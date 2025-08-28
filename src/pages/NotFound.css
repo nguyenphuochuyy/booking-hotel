@@ -1,0 +1,36 @@
+/* NotFound Page Styles */
+.not-found-page {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.error-content h1 {
+  font-size: 6rem;
+  color: #e74c3c;
+  margin-bottom: 1rem;
+}
+
+.error-content h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.error-content p {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.back-home-btn {
+  display: inline-block;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  padding: 1rem 2rem;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.back-home-btn:hover {
+  background: #5a6fd8;
+}

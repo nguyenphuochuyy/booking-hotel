@@ -1,0 +1,29 @@
+/* About Page Styles */
+.about-page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.about-page h1 {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: #2c3e50;
+}
+
+.about-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.about-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.about-section p {
+  color: #7f8c8d;
+  line-height: 1.8;
+}
