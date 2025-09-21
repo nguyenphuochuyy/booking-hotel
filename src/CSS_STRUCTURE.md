@@ -1,66 +1,77 @@
 # Cấu trúc CSS trong dự án Hotel Booking
 
-## 📁 Tổ chức file CSS
+## 📁 Tổ chức file CSS theo folder
 
 ### 1. **App.css** - Layout chính
 - Reset CSS và base styles
 - Layout chung cho toàn bộ ứng dụng
 - Main content container
 
-### 2. **components/common.css** - Component chung
-- Button styles (btn, btn-primary, btn-success, btn-danger)
-- Card styles
-- Form styles
-- Loading spinner
-- Utility classes (margin, padding, text-align)
+### 2. **components/Navigation/** - Navigation component
+```
+Navigation/
+├── Navigation.jsx      # Component logic
+├── Navigation.css      # Component styles
+└── index.js           # Export component
+```
 
-### 3. **components/Navigation.css** - Navigation component
-- Navigation bar styling
-- Menu items
-- Logo và buttons
-- Responsive design
+### 3. **pages/Home/** - Trang chủ
+```
+Home/
+├── Home.jsx           # Page component
+├── Home.css           # Page styles
+└── index.js           # Export component
+```
 
-### 4. **pages/Home.css** - Trang chủ
-- Home page layout
-- Features grid
-- Typography cho trang chủ
+### 4. **pages/Hotels/** - Trang khách sạn
+```
+Hotels/
+├── Hotels.jsx         # Page component
+├── Hotels.css         # Page styles
+└── index.js           # Export component
+```
 
-### 5. **pages/Hotels.css** - Trang khách sạn
-- Hotels page layout
-- Search section
-- Hotel cards grid
-- Booking buttons
+### 5. **pages/About/** - Trang giới thiệu
+```
+About/
+├── About.jsx          # Page component
+├── About.css          # Page styles
+└── index.js           # Export component
+```
 
-### 6. **pages/About.css** - Trang giới thiệu
-- About page layout
-- About sections
-- Contact information
-
-### 7. **pages/NotFound.css** - Trang 404
-- Error page styling
-- Back to home button
+### 6. **pages/NotFound/** - Trang 404
+```
+NotFound/
+├── NotFound.jsx       # Page component
+├── NotFound.css       # Page styles
+└── index.js           # Export component
+```
 
 ## 🎯 Cách sử dụng
 
-### Import CSS trong component:
+### Import component/page:
 ```jsx
-import React from 'react'
-import './ComponentName.css'  // CSS riêng cho component
-import '../components/common.css'  // CSS chung (nếu cần)
+// Sử dụng index.js (khuyến nghị)
+import Home from '../pages/Home'
+import Navigation from '../components/Navigation'
+
+// Hoặc import trực tiếp
+import Home from '../pages/Home/Home'
+import Navigation from '../components/Navigation/Navigation'
 ```
 
-### Import CSS trong page:
+### Import CSS:
 ```jsx
-import React from 'react'
-import './PageName.css'  // CSS riêng cho page
+// CSS được import trong component/page tương ứng
+import './ComponentName.css'
 ```
 
 ## 🔧 Quy tắc đặt tên
 
-- **Component CSS**: `ComponentName.css`
-- **Page CSS**: `PageName.css`
-- **Common CSS**: `common.css`
-- **Layout CSS**: `App.css`
+- **Folder**: `ComponentName/` hoặc `PageName/`
+- **Component**: `ComponentName.jsx`
+- **CSS**: `ComponentName.css`
+- **Export**: `index.js`
 
 ## 📱 Responsive Design
 
@@ -80,10 +91,44 @@ Mỗi file CSS đều có media queries riêng cho mobile:
 - **Text Light**: #7f8c8d (Gray)
 - **Background**: #f5f7fa (Light Gray)
 
-## 🚀 Lợi ích của cấu trúc này
+## 🚀 Lợi ích của cấu trúc folder
 
-1. **Dễ bảo trì**: Mỗi component/page có CSS riêng
-2. **Tái sử dụng**: Common CSS cho các component chung
-3. **Performance**: Chỉ load CSS cần thiết
-4. **Teamwork**: Dễ dàng phân chia công việc
+1. **Tổ chức rõ ràng**: Mỗi component/page có folder riêng
+2. **Dễ bảo trì**: Tất cả file liên quan ở cùng một nơi
+3. **Tái sử dụng**: Dễ dàng copy/paste component
+4. **Teamwork**: Mỗi developer có thể làm việc trên folder riêng
 5. **Scalability**: Dễ dàng mở rộng khi thêm component/page mới
+6. **Clean imports**: Sử dụng index.js để import gọn gàng
+
+## 📋 Cấu trúc tổng thể
+
+```
+src/
+├── components/
+│   └── Navigation/
+│       ├── Navigation.jsx
+│       ├── Navigation.css
+│       └── index.js
+├── pages/
+│   ├── Home/
+│   │   ├── Home.jsx
+│   │   ├── Home.css
+│   │   └── index.js
+│   ├── Hotels/
+│   │   ├── Hotels.jsx
+│   │   ├── Hotels.css
+│   │   └── index.js
+│   ├── About/
+│   │   ├── About.jsx
+│   │   ├── About.css
+│   │   └── index.js
+│   └── NotFound/
+│       ├── NotFound.jsx
+│       ├── NotFound.css
+│       └── index.js
+├── routes/
+│   └── AppRoutes.jsx
+├── App.jsx
+├── App.css
+└── index.css
+```

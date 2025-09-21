@@ -1,0 +1,12 @@
+/* Orders Page */
+.orders-page h1 { text-align: center; color: #111827; margin-bottom: 0.5rem; }
+.subtitle { text-align: center; color: #6b7280; margin-bottom: 2rem; }
+.orders-list { display: grid; gap: 1rem; }
+.order-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+.order-status { padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.875rem; font-weight: 700; }
+.order-status.paid { background: #d1fae5; color: #065f46; }
+
+@media (max-width: 480px) {
+  .order-card { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
+

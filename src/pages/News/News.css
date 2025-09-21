@@ -1,0 +1,42 @@
+.news-page h1 {
+    text-align: center;
+    color: #111827;
+    margin-bottom: 1.5rem;
+}
+
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.news-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.news-card h3 {
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.news-card p {
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+}
+
+.read-btn {
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.read-btn:hover {
+    background: #4338ca;
+}
