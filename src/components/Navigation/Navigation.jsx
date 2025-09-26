@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Layout, Button, Grid, Drawer, Space, Typography, Avatar, Badge, Dropdown, Menu, Input, Divider } from 'antd'
+import { Layout, Button, Grid, Drawer, Space, Typography, Avatar, Badge, Dropdown, Divider } from 'antd'
+import './Navigation.css'
 import { MenuOutlined, LoginOutlined, UserAddOutlined, BellOutlined, UserOutlined, HomeOutlined, BookOutlined, InfoCircleOutlined, ReadOutlined, ShoppingCartOutlined, SearchOutlined, LogoutOutlined, CalendarOutlined, AppstoreOutlined } from '@ant-design/icons'
 import logo from '../../assets/images/logo.webp'
 const { Header } = Layout
@@ -15,23 +16,14 @@ function Navigation() {
   const screens = useBreakpoint()
 
   const menuItems = useMemo(() => ([
-    { key: '/', icon: <HomeOutlined />, label: 'Trang chủ' },
-    { key: '/about', icon: <InfoCircleOutlined />, label: 'Về chúng tôi' },
+    { key: '/', label: 'Trang chủ' },
+    { key: '/about', label: 'Về chúng tôi' },
     {
       key: '/hotels',
-      icon: <AppstoreOutlined />,
       label: 'Phòng',
       children: [
         { key: '/hotels', label: 'Danh sách phòng' },
         { key: '/booking', label: 'Giá & khuyến mãi' },
-      ],
-    },
-    {
-      key: '/news',
-      icon: <ReadOutlined />,
-      label: 'Ẩm thực',
-      children: [
-        { key: '/news', label: 'Tin ẩm thực' },
       ],
     },
     { key: '/about#services', label: 'Dịch vụ' },
@@ -51,6 +43,10 @@ function Navigation() {
     </Badge>
   )
 
+  
+  // Phần notificationBell là biểu tượng chuông thông báo với số lượng thông báo (ở đây là 3).
+  // Khi có nhiều thông báo hơn 99 thì sẽ hiển thị 99+.
+  // Sử dụng Badge của Ant Design để hiển thị số lượng, và Button để hiển thị icon chuông.
   const userSection = (
     <Dropdown
       menu={{
@@ -77,8 +73,43 @@ function Navigation() {
 
   const activeKey = menuItems.find(i => i.key === location.pathname)?.key || '/'
 
+  const renderMenuItems = (items, isMobile = false) => (
+    <ul className={`nav-menu${isMobile ? ' mobile' : ''}`}>
+      {items.map((item) => (
+        <li key={item.key} className={`nav-item${activeKey === item.key ? ' active' : ''}${item.children ? ' has-children' : ''}`}>
+          <Link
+            to={item.key}
+            className="nav-link"
+            onClick={() => {
+              if (isMobile) setDrawerOpen(false)
+            }}
+          >
+            {item.icon} <span style={{ marginLeft: 6 }}>{item.label}</span>
+          </Link>
+          {Array.isArray(item.children) && item.children.length > 0 && (
+            <ul className="submenu">
+              {item.children.map((sub) => (
+                <li key={sub.key} className={`nav-subitem${activeKey === sub.key ? ' active' : ''}`}>
+                  <Link
+                    to={sub.key}
+                    className="nav-sublink"
+                    onClick={() => {
+                      if (isMobile) setDrawerOpen(false)
+                    }}
+                  >
+                    {sub.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+
   return (
-    <Layout>
+    <Layout className="header-yellow">
       {/* Top wellcome bar */}
       <div style={{
         position: 'sticky',
@@ -129,13 +160,7 @@ function Navigation() {
           {/* Center: Menu (desktop/tablet) */}
           {screens.md && (
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <Menu
-                mode="horizontal"
-                selectedKeys={[activeKey]}
-                onClick={onMenuClick}
-                items={menuItems}
-                style={{ borderBottom: 'none' }}
-              />
+              {renderMenuItems(menuItems, false)}
             </div>
           )}
 
@@ -161,6 +186,7 @@ function Navigation() {
 
       {!screens.md && (
         <Drawer
+          className="header-yellow"
           title={
             <Space>
               <img src={logo} alt="Hotel Logo" style={{ width: 36, height: 36 }} />
@@ -172,12 +198,9 @@ function Navigation() {
           onClose={() => setDrawerOpen(false)}
           bodyStyle={{ padding: 0 }}
         >
-          <Menu
-            mode="inline"
-            selectedKeys={[activeKey]}
-            onClick={(e) => onMenuClick(e)}
-            items={menuItems}
-          />
+          <nav style={{ padding: 12 }}>
+            {renderMenuItems(menuItems, true)}
+          </nav>
           <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {notificationBell}
             {userSection}

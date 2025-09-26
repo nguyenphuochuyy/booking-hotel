@@ -28,15 +28,15 @@ function Booking() {
         <button className="search-btn">Tìm phòng</button>
       </div>
 
-      <div className="room-list">
-        <div className="room-card">
-          <div className="room-image">🛏️</div>
-          <div className="room-info">
+      <div className="booking-room-list">
+        <div className="booking-room-card">
+          <div className="booking-room-image">🛏️</div>
+          <div className="booking-room-info">
             <h3>Phòng Deluxe</h3>
             <p>Giường đôi • 30m² • View thành phố</p>
-            <div className="room-footer">
-              <span className="price">1,200,000 VNĐ/đêm</span>
-              <button className="book-btn">Đặt ngay</button>
+            <div className="booking-room-footer">
+              <span className="booking-price">1,200,000 VNĐ/đêm</span>
+              <button className="booking-book-btn">Đặt ngay</button>
             </div>
           </div>
         </div>
