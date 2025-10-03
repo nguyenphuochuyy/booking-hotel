@@ -1,0 +1,252 @@
+.home-news {
+  background-color: #f8f9fa;
+  padding: 60px 0;
+}
+
+.home-news-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.home-news-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.home-news-title {
+  color: #1f2937 !important;
+  font-weight: 700 !important;
+  font-size: 32px !important;
+  margin-bottom: 0 !important;
+  position: relative;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.home-news-title:hover {
+  color: #E6A73F !important;
+}
+
+.home-news-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background-color: #c08a19;
+}
+
+.home-news-grid {
+  margin: 0 !important;
+}
+
+.home-news-col {
+  display: flex;
+  justify-content: center;
+}
+
+.home-news-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.home-news-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.home-news-image-container {
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+}
+
+.home-news-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.home-news-card:hover .home-news-image {
+  transform: scale(1.05);
+}
+
+.home-news-content {
+  padding: 24px;
+}
+
+.home-news-card-title {
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  line-height: 1.4 !important;
+  margin-bottom: 12px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-news-description {
+  color: #6b7280 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  margin-bottom: 20px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-news-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.home-news-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-news-author {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 500;
+}
+
+.home-news-date {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+}
+
+.home-news-button {
+  background-color: #E6A73F !important;
+  border-color: #E6A73F !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 16px !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease;
+}
+
+.home-news-button:hover {
+  background-color: #d4962a !important;
+  border-color: #d4962a !important;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .home-news {
+    padding: 40px 0;
+  }
+  
+  .home-news-container {
+    padding: 0 12px;
+  }
+  
+  .home-news-header {
+    margin-bottom: 32px;
+  }
+  
+  .home-news-title {
+    font-size: 24px !important;
+  }
+  
+  .home-news-image-container {
+    height: 200px;
+  }
+  
+  .home-news-content {
+    padding: 20px;
+  }
+  
+  .home-news-card-title {
+    font-size: 16px !important;
+  }
+  
+  .home-news-description {
+    font-size: 13px !important;
+  }
+  
+  .home-news-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .home-news-button {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 576px) {
+  .home-news {
+    padding: 32px 0;
+  }
+  
+  .home-news-container {
+    padding: 0 8px;
+  }
+  
+  .home-news-header {
+    margin-bottom: 24px;
+  }
+  
+  .home-news-title {
+    font-size: 20px !important;
+  }
+  
+  .home-news-image-container {
+    height: 180px;
+  }
+  
+  .home-news-content {
+    padding: 16px;
+  }
+  
+  .home-news-card-title {
+    font-size: 15px !important;
+  }
+  
+  .home-news-description {
+    font-size: 12px !important;
+  }
+  
+  .home-news-button {
+    font-size: 11px !important;
+    padding: 5px 12px !important;
+  }
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .home-news-image-container {
+    height: 220px;
+  }
+  
+  .home-news-content {
+    padding: 22px;
+  }
+  
+  .home-news-card-title {
+    font-size: 17px !important;
+  }
+  
+  .home-news-description {
+    font-size: 13px !important;
+  }
+}

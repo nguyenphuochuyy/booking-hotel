@@ -12,7 +12,9 @@
 .about{
   background-color: #fff;
 }
-
+.features{
+  background-color: #fff;
+}
 /* Responsive Design */
 @media (max-width: 768px) {
   .features {

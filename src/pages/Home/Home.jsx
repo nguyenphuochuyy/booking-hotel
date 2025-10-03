@@ -5,6 +5,7 @@ import { Row, Col, Typography, Button } from 'antd'
 import { GlobalOutlined } from '@ant-design/icons'
 import aboutBanner from '../../assets/images/about1.webp'
 import RoomList from '../../components/RoomList/RoomList'
+import HomeNews from '../../components/HomeNews'
 
 function Home() {
   return (
@@ -97,6 +98,7 @@ function Home() {
       <div className='features'>
         <RoomList />
       </div>
+      <HomeNews />
     </div>
   )
 }

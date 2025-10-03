@@ -22,108 +22,384 @@
 
 
 .room-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-} 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 .room-list-card {
-     background: #fff;
-     border-radius: 0;
-     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-     transition: transform 0.3s ease;
-     height: 100%;
-     display: flex;
-     flex-direction: column;
+    background: #fff;
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .room-list-image {
-     width: 100%;
-     height: 200px;
-     position: relative;
+    width: 100%;
+    height: auto;
+    position: relative;
 }
 
 .room-list-image img {
-     width: 100%;
-     height: 100%;
-     object-fit: contain;
+    width: 100%;
+    object-fit: contain;
 
 }
 
 .room-list-content {
-     padding: 20px 16px 16px 16px;
-     background: #f8f9fa;
-     flex: 1;
-     display: flex;
-     flex-direction: column;
+    padding: 20px 16px 16px 16px;
+    background: #f8f9fa;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .room-list-name {
-     text-align: center;
-     margin: 0 0 12px 0;
-     font-size: 16px;
-     font-weight: 700;
-     color: #333;
-     letter-spacing: 0.5px;
-     line-height: 1.2;
+    text-align: center;
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
 }
 
 .room-list-amenities {
-     display: flex;
-     justify-content: center;
-     gap: 20px;
-     color: #666;
-     margin-bottom: 16px;
-     font-size: 18px;
-     padding-bottom: 12px;
-     border-bottom: 2px solid #ddd;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: #666;
+    margin-bottom: 16px;
+    font-size: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #ddd;
 }
 
 .room-list-stats {
-     display: flex;
-     justify-content: center;
-     align-items: center;
-     gap: 20px;
-     margin-bottom: 16px;
-     color: #333;
-     font-size: 14px;
-     font-weight: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 16px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .room-list-capacity,
 .room-list-size {
-     display: inline-flex;
-     align-items: center;
-     gap: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .room-list-footer {
-     display: flex;
-     justify-content: space-between;
-     align-items: center;
-     margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
 }
 
 .room-list-price {
-     color: #dc2626;
-     font-weight: 700;
-     font-size: 16px;
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 16px;
 }
 
 .room-list-book-btn {
-     background: #dc2626;
-     border: 1px solid #dc2626;
-     color: #ffffff;
-     font-weight: 600;
-     font-size: 12px;
-     padding: 6px 16px;
-     border-radius: 4px;
-     text-transform: uppercase;
-     letter-spacing: 0.5px;
-     cursor: pointer;
-     transition: all 0.3s ease;
+    background: #dc2626;
+    border: 1px solid #dc2626;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .room-list-book-btn:hover {
-     background: #ffffff;
-     color: #dc2626;
-     border-color: #dc2626;
+    background: #ffffff;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+/* VIP Rooms Styles */
+.vip-rooms-grid {
+    margin-bottom: 40px;
+}
+
+.vip-room-card {
+    background: #fff;
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.vip-room-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.vip-room-card-large {
+    height: 600px;
+}
+
+.vip-room-card-small {
+    height: 280px;
+}
+
+.vip-room-image {
+    width: 100%;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+}
+
+.vip-room-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vip-room-image-small {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.vip-room-image-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vip-room-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    padding: 20px 16px 16px 16px;
+    color: white;
+}
+
+.vip-room-name-overlay {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.vip-room-price-overlay {
+    background: #dc2626;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.vip-room-content {
+    padding: 20px 16px 16px 16px;
+    background: #f8f9fa;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.vip-room-name {
+    text-align: center;
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.vip-room-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 16px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.vip-room-capacity,
+.vip-room-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vip-room-amenities {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: #666;
+    margin-bottom: 16px;
+    font-size: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #ddd;
+}
+
+.vip-room-description {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.vip-room-book-btn {
+    background: #dc2626;
+    border: 1px solid #dc2626;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: auto;
+    width: 100%;
+}
+
+.vip-room-book-btn:hover {
+    background: #ffffff;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.vip-rooms-small-grid {
+    height: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .vip-room-card-large {
+        height: auto;
+        margin-bottom: 20px;
+    }
+
+    .vip-room-card-small {
+        height: 250px;
+        margin-bottom: 16px;
+    }
+
+    .vip-room-image {
+        height: 200px;
+    }
+}
+
+/* Services tabs & sections (Khách sạn / Phòng họp / Làm đẹp) */
+.hotel-services {
+    max-width: 1280px;
+    margin: 20px auto 60px auto;
+    padding: 0 10px;
+}
+
+/* override một chút giao diện Tabs của antd cho phù hợp thiết kế */
+.ant-tabs-nav {
+    margin-bottom: 16px;
+}
+
+.ant-tabs-tab {
+    font-weight: 700;
+}
+
+.ant-tabs-tab .ant-tabs-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #c3921e !important;
+}
+
+.ant-tabs-ink-bar {
+    background: #c3921e !important;
+}
+
+.services-band {
+    background: #c3921e;
+    padding: 24px;
+}
+
+.band-heading {
+    display: flex;
+    gap: 24px;
+    color: #fff;
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 500;
+    margin: 4px 0 16px 0;
+}
+
+
+.band-heading .line2 {
+    opacity: .9;
+}
+
+.services-section {
+    display: grid;
+    grid-template-columns: 1fr 420px 1fr;
+    align-items: stretch;
+    gap: 24px;
+}
+
+.gold-frame {
+    background: #c3921e;
+    padding: 18px;
+}
+
+.gold-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.services-text-card {
+    background: #e9d7ae;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.services-text-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 28px;
+    letter-spacing: 1px;
+}
+
+.services-text-card p {
+    margin: 0;
+    line-height: 1.7;
+    color: #4a4a4a;
+}
+
+@media (max-width: 992px) {
+    .services-section {
+        grid-template-columns: 1fr;
+    }
 }
