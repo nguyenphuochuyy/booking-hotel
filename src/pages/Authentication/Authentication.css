@@ -1,0 +1,238 @@
+/* Container */
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(192, 138, 25, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(192, 138, 25, 0.08) 0%, transparent 50%);
+}
+
+/* Card */
+.auth-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Tabs */
+.auth-tabs .ant-tabs-nav {
+  margin-bottom: 20px;
+}
+
+.auth-tabs .ant-tabs-tab {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+.auth-tabs .ant-tabs-tab-active {
+  color: #c08a19 !important;
+}
+
+.auth-tabs .ant-tabs-ink-bar {
+  background: #c08a19;
+  height: 3px;
+}
+
+/* Form Items */
+.auth-tabs .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.auth-tabs .ant-form-item-label > label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Input */
+.auth-tabs .ant-input,
+.auth-tabs .ant-input-password {
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+}
+
+.auth-tabs .ant-input:hover,
+.auth-tabs .ant-input-password:hover {
+  border-color: #c08a19;
+}
+
+.auth-tabs .ant-input:focus,
+.auth-tabs .ant-input-focused,
+.auth-tabs .ant-input-password:focus,
+.auth-tabs .ant-input-password-focused {
+  border-color: #c08a19;
+  box-shadow: 0 0 0 3px rgba(192, 138, 25, 0.1);
+}
+
+.input-icon {
+  color: #c08a19;
+  font-size: 16px;
+}
+
+/* Buttons */
+.auth-button {
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #c08a19 0%, #d4a02b 100%);
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.auth-button:hover {
+  background: linear-gradient(135deg, #d4a02b 0%, #e0b13d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.3);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+/* Social Buttons */
+.social-button {
+  height: 36px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.google-button {
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+}
+
+.google-button:hover {
+  border-color: #DB4437;
+  color: #DB4437;
+  background: #fef2f2;
+  transform: translateY(-1px);
+}
+
+.facebook-button {
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+}
+
+.facebook-button:hover {
+  border-color: #1877F2;
+  color: #1877F2;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+/* Links */
+.auth-link {
+  color: #c08a19;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.auth-link:hover {
+  color: #d4a02b;
+  text-decoration: underline;
+}
+
+/* Divider */
+.auth-tabs .ant-divider-inner-text {
+  padding: 0 16px;
+}
+
+/* Responsive - Mobile */
+@media (max-width: 576px) {
+  .auth-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .auth-tabs .ant-tabs-tab {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .auth-tabs .ant-tabs-nav {
+    margin-bottom: 16px;
+  }
+
+  .auth-tabs .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  .auth-tabs .ant-input,
+  .auth-tabs .ant-input-password {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .auth-button {
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .social-button {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .input-icon {
+    font-size: 14px;
+  }
+}
+
+/* Responsive - Tablet */
+@media (min-width: 577px) and (max-width: 768px) {
+  .auth-card {
+    border-radius: 14px;
+  }
+
+  .auth-tabs .ant-tabs-tab {
+    padding: 11px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Responsive - Desktop */
+@media (min-width: 1200px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .auth-tabs .ant-tabs-nav {
+    margin-bottom: 24px;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-card {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Error message styling */
+.ant-form-item-explain-error {
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* Loading state */
+.auth-button.ant-btn-loading {
+  opacity: 0.8;
+}
+
+

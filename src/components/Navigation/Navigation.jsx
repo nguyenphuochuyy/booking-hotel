@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Layout, Button, Grid, Drawer, Space, Typography, Avatar, Badge, Dropdown, Divider } from 'antd'
 import './Navigation.css'
 import { MenuOutlined, LoginOutlined, UserAddOutlined, BellOutlined, UserOutlined, HomeOutlined, BookOutlined, InfoCircleOutlined, ReadOutlined, ShoppingCartOutlined, SearchOutlined, LogoutOutlined, CalendarOutlined, AppstoreOutlined } from '@ant-design/icons'
-import logo from '../../assets/images/logo.webp'
+import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 const { Header } = Layout
 const { useBreakpoint } = Grid
 const { Text } = Typography
@@ -12,7 +12,7 @@ function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [isAuthenticated] = useState(true)
+  const [isAuthenticated] = useState(false)
   const screens = useBreakpoint()
 
   const menuItems = useMemo(() => ([
@@ -21,14 +21,11 @@ function Navigation() {
     {
       key: '/hotels',
       label: 'Phòng',
-      children: [
-        { key: '/hotels', label: 'Danh sách phòng' },
-        { key: '/booking', label: 'Giá & khuyến mãi' },
-      ],
+     
     },
-    { key: '/about#services', label: 'Dịch vụ' },
-    { key: '/news#gallery', label: 'Thư viện ảnh' },
-    { key: '/about#contact', label: 'Liên hệ' },
+    { key: '/services', label: 'Dịch vụ' },
+    { key: '/gallery', label: 'Thư viện ảnh' },
+    { key: '/contact', label: 'Liên hệ' },
   ]), [])
 
   // đóng menu khi click vào menu
@@ -109,7 +106,7 @@ function Navigation() {
   )
 
   return (
-    <Layout className="header-yellow">
+    <div className="header-yellow">
       {/* Top wellcome bar */}
       <div style={{
         position: 'sticky',
@@ -119,6 +116,7 @@ function Navigation() {
         width: '100%',
         background: '#c08a19',
         color: '#fff',
+        
       }}>
         <div style={{
           height: 32,
@@ -134,7 +132,6 @@ function Navigation() {
             {screens.xs ? '' : 'Chào mừng bạn đến với Bean Hotel!'}
           </Text>
           <Space size={12}>
-            <Button type="link" icon={<ShoppingCartOutlined />} style={{ color: '#fff', padding: 0 }}>Giỏ hàng (1)</Button>
             <Divider type="vertical" style={{ background: 'rgba(255,255,255,0.35)', margin: '0 4px' }} />
             <Button type="link" icon={<SearchOutlined />} style={{ color: '#fff', padding: 0 }}>{screens.sm ? 'Tìm kiếm' : ''}</Button>
           </Space>
@@ -144,41 +141,91 @@ function Navigation() {
       {/* Main header */}
       <Header style={{
         position: 'sticky',
-        top: 32,
+        top: 0,
+        height: screens.md ? 100 : 80,
         zIndex: 100,
         width: '100%',
         padding: '0',
         background: '#fff',
-        borderBottom: '1px solid rgba(2,6,23,0.06)'
+        borderBottom: '1px solid rgba(2,6,23,0.06)',
+        display: 'flex',
+        alignItems: 'center',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 16, padding: '0 16px', maxWidth: 1280, margin: '0 auto' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          padding: '0 16px', 
+          maxWidth: 1400, 
+          margin: '0 auto',
+          width: '100%',
+          height: '100%'
+        }}>
           {/* Left: Logo */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'inherit', textDecoration: 'none' }}>
-            <img src={logo} alt="Hotel Logo" style={{  height: 50 }} />
+          <Link to="/" style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            width: screens.md ? '130px' : '90px',
+            height: screens.md ? '130px' : '90px',
+            flexShrink: 0,
+            marginRight: screens.md ? 20 : 10
+          }}>
+            <img 
+              src={logo} 
+              alt="Hotel Logo" 
+              style={{ 
+                width: '100%', 
+                height: '100%',
+                objectFit: 'contain'
+              }} 
+            />
           </Link>
           
           {/* Center: Menu (desktop/tablet) */}
           {screens.md && (
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ 
+              flex: 1, 
+              display: 'flex', 
+              justifyContent: 'center',
+              paddingLeft: 10,
+              paddingRight: 10
+            }}>
               {renderMenuItems(menuItems, false)}
             </div>
           )}
 
           {/* Right: Actions */}
           {screens.md ? (
-            <Space size={12} style={{ marginLeft: 'auto' }}>
+            <Space size={12} style={{ marginLeft: 'auto', flexShrink: 0 }}>
               {notificationBell}
               {userSection}
               <Link to="/booking">
-                <Button type="primary" icon={<CalendarOutlined />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
+                <Button 
+                  type="primary" 
+                  icon={<CalendarOutlined />} 
+                  style={{ background: '#c08a19', borderColor: '#c08a19' }}
+                >
+                  {screens.lg ? 'Đặt phòng' : ''}
+                </Button>
               </Link>
             </Space>
           ) : (
             <Space size={8} style={{ marginLeft: 'auto' }}>
               <Link to="/booking">
-                <Button type="primary" size="small" icon={<CalendarOutlined />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
+                <Button 
+                  type="primary" 
+                  size="small" 
+                  icon={<CalendarOutlined />} 
+                  style={{ background: '#c08a19', borderColor: '#c08a19' }}
+                >
+                  Đặt
+                </Button>
               </Link>
-              <Button type="text" icon={<MenuOutlined style={{ color: '#1f2937', fontSize: 20 }} />} onClick={() => setDrawerOpen(true)} />
+              <Button 
+                type="text" 
+                icon={<MenuOutlined style={{ color: '#1f2937', fontSize: 20 }} />} 
+                onClick={() => setDrawerOpen(true)} 
+              />
             </Space>
           )}
         </div>
@@ -189,8 +236,8 @@ function Navigation() {
           className="header-yellow"
           title={
             <Space>
-              <img src={logo} alt="Hotel Logo" style={{ width: 36, height: 36 }} />
-              <span>Hotel Booking</span>
+              <img src={logo} alt="Hotel Logo" style={{ width: 50, height: 50, objectFit: 'contain' }} />
+              <span style={{ fontSize: 18, fontWeight: 600 }}>Bean Hotel</span>
             </Space>
           }
           placement="left"
@@ -212,7 +259,7 @@ function Navigation() {
           </div>
         </Drawer>
       )}
-    </Layout>
+    </div>
   )
 }
 

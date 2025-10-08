@@ -1,7 +1,8 @@
 .room-list-section {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 40px 10px;
+    width: 100%;
+    margin: 0;
+    padding: 40px 16px; /* khớp half gutter 24 của antd để không tràn */
+    box-sizing: border-box;
 }
 
 .room-title-wrap {

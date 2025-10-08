@@ -24,18 +24,15 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #ffffff;
 }
 
 #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  text-align: center;
 }
 
 h1 {

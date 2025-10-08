@@ -9,12 +9,12 @@ import HomeNews from '../../components/HomeNews'
 
 function Home() {
   return (
-    <div className="home-page">
+    <div className="home-page container">
       <div className="banner">
         <img src={banner} alt="Banner" />
       </div>
       <div className="about">
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 16px' }}>
+        <div className="about-container">
           <Row gutter={[32, 32]}>
             <Col xs={24} md={12} xl={12}>
               <div className="about-banner">

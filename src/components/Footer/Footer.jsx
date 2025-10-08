@@ -1,7 +1,7 @@
 import React from 'react'
 import { Layout, Row, Col, Space, Button, Typography, Divider, Select } from 'antd'
 import { PhoneFilled, MessageFilled, EnvironmentFilled, MailFilled, ClockCircleFilled, CarFilled, InfoCircleFilled, LockFilled, FileTextFilled, GlobalOutlined, DollarOutlined, ArrowRightOutlined } from '@ant-design/icons'
-import logo from '../../assets/images/logo.png'
+import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 const { Footer: AntFooter } = Layout
 const { Title, Text, Link } = Typography
 
@@ -13,74 +13,201 @@ function AppFooter() {
       background: '#f6f5f2',
       color: '#1f2937',
       padding: '48px 16px 16px',
-      borderTop: '1px solid rgba(2,6,23,0.08)'
+      borderTop: '1px solid rgba(2,6,23,0.08)',
     }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <Row gutter={[24, 32]} align="top">
-          {/* 1) Thương hiệu & CTA */}
-          <Col xs={24} md={12} lg={6}>
-            <Space direction="vertical" size={12}>
-              <img src= {logo} alt="Khách sạn An Yên" style={{ width: 40, height: 40 }} />
-              <Text strong style={{ color: '#0f172a' }}>Khách sạn An Yên – Đặt trực tiếp giá tốt hơn</Text>
-              <Space wrap>
-                <a href="#booking">
-                  <Button type="primary" icon={<ArrowRightOutlined />}>Đặt phòng ngay</Button>
-                </a>
-                <a href="tel:09xxxxxxxx">
-                  <Button>Gọi 24/7: 09xx xxx xxx</Button>
-                </a>
-                <a href="https://zalo.me/09xxxxxxxx" target="_blank" rel="noreferrer">
-                  <Button>Chat Zalo</Button>
-                </a>
-              </Space>
-              <Space direction="vertical" size={8}>
-                <img src="/qr-vietqr.png" alt="VietQR chuyển khoản nhanh" style={{ width: 120, height: 120, background: '#ffffff', padding: 8, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }} />
-                <Text type="secondary">VietQR • STK 12345678 (Vietcombank – CN Đà Lạt)</Text>
-              </Space>
-            </Space>
-          </Col>
-
-          {/* 2) Liên hệ & Bản đồ */}
-          <Col xs={24} md={12} lg={6}>
-            <Title level={4} style={{ color: '#0f172a', marginTop: 0 }}>Liên hệ</Title>
-            <Space direction="vertical" size={6} style={{ width: '100%' }}>
-              <a href="tel:09xxxxxxxx" style={{ color: '#1d4ed8' }}>Hotline/Zalo: 09xx xxx xxx</a>
-              <a href="mailto:hello@anyen.vn" style={{ color: '#1d4ed8' }}>hello@anyen.vn</a>
-              <Text>Địa chỉ: Số 12 Hoa Sữa, P.7, TP. Đà Lạt, Lâm Đồng</Text>
-              <a target="_blank" rel="noopener" href="https://maps.google.com/?q=Khach+san+An+Yen+Da+Lat" style={{ color: '#1d4ed8' }}>Xem bản đồ</a>
-              <Text>Check-in 14:00 • Check-out 12:00 • Hỗ trợ 07:00–22:00</Text>
-            </Space>
-          </Col>
-
-          {/* 3) Hỗ trợ & Chính sách */}
-          <Col xs={24} md={12} lg={6}>
-            <Title level={4} style={{ color: '#0f172a', marginTop: 0 }}>Hỗ trợ & Chính sách</Title>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
-              <li><a href="/huong-dan-di-chuyen" style={{ color: '#334155' }}>Hướng dẫn di chuyển/đậu xe</a></li>
-              <li><a href="/faq" style={{ color: '#334155' }}>Câu hỏi thường gặp</a></li>
-              <li><a href="/chinh-sach-huy" style={{ color: '#334155' }}>Chính sách hủy/đổi ngày</a></li>
-              <li><a href="/thanh-toan" style={{ color: '#334155' }}>Thanh toán & Hoàn tiền</a></li>
-              <li><a href="/tre-em-thu-cung" style={{ color: '#334155' }}>Trẻ em & Thú cưng</a></li>
-              <li><a href="/bao-mat" style={{ color: '#334155' }}>Bảo mật dữ liệu cá nhân</a></li>
-              <li><a href="/hoa-don-vat" style={{ color: '#334155' }}>Xuất hóa đơn VAT</a></li>
-            </ul>
-          </Col>
-
-          {/* 4) Tin cậy & Thanh toán */}
-          <Col xs={24} md={12} lg={6}>
-            <Title level={4} style={{ color: '#0f172a', marginTop: 0 }}>Tin cậy & Thanh toán</Title>
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
-              <Text>Đánh giá: ⭐ 4.8/5 (320+ đánh giá Google)</Text>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                <img src="/pay/napas.svg" alt="Napas" height="20" />
-                <img src="/pay/visa.svg" alt="Visa" height="20" />
-                <img src="/pay/mastercard.svg" alt="Mastercard" height="20" />
-                <img src="/pay/vnpay.svg" alt="VNPay QR" height="20" />
-                <img src="/pay/vietqr.svg" alt="VietQR" height="20" />
-                <img src="/pay/momo.svg" alt="Momo" height="20" />
-                <img src="/pay/zalopay.svg" alt="ZaloPay" height="20" />
+      <div style={{ 
+        maxWidth: 1200, 
+        margin: '0 auto',
+        padding: '0 8px'
+      }}>
+        <Row 
+          gutter={[
+            { xs: 16, sm: 24, md: 24 }, 
+            { xs: 24, sm: 32, md: 32 }
+          ]} 
+          justify="center" 
+          align="top"
+        >
+          {/* Cột 1: Logo, Tên khách sạn, Nút đặt phòng, QR */}
+          <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                cursor: 'pointer'
+              }} onClick={() => window.location.href = '/' }>
+                <img 
+                  src={logo} 
+                  alt="Bean Hotel" 
+                  style={{ 
+                    width: window.innerWidth < 768 ? 60 : 100, 
+                    height: window.innerWidth < 768 ? 60 : 100 
+                  }} 
+                />
+                <div>
+                  <Title 
+                    level={4} 
+                    style={{ 
+                      color: '#0f172a', 
+                      margin: 0, 
+                      fontSize: window.innerWidth < 768 ? '16px' : '18px' 
+                    }}
+                  >
+                    Bean Hotel
+                  </Title>
+                  <Text style={{ color: '#64748b', fontSize: '14px' }}>Đặt trực tiếp giá tốt hơn</Text>
+                </div>
               </div>
-              <Text className="legal">Chủ sở hữu: Nguyễn Văn A • Hộ KD số 41A802xxx, cấp ngày 15/08/2024 tại UBND TP…<br/>MST: 0xxx xxx xxx • Kết nối an toàn SSL</Text>
+              
+              <a href="#booking" style={{ width: '100%', display: 'block' }}>
+                <Button 
+                  type="primary" 
+                  icon={<ArrowRightOutlined />} 
+                  size="large"
+                  style={{ 
+                    width: window.innerWidth < 768 ? '100%' : '70%', 
+                    height: '48px', 
+                    fontSize: window.innerWidth < 768 ? '14px' : '16px' 
+                  }}
+                >
+                  Đặt phòng ngay
+                </Button>
+              </a>
+              
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <img 
+                    src="/qr-vietqr.png" 
+                    alt="VietQR chuyển khoản nhanh" 
+                    style={{ 
+                      width: window.innerWidth < 768 ? 60 : 80, 
+                      height: window.innerWidth < 768 ? 60 : 80, 
+                      background: '#ffffff', 
+                      padding: 8, 
+                      borderRadius: 8, 
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+                    }} 
+                  />
+                  <div>
+                    <Text strong style={{ color: '#0f172a', display: 'block' }}>Chuyển khoản nhanh</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>VietQR • STK: 12345678</Text>
+                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>Vietcombank - CN Đà Lạt</Text>
+                  </div>
+                </div>
+              </Space>
+            </Space>
+          </Col>
+
+          {/* Cột 2: Liên hệ */}
+          <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+            <Title 
+              level={4} 
+              style={{ 
+                color: '#0f172a', 
+                marginTop: 0, 
+                marginBottom: 16,
+                fontSize: window.innerWidth < 768 ? '16px' : '18px'
+              }}
+            >
+              Liên hệ
+            </Title>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <div 
+               style={{ display : 'flex' , alignItems : 'center' , gap : 8 }}
+              >
+                <PhoneFilled style={{ color : '#000' , marginRight: 8 }} />
+                <a href="tel:0858369609" style={{ color : '#000' , marginRight: 8 }}>
+                  Hotline: 0858 369 609
+                </a>
+              </div>
+              
+              <div
+               >
+                <MailFilled style={{ color: '#000', marginRight: 8 }} />
+                <a href="mailto:beanhotelvn@gmail.com" style={{ color: '#334155' }}>
+                  beanhotelvn@gmail.com
+                </a>
+              </div>
+              
+              <div>
+                <EnvironmentFilled style={{ color: '#64748b', marginRight: 8 }} />
+                <Text style={{ color: '#334155' }}>
+                  Số 12 Hoa Sữa, P.7, TP. Đà Lạt, Lâm Đồng
+                </Text>
+              </div>
+              
+              <div>
+                <GlobalOutlined style={{ color: '#000', marginRight: 8 }} />
+                <a 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  href="https://www.google.com/maps/place/Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+C%C3%B4ng+nghi%E1%BB%87p+TP.HCM/@10.8221642,106.6842705,17z/data=!3m1!4b1!4m6!3m5!1s0x3174deb3ef536f31:0x8b7bb8b7c956157b!8m2!3d10.8221589!4d106.6868454!16s%2Fm%2F02pyzdj?entry=ttu&g_ep=EgoyMDI1MTAwNC4wIKXMDSoASAFQAw%3D%3D" 
+                  style={{ color: '#334155' }}
+                >
+                  Xem bản đồ
+                </a>
+              </div>
+              
+              <div>
+                <ClockCircleFilled style={{ color: '#64748b', marginRight: 8 }} />
+                <Text style={{ color: '#334155' }}>
+                  Check-in: 14:00 • Check-out: 12:00
+                </Text>
+              </div>
+              
+              <div>
+                <InfoCircleFilled style={{ color: '#64748b', marginRight: 8 }} />
+                <Text style={{ color: '#334155' }}>
+                  Thời gian hỗ trợ: 07:00 - 22:00
+                </Text>
+              </div>
+            </Space>
+          </Col>
+
+          {/* Cột 3: Hỗ trợ & Chính sách */}
+          <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+            <Title 
+              level={4} 
+              style={{ 
+                color: '#0f172a', 
+                marginTop: 0, 
+                marginBottom: 16,
+                fontSize: window.innerWidth < 768 ? '16px' : '18px'
+              }}
+            >
+              Hỗ trợ & Chính sách
+            </Title>
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <a href="/faq" style={{ color: '#334155', display: 'block' }}>
+                <InfoCircleFilled style={{ marginRight: 8, color: '#64748b' }} />
+                Câu hỏi thường gặp
+              </a>
+              
+              <a href="/chinh-sach-huy" style={{ color: '#334155', display: 'block' }}>
+                <FileTextFilled style={{ marginRight: 8, color: '#64748b' }} />
+                Chính sách hủy/đổi ngày
+              </a>
+              
+              <a href="/doi-phong" style={{ color: '#334155', display: 'block' }}>
+                <CarFilled style={{ marginRight: 8, color: '#64748b' }} />
+                Chính sách đổi phòng
+              </a>
+              
+              <a href="/thanh-toan" style={{ color: '#334155', display: 'block' }}>
+                <DollarOutlined style={{ marginRight: 8, color: '#64748b' }} />
+                Thanh toán & Hoàn tiền
+              </a>
+              
+              <a href="/privacy-policy" style={{ color: '#334155', display: 'block' }}>
+                <LockFilled style={{ marginRight: 8, color: '#64748b' }} />
+                Bảo mật dữ liệu cá nhân
+              </a>
+              
+              <a href="/hoa-don-vat" style={{ color: '#334155', display: 'block' }}>
+                <FileTextFilled style={{ marginRight: 8, color: '#64748b' }} />
+                Xuất hóa đơn VAT
+              </a>
             </Space>
           </Col>
         </Row>
@@ -97,12 +224,12 @@ function AppFooter() {
             </Space>
           </Col>
           <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-            <Text style={{ color: '#334155' }}>© {currentYear} Khách sạn An Yên. All rights reserved.</Text>
+            <Text style={{ color: '#334155' }}>© {currentYear} Bean Hotel. All rights reserved.</Text>
           </Col>
           <Col xs={24} md={8} style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-            <a href="/dieu-khoan" style={{ color: '#1d4ed8' }}>Điều khoản</a>
-            <a href="/bao-mat" style={{ color: '#1d4ed8' }}>Bảo mật</a>
-            <a href="/cookie" style={{ color: '#1d4ed8' }}>Cookie</a>
+            <a href="/terms-of-service" style={{ color: '#1d4ed8' }}>Điều khoản</a>
+            <a href="/privacy-policy" style={{ color: '#1d4ed8' }}>Bảo mật</a>
+            <a href="/cookie-policy" style={{ color: '#1d4ed8' }}>Cookie</a>
           </Col>
         </Row>
       </div>
