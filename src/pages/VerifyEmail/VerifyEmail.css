@@ -1,0 +1,197 @@
+.verify-email-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.verify-email-card {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 16px solid #ccc;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: #ffffff;
+  animation: fadeInUp 0.5s ease;
+}
+
+.verify-email-logo {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-top: 16px;
+}
+
+.verify-email-loading {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.verify-email-loading .anticon {
+  color: #c08a19;
+}
+
+.verify-email-loading h3 {
+  color: #374151;
+}
+
+/* Custom button styling đồng nhất với website */
+.verify-email-card .ant-btn-primary {
+  background: linear-gradient(135deg, #c08a19 0%, #d4a02b 100%);
+  border: none;
+  border-radius: 8px;
+  height: 40px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.verify-email-card .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #d4a02b 0%, #e0b13d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.3);
+}
+
+.verify-email-card .ant-btn-default {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  height: 40px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.3s ease;
+}
+
+.verify-email-card .ant-btn-default:hover {
+  border-color: #c08a19;
+  color: #c08a19;
+  background: rgba(192, 138, 25, 0.05);
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive cho tablet (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .verify-email-container {
+    padding: 24px;
+  }
+
+  .verify-email-card {
+    max-width: 550px;
+    border-radius: 14px;
+  }
+
+  .verify-email-logo h2 {
+    font-size: 28px;
+  }
+
+  .verify-email-loading {
+    padding: 40px 20px;
+  }
+  
+  .verify-email-card .ant-btn-primary,
+  .verify-email-card .ant-btn-default {
+    height: 38px;
+  }
+}
+
+/* Responsive cho mobile (< 768px) */
+@media (max-width: 767px) {
+  .verify-email-container {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .verify-email-card {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .verify-email-card .ant-card-body {
+    padding: 20px 16px;
+  }
+
+  .verify-email-logo {
+    margin-bottom: 24px;
+  }
+
+  .verify-email-logo h2 {
+    font-size: 24px;
+  }
+
+  .verify-email-loading {
+    padding: 32px 16px;
+  }
+
+  .verify-email-loading h3 {
+    font-size: 20px;
+  }
+
+  /* Result responsive */
+  .verify-email-card .ant-result {
+    padding: 24px 12px;
+  }
+
+  .verify-email-card .ant-result-title {
+    font-size: 20px;
+  }
+
+  .verify-email-card .ant-result-subtitle {
+    font-size: 14px;
+  }
+
+  .verify-email-card .ant-result-extra {
+    margin-top: 24px;
+  }
+
+  .verify-email-card .ant-result-extra .ant-btn {
+    width: 100%;
+    margin-bottom: 12px;
+    height: 36px;
+  }
+
+  .verify-email-card .ant-result-extra .ant-btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Responsive cho mobile nhỏ (< 480px) */
+@media (max-width: 479px) {
+  .verify-email-container {
+    padding: 12px;
+    padding-top: 40px;
+  }
+
+  .verify-email-logo h2 {
+    font-size: 22px;
+  }
+
+  .verify-email-loading .anticon {
+    font-size: 40px !important;
+  }
+
+  .verify-email-loading h3 {
+    font-size: 18px;
+    margin-top: 16px;
+  }
+
+  .verify-email-card .ant-result-icon {
+    margin-bottom: 16px;
+  }
+
+  .verify-email-card .ant-result-icon svg {
+    width: 56px !important;
+    height: 56px !important;
+  }
+}
+

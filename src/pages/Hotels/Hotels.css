@@ -19,10 +19,10 @@
 
 /* Page Title */
 .page-title {
-  color: #1f2937;
-  margin-bottom: 4rem !important;
-  font-weight: 700;
   text-align: center;
+  color: #111827;
+  margin-bottom: 4rem !important;
+  font-size: 2rem;
 }
 
 /* Sort Card */

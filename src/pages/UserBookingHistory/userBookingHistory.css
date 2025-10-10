@@ -1,0 +1,590 @@
+/* User Booking History Page Styles */
+.user-booking-history-page {
+  min-height: 100vh;
+  background: #f6f5f2;
+  padding: 40px 16px;
+}
+
+.booking-history-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Card */
+.header-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.page-title {
+  margin: 0 !important;
+  color: #1f2937 !important;
+  font-weight: 700 !important;
+  font-size: 28px !important;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+  margin-top: 16px;
+}
+
+.filter-btn {
+  border-radius: 20px;
+  font-weight: 500;
+  height: 36px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: #c08a19;
+  color: #c08a19;
+}
+
+.filter-btn.active {
+  background: #c08a19 !important;
+  border-color: #c08a19 !important;
+  color: white !important;
+}
+
+.filter-btn.active:hover {
+  background: #a67317 !important;
+  border-color: #a67317 !important;
+}
+
+/* Table Card */
+.table-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Table Styles */
+.booking-table .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.booking-table .ant-table-thead > tr > th {
+  background: #f8f9fa;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.booking-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 12px 8px;
+}
+
+.booking-table .ant-table-tbody > tr:hover > td {
+  background: #fefdf8;
+}
+
+/* Table Cell Styles */
+.booking-id {
+  color: #c08a19 !important;
+  font-size: 14px !important;
+}
+
+.hotel-name {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.room-type {
+  color: #64748b;
+}
+
+.date-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.date-cell .anticon {
+  color: #c08a19;
+  font-size: 12px;
+}
+
+.guests-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.guests-cell .anticon {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.amount-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.amount-cell .anticon {
+  color: #c08a19;
+  font-size: 12px;
+}
+
+.amount-text {
+  color: #16a34a !important;
+  font-size: 14px !important;
+}
+
+/* Status Tags */
+.status-tag {
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 12px;
+  padding: 2px 12px;
+}
+
+/* Action Buttons */
+.view-btn {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: white !important;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.view-btn:hover {
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+  color: white !important;
+}
+
+.view-btn:focus {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: white !important;
+}
+
+.cancel-btn {
+  border-radius: 6px;
+  font-weight: 500;
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+
+.cancel-btn:hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn:disabled:hover {
+  background: transparent !important;
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+
+/* Cancelled status text */
+.ant-typography {
+  margin: 0;
+}
+
+/* Detail Modal */
+.detail-modal .ant-modal-header {
+  border-bottom: 2px solid #e5e7eb;
+  padding: 20px 24px;
+}
+
+.detail-modal .ant-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.detail-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.booking-detail .ant-descriptions-bordered .ant-descriptions-item-label {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #374151;
+}
+
+.booking-detail .ant-descriptions-bordered .ant-descriptions-item-content {
+  background: white;
+  color: #1f2937;
+}
+
+/* Pagination */
+.booking-table .ant-pagination {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.booking-table .ant-pagination-item-active {
+  border-color: #c08a19;
+  background: #c08a19;
+}
+
+.booking-table .ant-pagination-item-active a {
+  color: white;
+}
+
+.booking-table .ant-pagination-item:hover {
+  border-color: #c08a19;
+}
+
+.booking-table .ant-pagination-item:hover a {
+  color: #c08a19;
+}
+
+/* Phone - Extra Small devices (< 576px) */
+@media (max-width: 575px) {
+  .user-booking-history-page {
+    padding: 20px 8px;
+  }
+  
+  .header-card {
+    margin-bottom: 16px;
+  }
+  
+  .page-title {
+    font-size: 22px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .filter-buttons {
+    margin-top: 12px;
+  }
+  
+  .filter-btn {
+    height: 32px;
+    font-size: 12px;
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  
+  .booking-table .ant-table-thead > tr > th {
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+  
+  .booking-table .ant-table-tbody > tr > td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .booking-id {
+    font-size: 12px !important;
+  }
+  
+  .hotel-name,
+  .room-type {
+    font-size: 12px;
+  }
+  
+  .date-cell {
+    font-size: 11px;
+    gap: 4px;
+  }
+  
+  .date-cell .anticon {
+    font-size: 10px;
+  }
+  
+  .amount-text {
+    font-size: 12px !important;
+  }
+  
+  .status-tag {
+    font-size: 10px;
+    padding: 1px 8px;
+  }
+  
+  .view-btn,
+  .cancel-btn {
+    font-size: 11px;
+    height: 28px;
+    padding: 0 8px;
+    min-width: 28px;
+  }
+  
+  .view-btn {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+  }
+  
+  .cancel-btn {
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+  
+  .booking-table .ant-table-scroll {
+    overflow-x: auto;
+  }
+  
+  .detail-modal .ant-modal-body {
+    padding: 16px;
+  }
+  
+  .booking-detail .ant-descriptions {
+    font-size: 12px;
+  }
+}
+
+/* Large phones - Small devices (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .user-booking-history-page {
+    padding: 32px 12px;
+  }
+  
+  .header-card {
+    margin-bottom: 20px;
+  }
+  
+  .page-title {
+    font-size: 24px !important;
+  }
+  
+  .filter-btn {
+    height: 34px;
+    font-size: 13px;
+    padding: 0 14px;
+  }
+  
+  .booking-table .ant-table-thead > tr > th {
+    font-size: 13px;
+    padding: 10px 6px;
+  }
+  
+  .booking-table .ant-table-tbody > tr > td {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+  
+  .booking-id {
+    font-size: 13px !important;
+  }
+  
+  .date-cell {
+    font-size: 12px;
+  }
+  
+  .date-cell .anticon {
+    font-size: 11px;
+  }
+  
+  .amount-text {
+    font-size: 13px !important;
+  }
+  
+  .status-tag {
+    font-size: 11px;
+    padding: 2px 10px;
+  }
+  
+  .view-btn,
+  .cancel-btn {
+    font-size: 12px;
+    height: 30px;
+    padding: 0 10px;
+    min-width: 30px;
+  }
+  
+  .view-btn {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+  }
+  
+  .cancel-btn {
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+  
+  .detail-modal .ant-modal-body {
+    padding: 20px;
+  }
+}
+
+/* Tablets - Medium devices (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .user-booking-history-page {
+    padding: 36px 14px;
+  }
+  
+  .header-card {
+    margin-bottom: 22px;
+  }
+  
+  .page-title {
+    font-size: 26px !important;
+  }
+  
+  .filter-btn {
+    height: 35px;
+    font-size: 13.5px;
+    padding: 0 15px;
+  }
+  
+  .booking-table .ant-table-thead > tr > th {
+    font-size: 13.5px;
+    padding: 11px 7px;
+  }
+  
+  .booking-table .ant-table-tbody > tr > td {
+    padding: 11px 7px;
+    font-size: 13.5px;
+  }
+  
+  .booking-id {
+    font-size: 13.5px !important;
+  }
+  
+  .date-cell {
+    font-size: 12.5px;
+  }
+  
+  .date-cell .anticon {
+    font-size: 11.5px;
+  }
+  
+  .amount-text {
+    font-size: 13.5px !important;
+  }
+  
+  .status-tag {
+    font-size: 11.5px;
+    padding: 2px 11px;
+  }
+  
+  .view-btn,
+  .cancel-btn {
+    font-size: 12.5px;
+    height: 31px;
+    padding: 0 11px;
+    min-width: 31px;
+  }
+  
+  .view-btn {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+  }
+  
+  .cancel-btn {
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+  
+  .detail-modal .ant-modal-body {
+    padding: 22px;
+  }
+}
+
+/* Desktop - Large devices (≥ 992px) */
+@media (min-width: 992px) {
+  .user-booking-history-page {
+    padding: 40px 16px;
+  }
+  
+  .header-card {
+    margin-bottom: 24px;
+  }
+  
+  .page-title {
+    font-size: 28px !important;
+  }
+  
+  .filter-btn {
+    height: 36px;
+    font-size: 14px;
+    padding: 0 16px;
+  }
+  
+  .booking-table .ant-table-thead > tr > th {
+    font-size: 14px;
+    padding: 12px 8px;
+  }
+  
+  .booking-table .ant-table-tbody > tr > td {
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+  
+  .booking-id {
+    font-size: 14px !important;
+  }
+  
+  .date-cell {
+    font-size: 13px;
+  }
+  
+  .date-cell .anticon {
+    font-size: 12px;
+  }
+  
+  .amount-text {
+    font-size: 14px !important;
+  }
+  
+  .status-tag {
+    font-size: 12px;
+    padding: 2px 12px;
+  }
+  
+  .view-btn,
+  .cancel-btn {
+    font-size: 13px;
+    height: 32px;
+    padding: 0 12px;
+    min-width: 32px;
+  }
+  
+  .view-btn {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+  }
+  
+  .cancel-btn {
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+  
+  .detail-modal .ant-modal-body {
+    padding: 24px;
+  }
+}
+
+/* Hover effects for cards */
+.header-card:hover,
+.table-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+}
+
+/* Loading states */
+.ant-table-tbody > tr.ant-table-placeholder:hover > td {
+  background: white !important;
+}
+
+/* Empty state */
+.ant-empty {
+  margin: 40px 0;
+}
+
+.ant-empty-description {
+  color: #64748b;
+}

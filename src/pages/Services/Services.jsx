@@ -95,17 +95,20 @@ function Services() {
       <div className="container">
         {/* Breadcrumb */}
         <Breadcrumb className="breadcrumb-custom">
-          <Breadcrumb.Item>
-            <Link to="/">
-              <HomeOutlined />
-            </Link>
+        <Breadcrumb.Item href="/">
+
+            <HomeOutlined />
+            <span>Trang chủ</span>
+        
           </Breadcrumb.Item>
-          <Breadcrumb.Item>Dịch vụ</Breadcrumb.Item>
+          <Breadcrumb.Item
+ 
+          >Dịch vụ</Breadcrumb.Item>
         </Breadcrumb>
 
         {/* Page Header */}
         <div className="page-header">
-          <Title className="page-title">Dịch vụ của chúng tôi</Title>
+          <h1 className="page-title">Dịch vụ của chúng tôi</h1>
           <Paragraph className="page-description">
             Bean Hotel cam kết mang đến cho quý khách những trải nghiệm tuyệt vời nhất với đa dạng các dịch vụ cao cấp
           </Paragraph>

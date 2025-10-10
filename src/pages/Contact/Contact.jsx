@@ -124,7 +124,7 @@ function Contact() {
                       <HomeOutlined className="info-icon" />
                       <Paragraph className="info-text">
                         <strong>Địa chỉ:</strong><br />
-                        123 Đường Nguyễn Huệ, Quận 1,<br />
+                        12 Nguyễn Văn Bảo phường Hạnh Thông,<br />
                         Thành phố Hồ Chí Minh, Việt Nam
                       </Paragraph>
                     </div>
@@ -142,8 +142,7 @@ function Contact() {
                       <MailOutlined className="info-icon" />
                       <Paragraph className="info-text">
                         <strong>Email:</strong><br />
-                        info@beanhotel.com<br />
-                        booking@beanhotel.com
+                        beanhotelvn@gmail.com<br />
                       </Paragraph>
                     </div>
 

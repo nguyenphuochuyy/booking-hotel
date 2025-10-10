@@ -4,6 +4,7 @@ import { Layout, Button, Grid, Drawer, Space, Typography, Avatar, Badge, Dropdow
 import './Navigation.css'
 import { MenuOutlined, LoginOutlined, UserAddOutlined, BellOutlined, UserOutlined, HomeOutlined, BookOutlined, InfoCircleOutlined, ReadOutlined, ShoppingCartOutlined, SearchOutlined, LogoutOutlined, CalendarOutlined, AppstoreOutlined } from '@ant-design/icons'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
+import { useAuth } from '../../context/AuthContext'
 const { Header } = Layout
 const { useBreakpoint } = Grid
 const { Text } = Typography
@@ -12,9 +13,59 @@ function Navigation() {
   const location = useLocation()
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [isAuthenticated] = useState(false)
   const screens = useBreakpoint()
+  const { user, setUser , logout , isAuthenticated } = useAuth()
 
+  // Responsive sizing tokens by device type 
+  const device = screens.lg ? 'pc' : (screens.md ? 'tablet' : 'phone')
+  const sizes = {
+    phone: {
+      topBarPaddingY: 8,
+      topBarPaddingX: 12,
+      topTextSize: 12,
+      headerHeight: 72,
+      containerPadX: 12,
+      logo: 80,
+      menuFont: 14,
+      menuPadY: 6,
+      menuPadX: 8,
+      iconSize: 16,
+      bookBtnSize: 'small',
+      drawerLogoSize: 45,
+      drawerTitleSize: 16,
+    },
+    tablet: {
+      topBarPaddingY: 10,
+      topBarPaddingX: 16,
+      topTextSize: 13,
+      headerHeight: 90,
+      containerPadX: 16,
+      logo: 110,
+      menuFont: 15,
+      menuPadY: 8,
+      menuPadX: 10,
+      iconSize: 18,
+      bookBtnSize: 'middle',
+      drawerLogoSize: 50,
+      drawerTitleSize: 18,
+    },
+    pc: {
+      topBarPaddingY: 10,
+      topBarPaddingX: 20,
+      topTextSize: 14,
+      headerHeight: 100,
+      containerPadX: 20,
+      logo: 130,
+      menuFont: 16,
+      menuPadY: 10,
+      menuPadX: 12,
+      iconSize: 20,
+      bookBtnSize: 'middle',
+      drawerLogoSize: 50,
+      drawerTitleSize: 18,
+    },
+  }
+  const S = sizes[device]
   const menuItems = useMemo(() => ([
     { key: '/', label: 'Trang chủ' },
     { key: '/about', label: 'Về chúng tôi' },
@@ -27,7 +78,11 @@ function Navigation() {
     { key: '/gallery', label: 'Thư viện ảnh' },
     { key: '/contact', label: 'Liên hệ' },
   ]), [])
-
+  // hàm xử lý đăng xuất 
+  const UserLogout = () => {
+    logout()
+    navigate('/login')
+  }
   // đóng menu khi click vào menu
   const onMenuClick = (e) => {
     navigate(e.key)
@@ -36,7 +91,7 @@ function Navigation() {
 
   const notificationBell = (
     <Badge count={3} overflowCount={99} size="small">
-      <Button type="text" icon={<BellOutlined style={{  fontSize: 18 }} />} />
+      <Button type="text" icon={<BellOutlined style={{  fontSize: S.iconSize }} />} />
     </Badge>
   )
 
@@ -49,9 +104,9 @@ function Navigation() {
       menu={{
         items: isAuthenticated
           ? [
-              { key: 'profile', label: 'Hồ sơ' },
-              { key: 'orders', label: 'Đơn đặt phòng', onClick: () => navigate('/orders') },
-              { key: 'logout', label: 'Đăng xuất' },
+              { key: 'profile', label: 'Hồ sơ', onClick: () => navigate('/user/profile') },
+              { key: 'orders', label: 'Đơn đặt phòng', onClick: () => navigate('/user/bookings') },
+              { key: 'logout', label: 'Đăng xuất', onClick: () => UserLogout() },
             ]
           : [
               { key: 'login', label: 'Đăng nhập', onClick: () => navigate('/login') },
@@ -61,9 +116,9 @@ function Navigation() {
       placement="bottomRight"
     >
       {isAuthenticated ? (
-        <Avatar style={{ backgroundColor: '#7265e6' }} icon={<UserOutlined />} />
+        <Avatar style={{ backgroundColor: '#7265e6' }} icon={<UserOutlined style={{ fontSize: S.iconSize }} />} />
       ) : (
-        <Button type="text" icon={<UserOutlined style={{ fontSize: 18 }} />} />
+        <Button type="text" icon={<UserOutlined style={{ fontSize: S.iconSize }} />} />
       )}
     </Dropdown>
   )
@@ -77,6 +132,7 @@ function Navigation() {
           <Link
             to={item.key}
             className="nav-link"
+            style={isMobile ? { fontSize: S.menuFont, padding: `${S.menuPadY}px ${S.menuPadX}px` } : {}}
             onClick={() => {
               if (isMobile) setDrawerOpen(false)
             }}
@@ -111,7 +167,7 @@ function Navigation() {
       <div style={{
         position: 'sticky',
         top: 0,
-        padding : '10px 16px',
+        padding : `${S.topBarPaddingY}px ${S.topBarPaddingX}px`,
         zIndex: 101,
         width: '100%',
         background: '#c08a19',
@@ -128,12 +184,12 @@ function Navigation() {
           maxWidth: 1280,
           margin: '0 auto',
         }}>
-          <Text style={{ color: '#fff', fontSize: 14 }} ellipsis>
-            {screens.xs ? '' : 'Chào mừng bạn đến với Bean Hotel!'}
+          <Text style={{ color: '#fff', fontSize: S.topTextSize }} ellipsis>
+            {device === 'phone' ? '' : 'Chào mừng bạn đến với Bean Hotel!'}
           </Text>
           <Space size={12}>
             <Divider type="vertical" style={{ background: 'rgba(255,255,255,0.35)', margin: '0 4px' }} />
-            <Button type="link" icon={<SearchOutlined />} style={{ color: '#fff', padding: 0 }}>{screens.sm ? 'Tìm kiếm' : ''}</Button>
+            <Button type="link" icon={<SearchOutlined style={{ fontSize: S.iconSize }} />} style={{ color: '#fff', padding: 0 }}>{device !== 'phone' ? 'Tìm kiếm' : ''}</Button>
           </Space>
         </div>
       </div>
@@ -142,7 +198,7 @@ function Navigation() {
       <Header style={{
         position: 'sticky',
         top: 0,
-        height: screens.md ? 100 : 80,
+        height: S.headerHeight,
         zIndex: 100,
         width: '100%',
         padding: '0',
@@ -154,7 +210,7 @@ function Navigation() {
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          padding: '0 16px', 
+          padding: `0 ${S.containerPadX}px`, 
           maxWidth: 1400, 
           margin: '0 auto',
           width: '100%',
@@ -165,8 +221,8 @@ function Navigation() {
             display: 'flex', 
             alignItems: 'center',
             justifyContent: 'flex-start',
-            width: screens.md ? '130px' : '90px',
-            height: screens.md ? '130px' : '90px',
+            width: `${S.logo}px`,
+            height: `${S.logo}px`,
             flexShrink: 0,
             marginRight: screens.md ? 20 : 10
           }}>
@@ -187,8 +243,8 @@ function Navigation() {
               flex: 1, 
               display: 'flex', 
               justifyContent: 'center',
-              paddingLeft: 10,
-              paddingRight: 10
+              paddingLeft: device === 'pc' ? 20 : 12,
+              paddingRight: device === 'pc' ? 20 : 12
             }}>
               {renderMenuItems(menuItems, false)}
             </div>
@@ -202,10 +258,11 @@ function Navigation() {
               <Link to="/booking">
                 <Button 
                   type="primary" 
-                  icon={<CalendarOutlined />} 
+                  size={S.bookBtnSize}
+                  icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} 
                   style={{ background: '#c08a19', borderColor: '#c08a19' }}
                 >
-                  {screens.lg ? 'Đặt phòng' : ''}
+                  {device === 'pc' ? 'Đặt phòng' : ''}
                 </Button>
               </Link>
             </Space>
@@ -214,8 +271,8 @@ function Navigation() {
               <Link to="/booking">
                 <Button 
                   type="primary" 
-                  size="small" 
-                  icon={<CalendarOutlined />} 
+                  size={S.bookBtnSize} 
+                  icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} 
                   style={{ background: '#c08a19', borderColor: '#c08a19' }}
                 >
                   Đặt
@@ -223,7 +280,7 @@ function Navigation() {
               </Link>
               <Button 
                 type="text" 
-                icon={<MenuOutlined style={{ color: '#1f2937', fontSize: 20 }} />} 
+                icon={<MenuOutlined style={{ color: '#1f2937', fontSize: S.iconSize + 2 }} />} 
                 onClick={() => setDrawerOpen(true)} 
               />
             </Space>
@@ -236,8 +293,8 @@ function Navigation() {
           className="header-yellow"
           title={
             <Space>
-              <img src={logo} alt="Hotel Logo" style={{ width: 50, height: 50, objectFit: 'contain' }} />
-              <span style={{ fontSize: 18, fontWeight: 600 }}>Bean Hotel</span>
+              <img src={logo} alt="Hotel Logo" style={{ width: S.drawerLogoSize, height: S.drawerLogoSize, objectFit: 'contain' }} />
+              <span style={{ fontSize: S.drawerTitleSize, fontWeight: 600 }}>Bean Hotel</span>
             </Space>
           }
           placement="left"
@@ -254,7 +311,7 @@ function Navigation() {
           </div>
           <div style={{ padding: 16 }}>
             <Link to="/booking" onClick={() => setDrawerOpen(false)}>
-              <Button block type="primary" size="large" icon={<CalendarOutlined />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
+              <Button block type="primary" size="large" icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
             </Link>
           </div>
         </Drawer>

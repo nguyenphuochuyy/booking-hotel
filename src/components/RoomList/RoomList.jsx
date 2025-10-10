@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
-import { Row, Col, Typography, Button, Tabs } from 'antd'
+import { Row, Col, Typography, Button, Tabs, Grid } from 'antd'
 import { WifiOutlined, CoffeeOutlined, UserOutlined, ExpandOutlined, RestOutlined, BankOutlined, TeamOutlined, SmileOutlined } from '@ant-design/icons'
 import './RoomList.css'
+import { useNavigate } from 'react-router-dom'
+
+const { useBreakpoint } = Grid
 
 const rooms = [
   {
@@ -82,6 +85,8 @@ const vipRooms = [
 
 function RoomList() {
   const [activeServiceTab, setActiveServiceTab] = useState('hotel')
+  const screens = useBreakpoint()
+  const navigate = useNavigate()
   return (
     <div>
       {/* Danh sách phòng */}
@@ -90,10 +95,10 @@ function RoomList() {
         <Typography.Title level={2} className="room-section-title">PHÒNG ĐƠN</Typography.Title>
       </div>
 
-      <Row gutter={[24, 24]} >
+      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
         {rooms.map((room) => (
-          <Col key={room.id} xs={8} sm={8} md={8} lg={6} xl={6} xxl={6}>
-            <div className="room-list-card">
+          <Col key={room.id} xs={24} sm={12} md={8} lg={6} xl={6} xxl={6}>
+            <div className="room-list-card" onClick={() => navigate(`/rooms/${room.id}`)}>
               <div className="room-list-image">
                 <img alt={room.name} src={room.image} />
               </div>
@@ -128,9 +133,9 @@ function RoomList() {
       <div className="room-title-wrap" style={{ marginTop: '40px' }}>
         <Typography.Title level={2} className="room-section-title">PHÒNG ĐÔI</Typography.Title>
       </div>
-      <Row gutter={[24, 24]} >
+      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
         {rooms.map((room) => (
-          <Col key={room.id} xs={8} sm={8} md={8} lg={6} xl={6} xxl={6}>
+          <Col key={room.id} xs={24} sm={12} md={8} lg={6} xl={6} xxl={6}>
             <div className="room-list-card">
               <div className="room-list-image">
                 <img alt={room.name} src={room.image} />
@@ -167,7 +172,7 @@ function RoomList() {
       <div className='room-title-wrap' style={{ marginTop: '40px' }}>
         <Typography.Title level={2} className="room-section-title">PHÒNG VIP</Typography.Title>
       </div>
-      <Row gutter={[24, 24]} className="vip-rooms-grid">
+      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]} className="vip-rooms-grid">
         {/* Card lớn bên trái */}
         <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12}>
           <div className="vip-room-card vip-room-card-large">
@@ -205,7 +210,7 @@ function RoomList() {
 
         {/* 4 card nhỏ bên phải */}
         <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12}>
-          <Row gutter={[16, 16]} className="vip-rooms-small-grid">
+          <Row gutter={screens.xs ? [8, 12] : [16, 16]} className="vip-rooms-small-grid">
             {vipRooms.slice(1).map((room) => (
               <Col key={room.id} xs={12} sm={12} md={12} lg={12} xl={12} xxl={12}>
                 <div className="vip-room-card vip-room-card-small">

@@ -12,7 +12,8 @@ import {
   Space,
   Divider,
   message,
-  Breadcrumb
+  Breadcrumb,
+  Modal
 } from 'antd'
 import {
   UserOutlined,
@@ -23,7 +24,11 @@ import {
   FacebookOutlined
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+// import { GoogleLogin } from '@react-oauth/google'
 import './Authentication.css'
+import { useAuth } from '../../context/AuthContext'
+import { getUserProfile } from '../../services/user.service'
+import authenticationService from '../../services/authentication.service'
 
 const { Title, Text, Link } = Typography
 const { useBreakpoint } = Grid
@@ -36,6 +41,11 @@ const Authentication = () => {
   const [loginForm] = Form.useForm()
   const [registerForm] = Form.useForm()
   const [loading, setLoading] = useState(false)
+  const { login , setUser , setAccessToken  } = useAuth()
+  const [messageApi, contextHolder] = message.useMessage()
+  const [forgotPasswordModal, setForgotPasswordModal] = useState(false)
+  const [forgotPasswordForm] = Form.useForm()
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
 
   // Tự động chuyển tab dựa vào URL
   useEffect(() => {
@@ -45,16 +55,39 @@ const Authentication = () => {
       setActiveTab('login')
     }
   }, [location.pathname])
-
+  // message khi đăng nhập
+  const success = () => {
+    messageApi.open({
+      type: 'success',
+      content: 'Đăng nhập thành công!',
+      duration: 3,
+    });
+  };
   // Xử lý đăng nhập
   const handleLogin = async (values) => {
     setLoading(true)
     try {
-      // TODO: Tích hợp API đăng nhập
-      console.log('Login values:', values)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Giả lập API call
-      message.success('Đăng nhập thành công!')
-      navigate('/')
+      const response = await login(values)
+      if(response){
+        success()
+        // lấy thông tin của user sau khi đăng nhập thành công bằng accessToken
+        const userProfile = await getUserProfile()
+        console.log(userProfile.user);
+        
+        const profileUser = userProfile?.user
+        if (profileUser) {
+          setUser(profileUser)
+        }
+        setTimeout(() => {
+          const role = profileUser?.role
+          if (role === 'admin') {
+            navigate('/admin')
+          } else {
+            navigate('/')
+          }
+        }, 1000)
+      }
+      
     } catch (error) {
       message.error('Đăng nhập thất bại!')
     } finally {
@@ -62,18 +95,78 @@ const Authentication = () => {
     }
   }
 
+  // Xử lý đăng nhập Google
+  // const handleGoogleSuccess = async (credentialResponse) => {
+  //   setLoading(true)
+  //   try {
+  //     // Gửi credential token lên backend để verify và tạo user/login
+  //     const response = await authenticationService.googleLogin({
+  //       credential: credentialResponse.credential
+  //     })
+      
+  //     if (response) {
+  //       messageApi.success('Đăng nhập Google thành công!')
+        
+  //       // Lấy thông tin user
+  //       const userProfile = await getUserProfile()
+  //       if (userProfile?.user) {
+  //         setUser(userProfile.user)
+  //       }
+        
+  //       setTimeout(() => {
+  //         const role = userProfile?.user?.role
+  //         if (role === 'admin') {
+  //           navigate('/admin')
+  //         } else {
+  //           navigate('/')
+  //         }
+  //       }, 1500)
+  //     }
+  //   } catch (error) {
+  //     const errMsg = error?.data?.message || error?.message || 'Đăng nhập Google thất bại!'
+  //     messageApi.error(errMsg)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
+
+  const handleGoogleError = () => {
+    messageApi.error('Đăng nhập Google thất bại!')
+  }
+
+  // Xử lý quên mật khẩu
+  const handleForgotPassword = async (values) => {
+    setForgotPasswordLoading(true)
+    try {
+      const response = await authenticationService.forgotPassword({ email: values.email })
+      messageApi.success('Đã gửi email hướng dẫn đặt lại mật khẩu!')
+      setForgotPasswordModal(false)
+      forgotPasswordForm.resetFields()
+    } catch (error) {
+      const errMsg = error?.data?.message || error?.message || 'Có lỗi xảy ra!'
+      messageApi.error(errMsg)
+    } finally {
+      setForgotPasswordLoading(false)
+    }
+  }
+
   // Xử lý đăng ký
   const handleRegister = async (values) => {
     setLoading(true)
     try {
-      // TODO: Tích hợp API đăng ký
-      console.log('Register values:', values)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Giả lập API call
-      message.success('Đăng ký thành công!')
-      setActiveTab('login')
+      const payload = {
+        full_name: values.fullName,
+        email: values.email,
+        password: values.password,
+      }
+      const result = await authenticationService.register(payload)
+      console.log(result);
+      message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.')
       registerForm.resetFields()
+      navigate('/register/success')
     } catch (error) {
-      message.error('Đăng ký thất bại!')
+      const errMsg = error?.data?.message || error?.message || 'Đăng ký thất bại!'
+      message.error(errMsg)
     } finally {
       setLoading(false)
     }
@@ -119,7 +212,13 @@ const Authentication = () => {
 
       <Form.Item>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="#" className="auth-link">Quên mật khẩu?</Link>
+          <Link 
+            onClick={() => setForgotPasswordModal(true)} 
+            className="auth-link"
+            style={{ cursor: 'pointer' }}
+          >
+            Quên mật khẩu?
+          </Link>
         </div>
       </Form.Item>
 
@@ -140,15 +239,18 @@ const Authentication = () => {
         <Text type="secondary" style={{ fontSize: screens.xs ? 12 : 14 }}>Hoặc đăng nhập với</Text>
       </Divider>
 
-      <Space direction="vertical" style={{ width: '100%' }} size={8}>
-        <Button
-          icon={<GoogleOutlined />}
-          block
-          className="social-button google-button"
-          size="middle"
-        >
-          Đăng nhập với Google
-        </Button>
+      <Space direction="vertical" style={{ width: '100%'  }} size={8}>
+        {/* <div style={{ width: '100%' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="outline"
+            size="large"
+            width={'100%'}
+            text="signin_with"
+            shape="rectangular"
+          />
+        </div> */}
         <Button
           icon={<FacebookOutlined />}
           block
@@ -200,20 +302,6 @@ const Authentication = () => {
       </Form.Item>
 
       <Form.Item
-        name="phone"
-        label="Số điện thoại"
-        rules={[
-          { required: true, message: 'Vui lòng nhập số điện thoại!' },
-          { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ!' }
-        ]}
-      >
-        <Input
-          prefix={<PhoneOutlined className="input-icon" />}
-          placeholder="Nhập số điện thoại"
-        />
-      </Form.Item>
-
-      <Form.Item
         name="password"
         label="Mật khẩu"
         rules={[
@@ -222,13 +310,13 @@ const Authentication = () => {
         ]}
       >
         <Input.Password
+     
           prefix={<LockOutlined className="input-icon" />}
           placeholder="Nhập mật khẩu"
         />
       </Form.Item>
 
       <Form.Item
-
         name="confirmPassword"
         label="Xác nhận mật khẩu"
         dependencies={['password']}
@@ -268,14 +356,17 @@ const Authentication = () => {
       </Divider>
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
-        <Button
-          icon={<GoogleOutlined />}
-          block
-          className="social-button google-button"
-          size="middle"
-        >
-          Đăng ký với Google
-        </Button>
+        {/* <div style={{ width: '100%' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="outline"
+            size="large"
+            width={'100%'}
+            text="signup_with"
+            shape="rectangular"
+          />
+        </div> */}
         <Button
           icon={<FacebookOutlined />}
           block
@@ -311,6 +402,7 @@ const Authentication = () => {
 
   return (
     <div className="auth-container container">
+      {contextHolder}
       {/* Breadcrumb */}
       <div style={{ marginBottom: screens.xs ? 12 : 16 , marginTop: screens.xs ? 12 : 16 }}>
         <Breadcrumb>
@@ -372,6 +464,69 @@ const Authentication = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal Quên mật khẩu */}
+      <Modal
+        title={<span style={{ fontSize: screens.xs ? 18 : 20, fontWeight: 600 }}>Quên mật khẩu</span>}
+        open={forgotPasswordModal}
+        onCancel={() => {
+          setForgotPasswordModal(false)
+          forgotPasswordForm.resetFields()
+        }}
+        footer={null}
+        centered
+        width={screens.xs ? '90%' : screens.md ? 500 : 520}
+      >
+        <div style={{ padding: screens.xs ? '16px 0' : '20px 0' }}>
+          <Text type="secondary" style={{ fontSize: screens.xs ? 14 : 15, display: 'block', marginBottom: 24 }}>
+            Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu
+          </Text>
+          
+          <Form
+            form={forgotPasswordForm}
+            onFinish={handleForgotPassword}
+            layout="vertical"
+          >
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: 'Vui lòng nhập email!' },
+                { type: 'email', message: 'Email không hợp lệ!' }
+              ]}
+            >
+              <Input
+                prefix={<MailOutlined className="input-icon" />}
+                placeholder="Nhập email của bạn"
+                size="large"
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Button
+                  onClick={() => {
+                    setForgotPasswordModal(false)
+                    forgotPasswordForm.resetFields()
+                  }}
+                  size={screens.xs ? 'middle' : 'large'}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={forgotPasswordLoading}
+                  className="auth-button"
+                  size={screens.xs ? 'middle' : 'large'}
+                >
+                  Gửi email
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,12 +1,17 @@
 .about-page {
-  padding: 10px;
+  background: #f8f9fa;
+  min-height: 100vh;
+  padding: 2rem 0 4rem 0;
  
 }
 .breadcrumb {
- color: #000;
- font-size: 1rem;
-  margin: 1.5rem 0;
+  margin-bottom: 1.5rem;
+  font-size: 14px;
 }
+ .breadcrumb-custom a:hover {
+  color: #c08a19;
+}
+
 .about-page h1 {
   text-align: center;
   color: #111827;

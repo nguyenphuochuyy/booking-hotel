@@ -163,7 +163,7 @@ function Hotels() {
   }
 
   return (
-    <div className="hotels-page">
+    <div className="hotels-page ">
       <div className="container">
         {/* Breadcrumb */}
         <Breadcrumb className="breadcrumb-custom">
@@ -175,9 +175,9 @@ function Hotels() {
         </Breadcrumb>
 
         {/* Page Title */}
-        <Title level={2} className="page-title">
+        <h1 className="page-title">
           Danh sách phòng khách sạn
-        </Title>
+        </h1>
 
         {/* Main Layout */}
         <Row gutter={[24, 24]}>

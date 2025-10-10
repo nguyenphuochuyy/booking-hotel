@@ -10,48 +10,49 @@ function AppFooter() {
 
   return (
     <AntFooter style={{
-      background: '#f6f5f2',
+  
+      backgroundSize: 'cover',
       color: '#1f2937',
       padding: '48px 16px 16px',
       borderTop: '1px solid rgba(2,6,23,0.08)',
     }}>
-      <div style={{ 
-        maxWidth: 1200, 
+      <div style={{
+        maxWidth: 1200,
         margin: '0 auto',
-        padding: '0 8px'
+        padding: '0 8px', 
       }}>
-        <Row 
+        <Row
           gutter={[
-            { xs: 16, sm: 24, md: 24 }, 
+            { xs: 16, sm: 24, md: 24 },
             { xs: 24, sm: 32, md: 32 }
-          ]} 
-          justify="center" 
+          ]}
+          justify="center"
           align="top"
         >
           {/* Cột 1: Logo, Tên khách sạn, Nút đặt phòng, QR */}
           <Col xs={24} sm={24} md={8} lg={8} xl={8}>
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 12, 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
                 cursor: 'pointer'
-              }} onClick={() => window.location.href = '/' }>
-                <img 
-                  src={logo} 
-                  alt="Bean Hotel" 
-                  style={{ 
-                    width: window.innerWidth < 768 ? 60 : 100, 
-                    height: window.innerWidth < 768 ? 60 : 100 
-                  }} 
+              }} onClick={() => window.location.href = '/'}>
+                <img
+                  src={logo}
+                  alt="Bean Hotel"
+                  style={{
+                    width: window.innerWidth < 768 ? 60 : 100,
+                    height: window.innerWidth < 768 ? 60 : 100
+                  }}
                 />
                 <div>
-                  <Title 
-                    level={4} 
-                    style={{ 
-                      color: '#0f172a', 
-                      margin: 0, 
-                      fontSize: window.innerWidth < 768 ? '16px' : '18px' 
+                  <Title
+                    level={4}
+                    style={{
+                      color: '#0f172a',
+                      margin: 0,
+                      fontSize: window.innerWidth < 768 ? '16px' : '18px'
                     }}
                   >
                     Bean Hotel
@@ -59,35 +60,35 @@ function AppFooter() {
                   <Text style={{ color: '#64748b', fontSize: '14px' }}>Đặt trực tiếp giá tốt hơn</Text>
                 </div>
               </div>
-              
+
               <a href="#booking" style={{ width: '100%', display: 'block' }}>
-                <Button 
-                  type="primary" 
-                  icon={<ArrowRightOutlined />} 
+                <Button
+                  type="primary"
+                  icon={<ArrowRightOutlined />}
                   size="large"
-                  style={{ 
-                    width: window.innerWidth < 768 ? '100%' : '70%', 
-                    height: '48px', 
-                    fontSize: window.innerWidth < 768 ? '14px' : '16px' 
+                  style={{
+                    width: window.innerWidth < 768 ? '100%' : '70%',
+                    height: '48px',
+                    fontSize: window.innerWidth < 768 ? '14px' : '16px'
                   }}
                 >
                   Đặt phòng ngay
                 </Button>
               </a>
-              
+
               <Space direction="vertical" size={12} style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img 
-                    src="/qr-vietqr.png" 
-                    alt="VietQR chuyển khoản nhanh" 
-                    style={{ 
-                      width: window.innerWidth < 768 ? 60 : 80, 
-                      height: window.innerWidth < 768 ? 60 : 80, 
-                      background: '#ffffff', 
-                      padding: 8, 
-                      borderRadius: 8, 
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
-                    }} 
+                  <img
+                    src="/qr-vietqr.png"
+                    alt="VietQR chuyển khoản nhanh"
+                    style={{
+                      width: window.innerWidth < 768 ? 60 : 80,
+                      height: window.innerWidth < 768 ? 60 : 80,
+                      background: '#ffffff',
+                      padding: 8,
+                      borderRadius: 8,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    }}
                   />
                   <div>
                     <Text strong style={{ color: '#0f172a', display: 'block' }}>Chuyển khoản nhanh</Text>
@@ -101,11 +102,11 @@ function AppFooter() {
 
           {/* Cột 2: Liên hệ */}
           <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-            <Title 
-              level={4} 
-              style={{ 
-                color: '#0f172a', 
-                marginTop: 0, 
+            <Title
+              level={4}
+              style={{
+                color: '#0f172a',
+                marginTop: 0,
                 marginBottom: 16,
                 fontSize: window.innerWidth < 768 ? '16px' : '18px'
               }}
@@ -113,49 +114,49 @@ function AppFooter() {
               Liên hệ
             </Title>
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <div 
-               style={{ display : 'flex' , alignItems : 'center' , gap : 8 }}
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
               >
-                <PhoneFilled style={{ color : '#000' , marginRight: 8 }} />
-                <a href="tel:0858369609" style={{ color : '#000' , marginRight: 8 }}>
+                <PhoneFilled style={{ color: '#000', marginRight: 8 }} />
+                <a href="tel:0858369609" style={{ color: '#000', marginRight: 8 }}>
                   Hotline: 0858 369 609
                 </a>
               </div>
-              
+
               <div
-               >
+              >
                 <MailFilled style={{ color: '#000', marginRight: 8 }} />
                 <a href="mailto:beanhotelvn@gmail.com" style={{ color: '#334155' }}>
                   beanhotelvn@gmail.com
                 </a>
               </div>
-              
+
               <div>
                 <EnvironmentFilled style={{ color: '#64748b', marginRight: 8 }} />
                 <Text style={{ color: '#334155' }}>
                   Số 12 Hoa Sữa, P.7, TP. Đà Lạt, Lâm Đồng
                 </Text>
               </div>
-              
+
               <div>
                 <GlobalOutlined style={{ color: '#000', marginRight: 8 }} />
-                <a 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  href="https://www.google.com/maps/place/Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+C%C3%B4ng+nghi%E1%BB%87p+TP.HCM/@10.8221642,106.6842705,17z/data=!3m1!4b1!4m6!3m5!1s0x3174deb3ef536f31:0x8b7bb8b7c956157b!8m2!3d10.8221589!4d106.6868454!16s%2Fm%2F02pyzdj?entry=ttu&g_ep=EgoyMDI1MTAwNC4wIKXMDSoASAFQAw%3D%3D" 
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.google.com/maps/place/Tr%C6%B0%E1%BB%9Dng+%C4%90%E1%BA%A1i+h%E1%BB%8Dc+C%C3%B4ng+nghi%E1%BB%87p+TP.HCM/@10.8221642,106.6842705,17z/data=!3m1!4b1!4m6!3m5!1s0x3174deb3ef536f31:0x8b7bb8b7c956157b!8m2!3d10.8221589!4d106.6868454!16s%2Fm%2F02pyzdj?entry=ttu&g_ep=EgoyMDI1MTAwNC4wIKXMDSoASAFQAw%3D%3D"
                   style={{ color: '#334155' }}
                 >
                   Xem bản đồ
                 </a>
               </div>
-              
+
               <div>
                 <ClockCircleFilled style={{ color: '#64748b', marginRight: 8 }} />
                 <Text style={{ color: '#334155' }}>
                   Check-in: 14:00 • Check-out: 12:00
                 </Text>
               </div>
-              
+
               <div>
                 <InfoCircleFilled style={{ color: '#64748b', marginRight: 8 }} />
                 <Text style={{ color: '#334155' }}>
@@ -167,11 +168,11 @@ function AppFooter() {
 
           {/* Cột 3: Hỗ trợ & Chính sách */}
           <Col xs={24} sm={24} md={8} lg={8} xl={8}>
-            <Title 
-              level={4} 
-              style={{ 
-                color: '#0f172a', 
-                marginTop: 0, 
+            <Title
+              level={4}
+              style={{
+                color: '#0f172a',
+                marginTop: 0,
                 marginBottom: 16,
                 fontSize: window.innerWidth < 768 ? '16px' : '18px'
               }}
@@ -183,27 +184,27 @@ function AppFooter() {
                 <InfoCircleFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Câu hỏi thường gặp
               </a>
-              
+
               <a href="/chinh-sach-huy" style={{ color: '#334155', display: 'block' }}>
                 <FileTextFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Chính sách hủy/đổi ngày
               </a>
-              
+
               <a href="/doi-phong" style={{ color: '#334155', display: 'block' }}>
                 <CarFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Chính sách đổi phòng
               </a>
-              
+
               <a href="/thanh-toan" style={{ color: '#334155', display: 'block' }}>
                 <DollarOutlined style={{ marginRight: 8, color: '#64748b' }} />
                 Thanh toán & Hoàn tiền
               </a>
-              
+
               <a href="/privacy-policy" style={{ color: '#334155', display: 'block' }}>
                 <LockFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Bảo mật dữ liệu cá nhân
               </a>
-              
+
               <a href="/hoa-don-vat" style={{ color: '#334155', display: 'block' }}>
                 <FileTextFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Xuất hóa đơn VAT
