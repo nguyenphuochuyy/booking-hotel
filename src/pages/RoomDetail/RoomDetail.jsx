@@ -24,7 +24,8 @@ import {
   WifiOutlined,
   CarOutlined,
   SafetyOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  RestOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import './RoomDetail.css'
@@ -79,16 +80,16 @@ function RoomDetail() {
 
   // Similar rooms mock data
   const similarRooms = [
-    { id: 2, name: 'PHÒNG ĐƠN VIEW THÀNH PHỐ', price: 700000, area: 25, guests: 2, image: 'https://via.placeholder.com/300x200' },
-    { id: 3, name: 'PHÒNG ĐƠN VIEW SÂN VƯỜN', price: 800000, area: 25, guests: 2, image: 'https://via.placeholder.com/300x200' },
-    { id: 4, name: 'PHÒNG ĐƠN VIEW BIỂN', price: 900000, area: 25, guests: 1, image: 'https://via.placeholder.com/300x200' }
+    { id: 2, name: 'PHÒNG ĐƠN VIEW THÀNH PHỐ', price: 700000, area: 25, guests: 2, image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/products/sp21.jpg?v=1670338576510' },
+    { id: 3, name: 'PHÒNG ĐƠN VIEW SÂN VƯỜN', price: 800000, area: 25, guests: 2, image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/products/anh11a713f0cbaa54ea595b6bb5e1b.jpg?v=1670338575473' },
+    { id: 4, name: 'PHÒNG ĐƠN VIEW BIỂN', price: 900000, area: 25, guests: 1, image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/products/anh1eb6eb86adb63474a819ab595ee.jpg?v=1670338574237' }
   ]
 
   const bestRooms = [
-    { id: 5, name: 'Phòng Đơn Vip', price: 2500000, image: 'https://via.placeholder.com/150x100' },
-    { id: 6, name: 'Phòng Gia Đình', price: 3000000, image: 'https://via.placeholder.com/150x100' },
-    { id: 7, name: 'Căn Hộ Chung Cư', price: 2700000, image: 'https://via.placeholder.com/150x100' },
-    { id: 8, name: 'Phòng Hạng Sang', price: 3500000, image: 'https://via.placeholder.com/150x100' }
+    { id: 5, name: 'Phòng Đơn Vip', price: 2500000, image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80' },
+    { id: 6, name: 'Phòng Gia Đình', price: 3000000, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80' },
+    { id: 7, name: 'Căn Hộ Chung Cư', price: 2700000, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80' },
+    { id: 8, name: 'Phòng Hạng Sang', price: 3500000, image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80' }
   ]
 
   if (loading || !roomData) {
@@ -356,7 +357,7 @@ function RoomDetail() {
         </Row>
 
         {/* Services Row */}
-        <div style={{ marginBottom: screens.xs ? 24 : 32 }}>
+        <div style={{ marginBottom: screens.xs ? 24 : 32 , border : '1px solid #c08a19' , borderRadius: '12px' , padding: '10px'}}>
           <div 
             className="section-title-wrapper"
             style={{ marginBottom: screens.xs ? 16 : 24 }}
@@ -413,40 +414,37 @@ function RoomDetail() {
             </Title>
           </div>
           
-          <Row gutter={[16, 16]}>
+          <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
             {similarRooms.map((room) => (
               <Col xs={24} sm={12} md={8} lg={8} key={room.id}>
-                <Card 
-                  hoverable
-                  className="similar-room-card"
-                  cover={<img alt={room.name} src={room.image} />}
-                  onClick={() => navigate(`/rooms/${room.id}`)}
-                >
-                  <Title level={5} style={{ marginBottom: 8, fontSize: screens.xs ? 15 : 16 }}>
-                    {room.name}
-                  </Title>
-                  <div className="room-meta">
-                    <Text type="secondary" style={{ fontSize: screens.xs ? 12 : 13 }}>
-                      <TeamOutlined /> {room.guests < 10 ? `0${room.guests}` : room.guests} Khách
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: screens.xs ? 12 : 13 }}>
-                      <ExpandOutlined /> {room.area}m²
-                    </Text>
+                <div className="room-list-card" onClick={() => navigate(`/rooms/${room.id}`)}>
+                  <div className="room-list-image">
+                    <img alt={room.name} src={room.image} />
                   </div>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <div className="room-price-footer">
-                    <Text strong style={{ fontSize: screens.xs ? 16 : 18, color: '#c08a19' }}>
-                      {room.price.toLocaleString('vi-VN')}đ/Đêm
-                    </Text>
-                    <Button 
-                      type="primary" 
-                      className="book-button"
-                      size={screens.xs ? 'small' : 'middle'}
-                    >
-                      ĐẶT PHÒNG
-                    </Button>
+                  <div className="room-list-content">
+                    <h3 className="room-list-name">{room.name}</h3>
+
+                    <div className="room-list-amenities">
+                      <CoffeeOutlined />
+                      <RestOutlined />
+                      <WifiOutlined />
+                    </div>
+
+                    <div className="room-list-stats">
+                      <span className="room-list-capacity">
+                        <UserOutlined /> {room.guests < 10 ? `0${room.guests}` : room.guests} Khách
+                      </span>
+                      <span className="room-list-size">
+                        <ExpandOutlined /> {room.area}m²
+                      </span>
+                    </div>
+
+                    <div className="room-list-footer">
+                      <span className="room-list-price">{room.price.toLocaleString('vi-VN')}đ/Đêm</span>
+                      <button className="room-list-book-btn">ĐẶT PHÒNG</button>
+                    </div>
                   </div>
-                </Card>
+                </div>
               </Col>
             ))}
           </Row>

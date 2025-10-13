@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import Loading from '../components/Loading'
 import Home from '../pages/Home'
 import Hotels from '../pages/Hotels'
 import About from '../pages/About'
@@ -16,7 +17,13 @@ import PrivacyPolicy from '../pages/PrivacyPolicy'
 import CookiePolicy from '../pages/CookiePolicy'
 import NotFound from '../pages/NotFound'
 import AccessDenied from '../pages/AccessDenied'
-import Admin from '../pages/Admin'
+import Dashboard from '../pages/Admin/Dashboard'
+import Users from '../pages/Admin/Users'
+import AdminHotels from '../pages/Admin/Hotel'
+import AdminRoomTypes from '../pages/Admin/RoomType'
+import AdminRooms from '../pages/Admin/Room'
+import AdminRoomPrices from '../pages/Admin/RoomPrice'
+import AdminServices from '../pages/Admin/Service'
 import { useAuth } from '../context/AuthContext'
 import UserLayout from '../layouts/UserLayout'
 import AdminLayout from '../layouts/AdminLayout'
@@ -26,10 +33,16 @@ import RoomDetail from '../pages/RoomDetail'
 import AuthGuard from '../components/AuthGuard'
 
 function AppRoutes() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const isAdmin = user?.role === 'admin'
 
   const AdminRoute = ({ children }) => {
+    // Nếu đang loading, hiển thị loading indicator
+    if (loading) {
+      return <Loading message="Đang xác thực quyền truy cập..." />
+    }
+    
+    // Sau khi loading xong, kiểm tra quyền admin
     if (!isAdmin) {
       return <Navigate to="/access-denied" replace />
     }
@@ -68,7 +81,64 @@ function AppRoutes() {
       {/* Admin layout - hoàn toàn tách biệt */}
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={
-          <AdminRoute><Admin /></AdminRoute>
+          <AdminRoute>
+            <Dashboard />
+          </AdminRoute>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRoute>
+            <Users />
+          </AdminRoute>
+        } />
+        <Route path="/admin/hotels" element={
+          <AdminRoute>
+            <AdminHotels />
+          </AdminRoute>
+        } />
+        <Route path="/admin/room-types" element={
+          <AdminRoute>
+            <AdminRoomTypes />
+          </AdminRoute>
+        } />
+        <Route path="/admin/rooms" element={
+          <AdminRoute>
+            <AdminRooms />
+          </AdminRoute>
+        } />
+        <Route path="/admin/room-prices" element={
+          <AdminRoute>
+            <AdminRoomPrices />
+          </AdminRoute>
+        } />
+        <Route path="/admin/services" element={
+          <AdminRoute>
+            <AdminServices />
+          </AdminRoute>
+        } />
+        <Route path="/admin/bookings" element={
+          <AdminRoute>
+            <div>Quản lý đặt phòng</div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/promotions" element={
+          <AdminRoute>
+            <div>Quản lý khuyến mãi</div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/reviews" element={
+          <AdminRoute>
+            <div>Quản lý đánh giá</div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/profile" element={
+          <AdminRoute>
+            <div>Thông tin cá nhân</div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/settings" element={
+          <AdminRoute>
+            <div>Cài đặt</div>
+          </AdminRoute>
         } />
       </Route>
 

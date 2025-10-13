@@ -1,0 +1,200 @@
+.hotels-management {
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  min-height: calc(100vh - 64px);
+}
+
+.hotels-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.hotels-header h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.hotels-search {
+  margin-bottom: 24px;
+}
+
+.hotels-search .ant-input-search {
+  max-width: 500px;
+}
+
+/* Table Styles */
+.ant-table-wrapper {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #262626;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+/* Modal Styles */
+.ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 24px;
+}
+
+.ant-modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+/* Form Styles */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* Upload Styles */
+.ant-upload-list-picture-card-container {
+  width: 104px;
+  height: 104px;
+}
+
+.ant-upload-select-picture-card {
+  width: 104px;
+  height: 104px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  background-color: #fafafa;
+  transition: all 0.3s;
+}
+
+.ant-upload-select-picture-card:hover {
+  border-color: #1890ff;
+}
+
+/* Button Styles */
+.ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+}
+
+.ant-btn-primary:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.ant-btn-danger {
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+}
+
+/* Tag Styles */
+.ant-tag {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hotels-management {
+    padding: 16px;
+  }
+
+  .hotels-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hotels-header h2 {
+    font-size: 24px;
+  }
+
+  .hotels-search .ant-input-search {
+    max-width: 100%;
+  }
+
+  .ant-modal {
+    max-width: 95%;
+    margin: 10px auto;
+  }
+
+  .ant-modal-body {
+    max-height: 60vh;
+  }
+}
+
+/* Image Preview */
+.ant-image {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ant-image-img {
+  transition: transform 0.3s;
+}
+
+.ant-image:hover .ant-image-img {
+  transform: scale(1.05);
+}
+
+/* Loading */
+.ant-spin-nested-loading {
+  border-radius: 8px;
+}
+
+/* Empty State */
+.ant-empty {
+  padding: 40px 0;
+}
+
+.ant-empty-description {
+  color: #8c8c8c;
+}
+
+/* Delete Modal Custom Styles */
+.ant-modal-confirm .ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-confirm .ant-modal-confirm-title {
+  font-weight: 600;
+}
+
+.ant-modal-confirm .ant-modal-confirm-content {
+  margin-top: 12px;
+}
+
+/* Remove all hover effects on modal */
+.ant-modal-confirm * {
+  transition: none !important;
+}
+
+.ant-modal-confirm button {
+  transition: background-color 0.2s, border-color 0.2s !important;
+}
+
+/* Success Message */
+.ant-message-success {
+  font-size: 14px;
+}
+
+/* Loading Message */
+.ant-message-loading {
+  font-size: 14px;
+}
+

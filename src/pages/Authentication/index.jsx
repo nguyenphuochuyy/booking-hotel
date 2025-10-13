@@ -29,6 +29,7 @@ import './Authentication.css'
 import { useAuth } from '../../context/AuthContext'
 import { getUserProfile } from '../../services/user.service'
 import authenticationService from '../../services/authentication.service'
+import { GoogleLogin } from '@react-oauth/google'
 
 const { Title, Text, Link } = Typography
 const { useBreakpoint } = Grid
@@ -95,44 +96,6 @@ const Authentication = () => {
     }
   }
 
-  // Xử lý đăng nhập Google
-  // const handleGoogleSuccess = async (credentialResponse) => {
-  //   setLoading(true)
-  //   try {
-  //     // Gửi credential token lên backend để verify và tạo user/login
-  //     const response = await authenticationService.googleLogin({
-  //       credential: credentialResponse.credential
-  //     })
-      
-  //     if (response) {
-  //       messageApi.success('Đăng nhập Google thành công!')
-        
-  //       // Lấy thông tin user
-  //       const userProfile = await getUserProfile()
-  //       if (userProfile?.user) {
-  //         setUser(userProfile.user)
-  //       }
-        
-  //       setTimeout(() => {
-  //         const role = userProfile?.user?.role
-  //         if (role === 'admin') {
-  //           navigate('/admin')
-  //         } else {
-  //           navigate('/')
-  //         }
-  //       }, 1500)
-  //     }
-  //   } catch (error) {
-  //     const errMsg = error?.data?.message || error?.message || 'Đăng nhập Google thất bại!'
-  //     messageApi.error(errMsg)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
-
-  const handleGoogleError = () => {
-    messageApi.error('Đăng nhập Google thất bại!')
-  }
 
   // Xử lý quên mật khẩu
   const handleForgotPassword = async (values) => {
@@ -240,17 +203,9 @@ const Authentication = () => {
       </Divider>
 
       <Space direction="vertical" style={{ width: '100%'  }} size={8}>
-        {/* <div style={{ width: '100%' }}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="large"
-            width={'100%'}
-            text="signin_with"
-            shape="rectangular"
-          />
-        </div> */}
+          <GoogleLogin>
+            Đăng nhập với Google
+          </GoogleLogin>
         <Button
           icon={<FacebookOutlined />}
           block
@@ -356,17 +311,8 @@ const Authentication = () => {
       </Divider>
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
-        {/* <div style={{ width: '100%' }}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="large"
-            width={'100%'}
-            text="signup_with"
-            shape="rectangular"
-          />
-        </div> */}
+      
+        
         <Button
           icon={<FacebookOutlined />}
           block

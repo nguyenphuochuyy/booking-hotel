@@ -1,0 +1,399 @@
+/* Room Price Management Styles - Consistent with Room Management */
+.room-price-management {
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  min-height: calc(100vh - 64px);
+}
+
+/* Room Types Header - same style */
+.room-types-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.room-types-header h2 {
+  margin: 0;
+}
+
+/* Room Types Search - same style */
+.room-types-search {
+  margin-bottom: 24px;
+}
+
+.room-types-search .search-input {
+  max-width: 500px;
+}
+
+/* Statistics Row */
+.statistics-row {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .ant-statistic-title {
+  color: #8c8c8c;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.stat-card .ant-statistic-content {
+  font-weight: 600;
+}
+
+.stat-card .ant-statistic-content-prefix {
+  margin-right: 8px;
+}
+
+/* Table Styles */
+.ant-table-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-table {
+  font-size: 14px;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #262626;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Action Buttons */
+.create-button {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.action-button {
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-button:hover {
+  color: #1890ff;
+  background-color: #e6f7ff;
+}
+
+.delete-button:hover {
+  background-color: #fff1f0;
+}
+
+/* Status Tags */
+.ant-tag {
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Modal Styles */
+.ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 24px;
+}
+
+.ant-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ant-modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+/* Form Styles */
+.ant-form-item {
+  margin-bottom: 20px;
+}
+
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+.form-note {
+  background-color: #fffbe6;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #ffe58f;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+/* Select Styles */
+.ant-select {
+  width: 100%;
+}
+
+.ant-select-dropdown {
+  border-radius: 6px;
+}
+
+/* Badge Styles */
+.ant-badge-count {
+  font-size: 14px;
+  font-weight: 600;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 12px;
+  padding: 0 8px;
+  min-width: 80px;
+}
+
+/* Price Display */
+.price-display {
+  display: inline-block;
+}
+
+/* Room Type Name */
+.room-type-name {
+  line-height: 1.4;
+}
+
+/* Tooltip */
+.ant-tooltip-inner {
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Pagination */
+.ant-pagination {
+  margin-top: 16px;
+  text-align: right;
+}
+
+/* Empty State */
+.ant-empty {
+  padding: 40px 0;
+}
+
+.ant-empty-description {
+  color: #8c8c8c;
+}
+
+/* Loading */
+.ant-spin-nested-loading {
+  border-radius: 8px;
+}
+
+/* Popconfirm */
+.ant-popconfirm {
+  max-width: 280px;
+}
+
+/* Delete Modal Custom Styles */
+.ant-modal-confirm .ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-confirm .ant-modal-confirm-title {
+  font-weight: 600;
+}
+
+.ant-modal-confirm .ant-modal-confirm-content {
+  margin-top: 12px;
+}
+
+/* Remove all hover effects on modal */
+.ant-modal-confirm * {
+  transition: none !important;
+}
+
+.ant-modal-confirm button {
+  transition: background-color 0.2s, border-color 0.2s !important;
+}
+
+/* Divider */
+.ant-divider {
+  margin: 16px 0;
+}
+
+/* Space component */
+.ant-space {
+  font-size: 14px;
+}
+
+/* Input Number */
+.ant-input-number {
+  width: 100%;
+}
+
+/* Date Picker */
+.ant-picker {
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .room-price-management {
+    padding: 16px;
+  }
+
+  .room-types-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .room-types-header h2 {
+    font-size: 24px;
+  }
+
+  .room-types-search .search-input {
+    max-width: 100%;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .page-header-card .ant-col {
+    margin-bottom: 12px;
+  }
+
+  .statistics-row .ant-col {
+    margin-bottom: 12px;
+  }
+
+  .stat-card {
+    margin-bottom: 8px;
+  }
+
+  .filter-card .ant-col {
+    margin-bottom: 12px;
+  }
+
+  .search-input {
+    max-width: 100%;
+  }
+
+  .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-modal {
+    max-width: 95%;
+    margin: 10px auto;
+  }
+
+  .ant-modal-body {
+    max-height: 60vh;
+  }
+
+  /* Stack form columns on mobile */
+  .ant-form-item {
+    grid-column: span 2;
+  }
+}
+
+/* Custom Scrollbar */
+.ant-table-body::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: #8c8c8c;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card,
+.room-types-search,
+.ant-table-wrapper {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Success Message */
+.ant-message-success {
+  font-size: 14px;
+}
+
+/* Loading Message */
+.ant-message-loading {
+  font-size: 14px;
+}
+
+/* Button Styles */
+.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+/* Page Title */
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title .anticon {
+  color: #1890ff;
+}
+

@@ -10,19 +10,36 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem('accessToken')
-      if (token) {
-        setAccessToken(token)
-        // Khi có token, cố gắng tải hồ sơ user
-        getUserProfile()
-          .then((data) => {
-            if (data?.user) setUser(data.user)
-          })
-          .catch(() => {})
+    const initAuth = async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        if (token) {
+          setAccessToken(token)
+          // Khi có token, cố gắng tải hồ sơ user
+          try {
+            const data = await getUserProfile()
+            if (data?.user) {
+              setUser(data.user)
+            }
+          } catch (error) {
+            // Token không hợp lệ hoặc hết hạn, xóa đi
+            localStorage.removeItem('accessToken')
+            setAccessToken(null)
+            setUser(null)
+          }
+        }
+      } catch (_err) {
+        // Nếu có lỗi, clear token
+        localStorage.removeItem('accessToken')
+        setAccessToken(null)
+        setUser(null)
+      } finally {
+        // Chỉ set loading=false sau khi đã check xong
+        setLoading(false)
       }
-    } catch (_err) {}
-    setLoading(false)
+    }
+    
+    initAuth()
   }, [])
 
   const login = useCallback(async (credentials) => {
@@ -31,10 +48,20 @@ export function AuthProvider({ children }) {
     if (token) {
       try { localStorage.setItem('accessToken', token) } catch (_err) {}
       setAccessToken(token)
-    }
-    // Nếu API trả về thông tin user, lưu lại
-    if (data?.user) {
-      setUser(data.user)
+      
+      // Fetch user profile ngay sau khi login
+      try {
+        const profileData = await getUserProfile()
+        if (profileData?.user) {
+          setUser(profileData.user)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error)
+        // Nếu API trả về thông tin user trong response login, dùng nó
+        if (data?.user) {
+          setUser(data.user)
+        }
+      }
     }
     return data
   }, [])

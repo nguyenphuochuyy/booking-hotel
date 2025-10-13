@@ -82,6 +82,58 @@ export const API_ENDPOINTS = {
     CONTACT: '/contact',
     NEWSLETTER: '/newsletter/subscribe',
     UPLOAD: '/upload',
+  },
+
+  // Admin APIs
+  ADMIN: {
+    // User Management
+    USERS: {
+      LIST: '/users',
+      DETAIL: '/users/:id',
+      CREATE: '/users',
+      UPDATE: '/users/:id',
+      DELETE: '/users/:id',
+      SEARCH: '/users/search/email',
+    },
+    // Hotel Management
+    HOTELS: {
+      LIST: '/hotels',
+      DETAIL: '/hotels/:id',
+      CREATE: '/hotels',
+      UPDATE: '/hotels/:id',
+      DELETE: '/hotels/:id',
+    },
+    // Room Type Management
+    ROOM_TYPES: {
+      LIST: '/room-types',
+      DETAIL: '/room-types/:id',
+      CREATE: '/room-types',
+      UPDATE: '/room-types/:id',
+      DELETE: '/room-types/:id',
+    },
+    // Room Management
+    ROOMS: {
+      LIST: '/rooms',
+      DETAIL: '/rooms/:id',
+      CREATE: '/rooms',
+      UPDATE: '/rooms/:id',
+      DELETE: '/rooms/:id',
+    },
+    // Room Price Management
+    ROOM_PRICES: {
+      LIST: '/room-prices',
+      CREATE: '/room-prices',
+      UPDATE: '/room-prices/:id',
+      DELETE: '/room-prices/:id',
+    },
+    // Service Management
+    SERVICES: {
+      LIST: '/services',
+      DETAIL: '/services/:id',
+      CREATE: '/services',
+      UPDATE: '/services/:id',
+      DELETE: '/services/:id',
+    },
   }
 }
 
@@ -104,5 +156,6 @@ export const {
   SERVICES,
   REVIEWS,
   PAYMENTS,
-  GENERAL
+  GENERAL,
+  ADMIN
 } = API_ENDPOINTS
