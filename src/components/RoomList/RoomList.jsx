@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Row, Col, Typography, Button, Tabs, Grid } from 'antd'
 import { WifiOutlined, CoffeeOutlined, UserOutlined, ExpandOutlined, RestOutlined, BankOutlined, TeamOutlined, SmileOutlined } from '@ant-design/icons'
 import './RoomList.css'
 import { useNavigate } from 'react-router-dom'
-
+import { useRoomTypes } from '../../hooks/roomtype'
+import formatPrice from '../../utils/formatPrice'
 const { useBreakpoint } = Grid
+
+
 
 const rooms = [
   {
@@ -87,147 +90,90 @@ function RoomList() {
   const [activeServiceTab, setActiveServiceTab] = useState('hotel')
   const screens = useBreakpoint()
   const navigate = useNavigate()
+  const {
+    roomTypes, pagination, loading, error,
+    search, setSearch, category, setCategory,
+    page, setPage, limit, setLimit,
+    refresh, nextPage, prevPage,
+  } = useRoomTypes();
+
+  // Nhóm và sắp xếp loại phòng theo danh mục
+  const CATEGORY_ORDER = [
+    'don-thuong',
+    'don-vip',
+    'doi-thuong',
+    'doi-vip',
+    'gia-dinh',
+    'suite',
+    'presidential'
+  ]
+  const CATEGORY_LABEL = {
+    'don-thuong': 'PHÒNG ĐƠN',
+    'don-vip': 'PHÒNG ĐƠN VIP',
+    'doi-thuong': 'PHÒNG ĐÔI',
+    'doi-vip': 'PHÒNG ĐÔI VIP',
+    'gia-dinh': 'PHÒNG GIA ĐÌNH',
+    'suite': 'SUITE',
+    'presidential': 'PRESIDENTIAL SUITE'
+  }
+
+  const groupedByCategory = CATEGORY_ORDER.map((cat) => ({
+    key: cat,
+    label: CATEGORY_LABEL[cat] || cat,
+    items: (roomTypes || []).filter(rt => rt?.category === cat)
+  })).filter(group => group.items.length > 0)
+
+  const getCoverImage = (rt) => {
+    if (Array.isArray(rt?.images) && rt.images.length > 0) return rt.images[0]
+    return 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1600&auto=format&fit=crop'
+  }
   return (
     <div>
       {/* Danh sách phòng */}
     <div className="room-list-section">
-      <div className="room-title-wrap">
-        <Typography.Title level={2} className="room-section-title">PHÒNG ĐƠN</Typography.Title>
-      </div>
-
-      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
-        {rooms.map((room) => (
-          <Col key={room.id} xs={24} sm={12} md={8} lg={6} xl={6} xxl={6}>
-            <div className="room-list-card" onClick={() => navigate(`/rooms/${room.id}`)}>
-              <div className="room-list-image">
-                <img alt={room.name} src={room.image} />
-              </div>
-              <div className="room-list-content">
-                <h3 className="room-list-name">{room.name.toUpperCase()}</h3>
-
-                <div className="room-list-amenities">
-                  <CoffeeOutlined />
-                  <RestOutlined />
-                  <WifiOutlined />
-                </div>
-
-                <div className="room-list-stats">
-                  <span className="room-list-capacity">
-                    <UserOutlined /> {room.capacity}
-                  </span>
-                  <span className="room-list-size">
-                    <ExpandOutlined /> {room.size}
-                  </span>
-                </div>
-
-                <div className="room-list-footer">
-                  <span className="room-list-price">{room.price}</span>
-                  <button className="room-list-book-btn">ĐẶT PHÒNG</button>
-                </div>
-              </div>
-            </div>
-          </Col>
-        ))}
-      </Row>
-
-      <div className="room-title-wrap" style={{ marginTop: '40px' }}>
-        <Typography.Title level={2} className="room-section-title">PHÒNG ĐÔI</Typography.Title>
-      </div>
-      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
-        {rooms.map((room) => (
-          <Col key={room.id} xs={24} sm={12} md={8} lg={6} xl={6} xxl={6}>
-            <div className="room-list-card">
-              <div className="room-list-image">
-                <img alt={room.name} src={room.image} />
-              </div>
-              <div className="room-list-content">
-                <h3 className="room-list-name">{room.name.toUpperCase()}</h3>
-
-                <div className="room-list-amenities">
-                  <CoffeeOutlined />
-                  <RestOutlined />
-                  <WifiOutlined />
-                </div>
-
-                <div className="room-list-stats">
-                  <span className="room-list-capacity">
-                    <UserOutlined /> {room.capacity}
-                  </span>
-                  <span className="room-list-size">
-                    <ExpandOutlined /> {room.size}
-                  </span>
-                </div>
-
-                <div className="room-list-footer">
-                  <span className="room-list-price">{room.price}</span>
-                  <button className="room-list-book-btn">ĐẶT PHÒNG</button>
-                </div>
-              </div>
-            </div>
-          </Col>
-        ))}
-      </Row>
-
-
-      <div className='room-title-wrap' style={{ marginTop: '40px' }}>
-        <Typography.Title level={2} className="room-section-title">PHÒNG VIP</Typography.Title>
-      </div>
-      <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]} className="vip-rooms-grid">
-        {/* Card lớn bên trái */}
-        <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12}>
-          <div className="vip-room-card vip-room-card-large">
-            <div className="vip-room-image">
-              <img alt={vipRooms[0].name} src={vipRooms[0].image} />
-            </div>
-            <div className="vip-room-content">
-              <h3 className="vip-room-name">{vipRooms[0].name}</h3>
-              
-              <div className="vip-room-stats">
-                <span className="vip-room-capacity">
-                  <UserOutlined /> {vipRooms[0].capacity}
-                </span>
-                <span className="vip-room-size">
-                  <ExpandOutlined /> {vipRooms[0].size}
-                </span>
-              </div>
-
-              <div className="vip-room-amenities">
-                <CoffeeOutlined />
-                <RestOutlined />
-                <WifiOutlined />
-                <CoffeeOutlined />
-                <RestOutlined />
-              </div>
-
-              <p className="vip-room-description">{vipRooms[0].description}</p>
-              
-              <button className="vip-room-book-btn">
-                ĐẶT PHÒNG TỪ {vipRooms[0].price}
-              </button>
-            </div>
+      {groupedByCategory.map((group, gi) => (
+        <div key={group.key} style={{ marginTop: gi === 0 ? 0 : 40 }}>
+          <div className="room-title-wrap">
+            <Typography.Title level={2} className="room-section-title">{group.label}</Typography.Title>
           </div>
-        </Col>
+          <Row gutter={screens.xs ? [12, 16] : screens.md ? [20, 20] : [24, 24]}>
+            {group.items.map((rt) => (
+              <Col key={rt.room_type_id} xs={24} sm={12} md={8} lg={6} xl={6} xxl={6}>
+                <div className="room-list-card" onClick={() => navigate(`/rooms/${rt.room_type_id}`)}>
+                  <div className="room-list-image">
+                    <img alt={rt.room_type_name} src={getCoverImage(rt)} />
+                  </div>
+                  <div className="room-list-content">
+                    <h3 className="room-list-name">{(rt.room_type_name || '').toUpperCase()}</h3>
 
-        {/* 4 card nhỏ bên phải */}
-        <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={12}>
-          <Row gutter={screens.xs ? [8, 12] : [16, 16]} className="vip-rooms-small-grid">
-            {vipRooms.slice(1).map((room) => (
-              <Col key={room.id} xs={12} sm={12} md={12} lg={12} xl={12} xxl={12}>
-                <div className="vip-room-card vip-room-card-small">
-                  <div className="vip-room-image-small">
-                    <img alt={room.name} src={room.image} />
-                    <div className="vip-room-overlay">
-                      <h4 className="vip-room-name-overlay">{room.name}</h4>
-                      <div className="vip-room-price-overlay">{room.price}</div>
+                    <div className="room-list-amenities">
+                      <CoffeeOutlined />
+                      <RestOutlined />
+                      <WifiOutlined />
+                    </div>
+
+                    <div className="room-list-stats">
+                      <span className="room-list-capacity">
+                        <UserOutlined /> {rt.capacity ? `${rt.capacity} Khách` : '—'}
+                      </span>
+                      <span className="room-list-size">
+                        <ExpandOutlined /> {rt.area ? `${rt.area}m²` : '—'}
+                      </span>
+                    </div>
+
+                    <div className="room-list-footer">
+                      <span className="room-list-price">
+                        {rt.price_per_night ? `${formatPrice(rt.price_per_night)}/Đêm` : 'Giá liên hệ'}
+                      </span>
+                      <button className="room-list-book-btn">ĐẶT PHÒNG</button>
                     </div>
                   </div>
                 </div>
               </Col>
             ))}
           </Row>
-        </Col>
-      </Row>
-     
+        </div>
+      ))}
     </div>
      {/* Dịch vụ - Tabs (Ant Design) */}
      <div className="hotel-services">

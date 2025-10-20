@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Table, 
-  Button, 
-  Space, 
-  Typography, 
-  Input, 
+import {
+  Table,
+  Button,
+  Space,
+  Typography,
+  Input,
   Modal,
   Form,
   message,
@@ -24,14 +24,14 @@ import {
   ExclamationCircleOutlined,
   EyeOutlined
 } from '@ant-design/icons'
-import { 
-  getAllRoomTypes, 
-  createRoomType, 
-  updateRoomType, 
-  deleteRoomType 
+import {
+  getAllRoomTypes,
+  createRoomType,
+  updateRoomType,
+  deleteRoomType
 } from '../../../services/admin.service'
 import './roomType.css'
-
+import { useRoomTypes } from '../../../hooks/roomtype'
 const { Title } = Typography
 const { Search } = Input
 const { TextArea } = Input
@@ -53,6 +53,17 @@ const AMENITIES_OPTIONS = [
   'Tầm nhìn biển',
   'Tầm nhìn thành phố',
   'Không hút thuốc'
+]
+
+// Danh sách danh mục loại phòng
+const CATEGORY_OPTIONS = [
+  { label: 'Đơn thường', value: 'don-thuong' },
+  { label: 'Đơn VIP', value: 'don-vip' },
+  { label: 'Đôi thường', value: 'doi-thuong' },
+  { label: 'Đôi VIP', value: 'doi-vip' },
+  { label: 'Gia đình', value: 'gia-dinh' },
+  { label: 'Suite', value: 'suite' },
+  { label: 'Presidential', value: 'presidential' }
 ]
 
 function RoomTypes() {
@@ -143,6 +154,8 @@ function RoomTypes() {
       dataIndex: 'room_type_id',
       key: 'room_type_id',
       width: 70,
+      sorter: (a, b) => a.room_type_id - b.room_type_id
+  
     },
     {
       title: 'Hình ảnh',
@@ -152,7 +165,7 @@ function RoomTypes() {
       render: (images, record) => {
         const imageArray = Array.isArray(images) ? images : []
         const imageCount = imageArray.length
-        
+
         if (imageCount === 0) {
           return (
             <div style={{ width: 80, height: 60, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
@@ -193,6 +206,41 @@ function RoomTypes() {
         <Space>
           <span style={{ fontWeight: 500 }}>{text}</span>
         </Space>
+      ),
+      sorter: (a, b) => {
+        if (!a.room_type_name) return -1;
+        if (!b.room_type_name) return 1;
+        return a.room_type_name.localeCompare(b.room_type_name, 'vi', { sensitivity: 'base' });
+      },
+      sortDirections: ['ascend', 'descend'],
+    },
+    {
+      title: 'Danh mục',
+      dataIndex: 'category',
+      key: 'category',
+      width: 120,
+      render: (category) => {
+        const categoryOption = CATEGORY_OPTIONS.find(opt => opt.value === category)
+        return categoryOption ? (
+          <Tag color="blue">{categoryOption.label}</Tag>
+        ) : (
+          <Tag color="default">{category || '-'}</Tag>
+        )
+      },
+      sorter: (a, b) => {
+        if (!a.category) return -1;
+        if (!b.category) return 1;
+        return a.category.localeCompare(b.category, 'vi', { sensitivity: 'base' });
+      },
+      sortDirections: ['ascend', 'descend'],
+    },
+    {
+      title: 'Số khách',
+      dataIndex: 'capacity',
+      key: 'capacity',
+      width: 100,
+      render: (capacity) => (
+        <Tag color="green">{capacity ? `${capacity} người` : '-'}</Tag>
       ),
     },
     {
@@ -246,6 +294,12 @@ function RoomTypes() {
       key: 'created_at',
       width: 110,
       render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
+      sorter: (a, b) => {
+        if (!a.created_at) return -1;
+        if (!b.created_at) return 1;
+        return new Date(a.created_at) - new Date(b.created_at);
+      },
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: 'Thao tác',
@@ -254,17 +308,17 @@ function RoomTypes() {
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             size="small"
             onClick={() => handleEdit(record)}
           >
             Sửa
           </Button>
-          <Button 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            danger
+            icon={<DeleteOutlined />}
             size="small"
             onClick={() => handleDelete(record)}
           >
@@ -279,12 +333,14 @@ function RoomTypes() {
     setEditingRoomType(record)
     form.setFieldsValue({
       room_type_name: record.room_type_name,
+      category: record.category,
+      capacity: record.capacity,
       description: record.description,
       amenities: Array.isArray(record.amenities) ? record.amenities : [],
       area: record.area,
       quantity: record.quantity,
     })
-    
+
     // Set existing images to fileList for preview
     if (record.images && Array.isArray(record.images) && record.images.length > 0) {
       const existingFiles = record.images.map((url, index) => ({
@@ -297,13 +353,13 @@ function RoomTypes() {
     } else {
       setFileList([])
     }
-    
+
     setIsModalVisible(true)
   }
 
   const handleDelete = (record) => {
     const imageCount = Array.isArray(record.images) ? record.images.length : 0
-    
+
     Modal.confirm({
       title: 'Xác nhận xóa loại phòng',
       icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
@@ -312,9 +368,9 @@ function RoomTypes() {
           <p style={{ marginBottom: 12 }}>
             Bạn có chắc chắn muốn xóa loại phòng <strong>"{record.room_type_name}"</strong>?
           </p>
-          
-          <div style={{ 
-            background: '#fff1f0', 
+
+          <div style={{
+            background: '#fff1f0',
             border: '1px solid #ffccc7',
             borderRadius: 6,
             padding: 12,
@@ -342,20 +398,20 @@ function RoomTypes() {
 
         try {
           await deleteRoomType(record.room_type_id)
-          
+
           message.success({
             content: `Đã xóa loại phòng "${record.room_type_name}" thành công!${imageCount > 0 ? ` (${imageCount} ảnh đã được xóa)` : ''}`,
             key: 'deleteRoomType',
             duration: 3
           })
-          
+
           setTimeout(() => {
             fetchRoomTypes()
           }, 500)
-          
+
         } catch (error) {
           console.error('Error deleting room type:', error)
-          
+
           message.error({
             content: `Không thể xóa loại phòng "${record.room_type_name}". ${error.message || 'Vui lòng thử lại.'}`,
             key: 'deleteRoomType',
@@ -376,38 +432,40 @@ function RoomTypes() {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
-      
+
       // Tạo FormData để upload images
       const formData = new FormData()
       formData.append('room_type_name', values.room_type_name)
+      formData.append('category', values.category || '')
+      formData.append('capacity', values.capacity || 0)
       formData.append('description', values.description || '')
       formData.append('area', values.area || 0)
       formData.append('quantity', values.quantity || 0)
-      
+
       // Xử lý amenities
       if (values.amenities && values.amenities.length > 0) {
         formData.append('amenities', JSON.stringify(values.amenities))
       }
-      
+
       // Thêm các file mới vào FormData
       const newFiles = fileList.filter(file => file.originFileObj)
       newFiles.forEach(file => {
         formData.append('images', file.originFileObj)
       })
-      
+
       // Nếu đang edit, giữ lại các ảnh cũ
       if (editingRoomType) {
         const existingImages = fileList
           .filter(file => !file.originFileObj && file.url)
           .map(file => file.url)
-        
+
         if (existingImages.length > 0) {
           formData.append('existingImages', JSON.stringify(existingImages))
         }
       }
-      
+
       setLoading(true)
-      
+
       if (editingRoomType) {
         await updateRoomType(editingRoomType.room_type_id, formData)
         message.success('Cập nhật loại phòng thành công')
@@ -415,7 +473,7 @@ function RoomTypes() {
         await createRoomType(formData)
         message.success('Tạo loại phòng thành công')
       }
-      
+
       setIsModalVisible(false)
       setEditingRoomType(null)
       setFileList([])
@@ -497,18 +555,18 @@ function RoomTypes() {
         message.error('Chỉ được upload file ảnh!')
         return Upload.LIST_IGNORE
       }
-      
+
       const isLt5M = file.size / 1024 / 1024 < 5
       if (!isLt5M) {
         message.error('Kích thước ảnh phải nhỏ hơn 5MB!')
         return Upload.LIST_IGNORE
       }
-      
+
       if (fileList.length >= 10) {
         message.warning('Chỉ được upload tối đa 10 ảnh!')
         return Upload.LIST_IGNORE
       }
-      
+
       return false
     },
     showUploadList: {
@@ -521,8 +579,8 @@ function RoomTypes() {
     <div className="room-types-management">
       <div className="room-types-header">
         <Title level={2}>Quản lý loại phòng</Title>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<PlusOutlined />}
           size="large"
           onClick={handleAddNew}
@@ -541,8 +599,8 @@ function RoomTypes() {
         />
       </div>
 
-      <Table 
-        columns={columns} 
+      <Table
+        columns={columns}
         dataSource={filteredRoomTypes}
         loading={loading}
         pagination={{
@@ -551,7 +609,7 @@ function RoomTypes() {
           showTotal: (total) => `Tổng ${total} loại phòng`,
         }}
         onChange={handleTableChange}
-        scroll={{ x: 1300 }}
+        scroll={{ x: 1700 }}
       />
 
       <Modal
@@ -584,12 +642,44 @@ function RoomTypes() {
             <Input placeholder="VD: Phòng Deluxe, Phòng Suite" size="large" />
           </Form.Item>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Form.Item
+              name="category"
+              label="Danh mục"
+              rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
+            >
+              <Select
+                placeholder="Chọn danh mục"
+                size="large"
+                options={CATEGORY_OPTIONS}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="capacity"
+              label="Số lượng khách"
+              rules={[
+                { required: true, message: 'Vui lòng nhập số lượng khách!' },
+                { type: 'number', min: 1, max: 20, message: 'Số khách từ 1-20 người!' }
+              ]}
+            >
+              <InputNumber
+                placeholder="Số khách"
+                size="large"
+                min={1}
+                max={20}
+                style={{ width: '100%' }}
+                addonAfter="người"
+              />
+            </Form.Item>
+          </div>
+
           <Form.Item
             name="description"
             label="Mô tả"
           >
-            <TextArea 
-              rows={4} 
+            <TextArea
+              rows={4}
               placeholder="Nhập mô tả về loại phòng"
               showCount
               maxLength={1000}
@@ -604,9 +694,9 @@ function RoomTypes() {
                 { required: true, message: 'Vui lòng nhập diện tích!' }
               ]}
             >
-              <InputNumber 
-                placeholder="Nhập diện tích" 
-                size="large" 
+              <InputNumber
+                placeholder="Nhập diện tích"
+                size="large"
                 min={1}
                 max={500}
                 style={{ width: '100%' }}
@@ -621,9 +711,9 @@ function RoomTypes() {
                 { required: true, message: 'Vui lòng nhập số lượng!' }
               ]}
             >
-              <InputNumber 
-                placeholder="Số lượng" 
-                size="large" 
+              <InputNumber
+                placeholder="Số lượng"
+                size="large"
                 min={0}
                 max={1000}
                 style={{ width: '100%' }}
@@ -687,9 +777,9 @@ function RoomTypes() {
                   key={index}
                   src={url}
                   alt={`Ảnh ${index + 1}`}
-                  style={{ 
-                    width: '100%', 
-                    height: 150, 
+                  style={{
+                    width: '100%',
+                    height: 150,
                     objectFit: 'cover',
                     borderRadius: 8,
                     cursor: 'pointer'

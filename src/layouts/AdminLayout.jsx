@@ -43,7 +43,7 @@ function AdminLayout() {
     {
       key: '/admin',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: 'Trang Chủ',
     },
     {
       key: '/admin/users',
@@ -148,6 +148,7 @@ function AdminLayout() {
           left: 0,
           top: 0,
           bottom: 0,
+        
         }}
       >
         {/* Logo */}
@@ -180,7 +181,7 @@ function AdminLayout() {
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={handleMenuClick}
-          style={{ borderRight: 0, marginTop: 16 }}
+          style={{ borderRight: 0, marginTop: 16 , fontSize : '16px' }}
         />
       </Sider>
 

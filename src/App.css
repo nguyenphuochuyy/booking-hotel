@@ -3,7 +3,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-
 }
 
 body {
@@ -22,16 +21,17 @@ body {
   display: flex;
   flex-direction: column;
 }
-.container{
-  margin : 0 auto;
-  width: 90%;
-  max-width: 1280px;
+
+.container {
+  margin: 0 auto;
+  width: 90vw;
+  max-width: 90vw;
   padding: 0 16px;
 }
+
 /* Main Content Layout */
 .main-content {
   flex: 1;
   margin: 0 auto;
   width: 100%;
 }
-

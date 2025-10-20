@@ -1,16 +1,77 @@
 /* Home Page Styles */
-.banner{
+.banner-slider {
   position: relative;
   width: 100%;
-  height: auto;
-  margin-top: 1rem!important;
+  height: 82vh;
+  margin-top: 1rem !important;
+  overflow: hidden;
 }
-.banner img {
-  border-radius: 12px;
+
+.banner-carousel {
+  height: 82vh;
+}
+
+.banner-carousel .slick-slider {
+  height: 100%;
+}
+
+.banner-carousel .slick-list {
+  height: 100%;
+}
+
+.banner-carousel .slick-track {
+  height: 100%;
+}
+
+.banner-slide {
+  height: 100%;
+  position: relative;
+}
+
+.banner-slide img {
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
   object-fit: cover;
+  aspect-ratio: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Smooth transitions for carousel */
+.banner-carousel .slick-slide {
+  transition: all 0.5s ease-in-out;
+}
+
+.banner-carousel .slick-slide.slick-active {
+  opacity: 1;
+}
+
+.banner-carousel .slick-slide:not(.slick-active) {
+  opacity: 0;
+}
+
+/* Custom dots styling */
+.banner-carousel .slick-dots {
+  bottom: 30px;
+  z-index: 10;
+}
+
+.banner-carousel .slick-dots li button {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+}
+
+.banner-carousel .slick-dots li.slick-active button {
+  background: #c08a19;
+}
+
+.banner-carousel .slick-dots li button:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.banner-carousel .slick-dots li.slick-active button:hover {
+  background: #c08a19;
 }
 
 .about{
@@ -18,7 +79,6 @@
 }
 .about-container{
   width: 100%;
-  margin-top: 3rem!important;
 }
 
 .features{
@@ -79,6 +139,24 @@
 
 /* Phone - Extra Small devices (< 576px) */
 @media (max-width: 575px) {
+  .banner-slider {
+    height: 100vh;
+    margin-top: 0.5rem !important;
+  }
+  
+  .banner-slide {
+    height: 100vh;
+  }
+  
+  .banner-carousel .slick-dots {
+    bottom: 20px;
+  }
+  
+  .banner-carousel .slick-dots li button {
+    width: 10px;
+    height: 10px;
+  }
+  
   .about-content {
     padding: 16px 0;
   }
@@ -112,6 +190,24 @@
 
 /* Small devices - Large phones (576px - 767px) */
 @media (min-width: 576px) and (max-width: 767px) {
+  .banner-slider {
+    height: 100vh;
+    margin-top: 0.75rem !important;
+  }
+  
+  .banner-slide {
+    height: 100vh;
+  }
+  
+  .banner-carousel .slick-dots {
+    bottom: 25px;
+  }
+  
+  .banner-carousel .slick-dots li button {
+    width: 11px;
+    height: 11px;
+  }
+  
   .about-content {
     padding: 18px 0;
   }
@@ -143,6 +239,24 @@
 
 /* Medium devices - Tablets (768px - 991px) */
 @media (min-width: 768px) and (max-width: 991px) {
+  .banner-slider {
+    height: 100vh;
+    margin-top: 1rem !important;
+  }
+  
+  .banner-slide {
+    height: 100vh;
+  }
+  
+  .banner-carousel .slick-dots {
+    bottom: 30px;
+  }
+  
+  .banner-carousel .slick-dots li button {
+    width: 12px;
+    height: 12px;
+  }
+  
   .about-content {
     padding: 20px 0;
   }
@@ -174,6 +288,24 @@
 
 /* Large devices and up - Desktop (≥ 992px) */
 @media (min-width: 992px) {
+  .banner-slider {
+    height: 100vh;
+    margin-top: 1rem !important;
+  }
+  
+  .banner-slide {
+    height: 100vh;
+  }
+  
+  .banner-carousel .slick-dots {
+    bottom: 40px;
+  }
+  
+  .banner-carousel .slick-dots li button {
+    width: 14px;
+    height: 14px;
+  }
+  
   .about-content {
     padding: 20px 0;
   }
