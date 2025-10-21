@@ -75,6 +75,7 @@ function Navigation() {
      
     },
     { key: '/services', label: 'Dịch vụ' },
+    { key: '/news', label: 'Tin tức' },
     { key: '/gallery', label: 'Thư viện ảnh' },
     { key: '/contact', label: 'Liên hệ' },
   ]), [])

@@ -77,6 +77,16 @@ export const API_ENDPOINTS = {
     HISTORY: '/payments/history',
   },
 
+  // Posts/News
+  POSTS: {
+    GET_POSTS: '/posts',
+    GET_POST_BY_ID: (id) => `/posts/${id}`,
+    GET_POST_BY_SLUG: (slug) => `/posts/slug/${slug}`,
+    CREATE_POST: '/posts',
+    UPDATE_POST: (id) => `/posts/${id}`,
+    DELETE_POST: (id) => `/posts/${id}`,
+  },
+
   // General
   GENERAL: {
     CONTACT: '/contact',
@@ -156,6 +166,7 @@ export const {
   SERVICES,
   REVIEWS,
   PAYMENTS,
+  POSTS,
   GENERAL,
   ADMIN
 } = API_ENDPOINTS

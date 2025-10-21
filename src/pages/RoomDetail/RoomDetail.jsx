@@ -14,7 +14,11 @@ import {
   Form,
   Input,
   DatePicker,
-  InputNumber
+  InputNumber,
+  Spin,
+  Empty,
+  Tag,
+  Space
 } from 'antd'
 import {
   UserOutlined,
@@ -25,9 +29,12 @@ import {
   CarOutlined,
   SafetyOutlined,
   CalendarOutlined,
-  RestOutlined
+  RestOutlined,
+  HomeOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useRoomTypeDetail } from '../../hooks/roomtype'
+import formatPrice from '../../utils/formatPrice'
 import './RoomDetail.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -37,48 +44,19 @@ function RoomDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const screens = useBreakpoint()
-  const [loading, setLoading] = useState(true)
-  const [roomData, setRoomData] = useState(null)
   const [bookingForm] = Form.useForm()
   const [bookingLoading, setBookingLoading] = useState(false)
 
-  // Mock data - sẽ thay bằng API call thật
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setRoomData({
-        id: 1,
-        name: 'Phòng Đơn Tiêu Chuẩn',
-        images: [
-          'https://bizweb.dktcdn.net/thumb/1024x1024/100/472/947/products/anh1.jpg?v=1670338577307',
-          'https://bizweb.dktcdn.net/thumb/1024x1024/100/472/947/products/anh3.jpg?v=1670338577307',
-          'https://bizweb.dktcdn.net/thumb/1024x1024/100/472/947/products/anh2.jpg?v=1670338577307'
-        ],
-        adults: 2,
-        children: 1,
-        area: 20,
-        price: 700000,
-        description: 'Các phòng trang nhã và đầy phòng trang nghiêm của chúng tôi gợi nhớ về một thời đã qua. Mỗi tính năng như đường cong, thẩm mỹ trang nhà cao, phòng tắm lát đá cẩm thạch, thiết bị làm sạch và nhiều tiện ích khác, thiết kế và trang bị sẵn nhà hàng, trang bị, được bổ sung một nhà hàng, thiết bị dành riêng cho riêng bạn. Tổng màu nâu nâu như màu sắc cùng với những dõ dõ bỏ với, ứng dõi hàng riêng tay cho riêng bạn.',
-        services: [
-          { icon: <CoffeeOutlined />, name: 'Cafe Buổi Sáng' },
-          { icon: <WifiOutlined />, name: 'Internet Không Dây' },
-          { icon: <CarOutlined />, name: 'Bãi Đỗ Xe' },
-          { icon: <SafetyOutlined />, name: 'Két Sắt' }
-        ],
-        amenities: [
-          'Ấn sáng tự chọn',
-          'Nước khoáng trên phòng nghỉ',
-          'Dịch Internet không dây (wifi)',
-          'Tiền ích phòng đầy máy lạnh, tivi màn hình phẳng và nhiều tiện ích khác nữa'
-        ],
-        paymentMethods: 'Tiền mặt (VND, USD, EURO, ...) thẻ tín dụng Visa và Master',
-        checkoutTime: '12h00 hàng ngày'
-      })
-      setLoading(false)
-    }, 500)
-  }, [id])
+  // Sử dụng hook để lấy thông tin room type
+  const { data: roomData, loading, error, fetchDetail } = useRoomTypeDetail(id)
 
-  // Similar rooms mock data
+  useEffect(() => {
+    if (id) {
+      fetchDetail()
+    }
+  }, [id, fetchDetail])
+
+  // Similar rooms mock data - có thể tích hợp API sau
   const similarRooms = [
     { id: 2, name: 'PHÒNG ĐƠN VIEW THÀNH PHỐ', price: 700000, area: 25, guests: 2, image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/products/sp21.jpg?v=1670338576510' },
     { id: 3, name: 'PHÒNG ĐƠN VIEW SÂN VƯỜN', price: 800000, area: 25, guests: 2, image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/products/anh11a713f0cbaa54ea595b6bb5e1b.jpg?v=1670338575473' },
@@ -92,8 +70,41 @@ function RoomDetail() {
     { id: 8, name: 'Phòng Hạng Sang', price: 3500000, image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80' }
   ]
 
-  if (loading || !roomData) {
-    return <div>Loading...</div>
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 0' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: '16px' }}>
+          <Text>Đang tải thông tin phòng...</Text>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 0' }}>
+        <Empty
+          description={error}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        >
+          <Button type="primary" onClick={() => fetchDetail()}>
+            Thử lại
+          </Button>
+        </Empty>
+      </div>
+    )
+  }
+
+  if (!roomData) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 0' }}>
+        <Empty
+          description="Không tìm thấy thông tin phòng"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+      </div>
+    )
   }
 
   const tabItems = [
@@ -103,19 +114,21 @@ function RoomDetail() {
       children: (
         <div className="tab-content">
           <Paragraph style={{ fontSize: screens.xs ? 14 : 16, lineHeight: 1.8, color: '#374151' }}>
-            {roomData.description}
+            {roomData.description || 'Phòng tiện nghi với đầy đủ trang thiết bị hiện đại'}
           </Paragraph>
           <div style={{ marginTop: screens.xs ? 16 : 24 }}>
             <Title level={screens.xs ? 5 : 4} style={{ marginBottom: screens.xs ? 12 : 16 }}>
               Giờ trả phòng:
             </Title>
-            <Text style={{ fontSize: screens.xs ? 14 : 15 }}>{roomData.checkoutTime}</Text>
+            <Text style={{ fontSize: screens.xs ? 14 : 15 }}>12h00 hàng ngày</Text>
           </div>
           <div style={{ marginTop: screens.xs ? 16 : 24 }}>
             <Title level={screens.xs ? 5 : 4} style={{ marginBottom: screens.xs ? 12 : 16 }}>
               Hình thức Thanh toán:
             </Title>
-            <Text style={{ fontSize: screens.xs ? 14 : 15 }}>{roomData.paymentMethods}</Text>
+            <Text style={{ fontSize: screens.xs ? 14 : 15 }}>
+              Tiền mặt (VND, USD, EURO, ...) thẻ tín dụng Visa và Master
+            </Text>
             <br />
             <Text type="secondary" style={{ fontSize: screens.xs ? 12 : 13 }}>
               * Nếu Quý khách thanh toán bằng ngoại tệ thì theo tỷ giá hối đoái của Ngân hàng hiện thời.
@@ -132,13 +145,17 @@ function RoomDetail() {
           <Title level={screens.xs ? 5 : 4} style={{ marginBottom: screens.xs ? 12 : 16 }}>
             Dịch vụ miễn phí:
           </Title>
-          <ul className="amenities-list">
-            {roomData.amenities.map((amenity, index) => (
-              <li key={index} style={{ fontSize: screens.xs ? 14 : 15, marginBottom: 8 }}>
-                {amenity}
-              </li>
-            ))}
-          </ul>
+          {roomData.amenities && Array.isArray(roomData.amenities) && roomData.amenities.length > 0 ? (
+            <ul className="amenities-list">
+              {roomData.amenities.map((amenity, index) => (
+                <li key={index} style={{ fontSize: screens.xs ? 14 : 15, marginBottom: 8 }}>
+                  {amenity}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Text type="secondary">Chưa có thông tin tiện nghi</Text>
+          )}
         </div>
       )
     }
@@ -151,24 +168,40 @@ function RoomDetail() {
         <div style={{ marginBottom: screens.xs ? 16 : 24, marginTop: screens.xs ? 16 : 24 }}>
           <Breadcrumb>
             <Breadcrumb.Item>
-              <a onClick={() => navigate('/')}>Trang chủ</a>
+              <a onClick={() => navigate('/')}>
+                <HomeOutlined /> Trang chủ
+              </a>
             </Breadcrumb.Item>
             <Breadcrumb.Item>
-              <a onClick={() => navigate('/hotels')}>Phòng đơn</a>
+              <a onClick={() => navigate('/hotels')}>Danh sách phòng</a>
             </Breadcrumb.Item>
-            <Breadcrumb.Item>Phòng đơn tiêu chuẩn</Breadcrumb.Item>
+            <Breadcrumb.Item>{roomData.room_type_name}</Breadcrumb.Item>
           </Breadcrumb>
         </div>
 
         {/* Image Slider */}
         <div className="room-slider-container" style={{ marginBottom: screens.xs ? 24 : 32 }}>
-          <Carousel autoplay autoplaySpeed={4000} dotPosition="bottom">
-            {roomData.images.map((image, index) => (
-              <div key={index} className="slider-item">
-                <img src={image} alt={`${roomData.name} ${index + 1}`} />
-              </div>
-            ))}
-          </Carousel>
+          {roomData.images && roomData.images.length > 0 ? (
+            <Carousel autoplay autoplaySpeed={4000} dotPosition="bottom">
+              {roomData.images.map((image, index) => (
+                <div key={index} className="slider-item">
+                  <img src={image} alt={`${roomData.room_type_name} ${index + 1}`} />
+                </div>
+              ))}
+            </Carousel>
+          ) : (
+            <div style={{ 
+              height: '400px', 
+              background: '#f0f0f0', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              borderRadius: '12px',
+              color: '#999'
+            }}>
+              Không có hình ảnh
+            </div>
+          )}
         </div>
 
         {/* Room Content: Left info + Right booking form */}
@@ -183,7 +216,7 @@ function RoomDetail() {
                 color: '#1f2937'
               }}
             >
-              {roomData.name}
+              {roomData.room_type_name}
             </Title>
 
             {/* Room Info Row */}
@@ -196,7 +229,7 @@ function RoomDetail() {
                 <div className="info-item">
                   <TeamOutlined style={{ fontSize: screens.xs ? 20 : 24, color: '#000' }} />
                   <Text style={{ fontSize: screens.xs ? 11 : 13, marginTop: 6, display: 'block' }}>
-                    {roomData.adults < 10 ? `0${roomData.adults}` : roomData.adults} Người lớn
+                    {roomData.capacity < 10 ? `0${roomData.capacity}` : roomData.capacity} Người lớn
                   </Text>
                 </div>
               </Col>
@@ -204,7 +237,7 @@ function RoomDetail() {
                 <div className="info-item">
                   <UserOutlined style={{ fontSize: screens.xs ? 20 : 24, color: '#000' }} />
                   <Text style={{ fontSize: screens.xs ? 11 : 13, marginTop: 6, display: 'block' }}>
-                    {roomData.children < 10 ? `0${roomData.children}` : roomData.children} Trẻ em
+                    {roomData.category || 'Standard'}
                   </Text>
                 </div>
               </Col>
@@ -212,15 +245,27 @@ function RoomDetail() {
                 <div className="info-item">
                   <ExpandOutlined style={{ fontSize: screens.xs ? 20 : 24, color: '#000' }} />
                   <Text style={{ fontSize: screens.xs ? 11 : 13, marginTop: 6, display: 'block' }}>
-                    Phòng {roomData.area}m²
+                    Phòng {roomData.area || 'N/A'}m²
                   </Text>
                 </div>
               </Col>
             </Row>
 
+            {/* Tags */}
+            <div style={{ marginBottom: screens.xs ? 16 : 20 }}>
+              <Space size="small" wrap>
+                <Tag color="blue">{roomData.category}</Tag>
+                <Tag icon={<UserOutlined />}>{roomData.capacity} người</Tag>
+                {roomData.area && <Tag color="green">{roomData.area}m²</Tag>}
+                {roomData.amenities && Array.isArray(roomData.amenities) && roomData.amenities.some(amenity => 
+                  amenity.toLowerCase().includes('pet') || amenity.toLowerCase().includes('thú cưng')
+                ) && <Tag color="orange">Cho phép thú cưng</Tag>}
+              </Space>
+            </div>
+
             {/* Description */}
             <Paragraph style={{ fontSize: screens.xs ? 14 : 15, lineHeight: 1.8, color: '#374151', marginBottom: 0 }}>
-              {roomData.description}
+              {roomData.description || 'Phòng tiện nghi với đầy đủ trang thiết bị hiện đại'}
             </Paragraph>
           </Col>
 
@@ -230,7 +275,7 @@ function RoomDetail() {
               {/* Price Header */}
               <div className="price-header">
                 <Title level={3} style={{ color: '#c08a19', margin: 0, fontSize: screens.xs ? 20 : 24 }}>
-                  {roomData.price.toLocaleString('vi-VN')}đ/Đêm
+                  {roomData.price_per_night ? formatPrice(roomData.price_per_night) : 'Liên hệ'}/Đêm
                 </Title>
               </div>
 
@@ -371,20 +416,54 @@ function RoomDetail() {
           </div>
           
           <Row gutter={[16, 16]} className="services-row">
-            {roomData.services.map((service, index) => (
-              <Col xs={12} sm={12} md={6} lg={6} key={index}>
-                <Card className="service-card" hoverable>
-                  <div className="service-content">
-                    <div style={{ fontSize: screens.xs ? 28 : 36, color: '#c08a19', marginBottom: 8 }}>
-                      {service.icon}
-                    </div>
-                    <Text style={{ fontSize: screens.xs ? 13 : 14, textAlign: 'center', display: 'block' }}>
-                      {service.name}
-                    </Text>
+            <Col xs={12} sm={12} md={6} lg={6}>
+              <Card className="service-card" hoverable>
+                <div className="service-content">
+                  <div style={{ fontSize: screens.xs ? 28 : 36, color: '#c08a19', marginBottom: 8 }}>
+                    <CoffeeOutlined />
                   </div>
-                </Card>
-              </Col>
-            ))}
+                  <Text style={{ fontSize: screens.xs ? 13 : 14, textAlign: 'center', display: 'block' }}>
+                    Cafe Buổi Sáng
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={12} sm={12} md={6} lg={6}>
+              <Card className="service-card" hoverable>
+                <div className="service-content">
+                  <div style={{ fontSize: screens.xs ? 28 : 36, color: '#c08a19', marginBottom: 8 }}>
+                    <WifiOutlined />
+                  </div>
+                  <Text style={{ fontSize: screens.xs ? 13 : 14, textAlign: 'center', display: 'block' }}>
+                    Internet Không Dây
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={12} sm={12} md={6} lg={6}>
+              <Card className="service-card" hoverable>
+                <div className="service-content">
+                  <div style={{ fontSize: screens.xs ? 28 : 36, color: '#c08a19', marginBottom: 8 }}>
+                    <CarOutlined />
+                  </div>
+                  <Text style={{ fontSize: screens.xs ? 13 : 14, textAlign: 'center', display: 'block' }}>
+                    Bãi Đỗ Xe
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={12} sm={12} md={6} lg={6}>
+              <Card className="service-card" hoverable>
+                <div className="service-content">
+                  <div style={{ fontSize: screens.xs ? 28 : 36, color: '#c08a19', marginBottom: 8 }}>
+                    <SafetyOutlined />
+                  </div>
+                  <Text style={{ fontSize: screens.xs ? 13 : 14, textAlign: 'center', display: 'block' }}>
+                    Két Sắt
+                  </Text>
+                </div>
+              </Card>
+            </Col>
           </Row>
         </div>
 
@@ -492,4 +571,3 @@ function RoomDetail() {
 }
 
 export default RoomDetail
-
