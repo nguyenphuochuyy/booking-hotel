@@ -239,8 +239,10 @@ const RoomManagement = () => {
       width: 120,
       align: 'center',
       render: (num) => (
-        <div className="room-number-badge">
-          <Badge count={num} style={{ backgroundColor: '#52c41a' }} showZero />
+        <div className="room-number-display">
+          <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
+            {num}
+          </Text>
         </div>
       ),
       sorter: (a, b) => a.room_num - b.room_num

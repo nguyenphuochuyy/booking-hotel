@@ -24,7 +24,8 @@ import {
   LogoutOutlined,
   SettingOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  FileTextOutlined
 } from '@ant-design/icons'
 
 const { Sider, Header, Content } = Layout
@@ -56,6 +57,11 @@ function AdminLayout() {
       label: 'Quản lý khách sạn',
     },
     {
+      key: '/admin/bookings',
+      icon: <CalendarOutlined />,
+      label: 'Quản lý đặt phòng',
+    },
+    {
       key: '/admin/room-types',
       icon: <AppstoreOutlined />,
       label: 'Quản lý loại phòng',
@@ -70,16 +76,7 @@ function AdminLayout() {
       icon: <DollarOutlined />,
       label: 'Quản lý giá phòng',
     },
-    {
-      key: '/admin/services',
-      icon: <CustomerServiceOutlined />,
-      label: 'Quản lý dịch vụ',
-    },
-    {
-      key: '/admin/bookings',
-      icon: <CalendarOutlined />,
-      label: 'Quản lý đặt phòng',
-    },
+   
     {
       key: '/admin/promotions',
       icon: <TagOutlined />,
@@ -89,6 +86,16 @@ function AdminLayout() {
       key: '/admin/reviews',
       icon: <StarOutlined />,
       label: 'Quản lý đánh giá',
+    },
+    {
+      key: '/admin/posts',
+      icon: <FileTextOutlined />,
+      label: 'Quản lý bài viết',
+    },
+    {
+      key: '/admin/services',
+      icon: <SettingOutlined />,
+      label: 'Quản lý dịch vụ',
     },
   ]
 
@@ -240,8 +247,8 @@ function AdminLayout() {
         {/* Content */}
         <Content
           style={{
-            margin: '24px',
-            padding: 24,
+            // margin: '24px',
+            // padding: 24,
             minHeight: 'calc(100vh - 112px)',
             background: '#f0f2f5',
           }}
@@ -249,7 +256,7 @@ function AdminLayout() {
           <div
             style={{
               background: '#fff',
-              padding: 24,
+              // padding: 24,
               borderRadius: 8,
               boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
               minHeight: 'calc(100vh - 160px)',

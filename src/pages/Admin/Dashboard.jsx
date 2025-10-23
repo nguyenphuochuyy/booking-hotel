@@ -11,7 +11,9 @@ const { Title } = Typography
 
 function Dashboard() {
   return (
-    <div>
+    <div
+    style={{ padding: 24 }}
+    >
       <Title align='center' level={2}>Trang quản trị</Title>
       <p style={{ color: '#666', marginBottom: 32 }}>
         Chào mừng đến với bảng điều khiển quản trị Bean Hotel

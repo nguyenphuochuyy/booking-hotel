@@ -306,6 +306,157 @@ export async function deleteService(id) {
   return http.delete(url)
 }
 
+// ==================== PROMOTION MANAGEMENT ====================
+
+/**
+ * Lấy danh sách khuyến mãi
+ * @param {Object} params - { page, limit, search }
+ * @returns {Promise}
+ */
+export async function getAllPromotions(params = {}) {
+  return http.get(ADMIN.PROMOTIONS.LIST, { params })
+}
+
+/**
+ * Lấy thông tin khuyến mãi theo ID
+ * @param {number|string} id - Promotion ID
+ * @returns {Promise}
+ */
+export async function getPromotionById(id) {
+  const url = buildUrl(ADMIN.PROMOTIONS.DETAIL, { id })
+  return http.get(url)
+}
+
+/**
+ * Tạo khuyến mãi mới
+ * @param {Object} promotionData - Thông tin khuyến mãi
+ * @returns {Promise}
+ */
+export async function createPromotion(promotionData) {
+  return http.post(ADMIN.PROMOTIONS.CREATE, promotionData)
+}
+
+/**
+ * Cập nhật khuyến mãi
+ * @param {number|string} id - Promotion ID
+ * @param {Object} promotionData - Thông tin cần cập nhật
+ * @returns {Promise}
+ */
+export async function updatePromotion(id, promotionData) {
+  const url = buildUrl(ADMIN.PROMOTIONS.UPDATE, { id })
+  return http.put(url, promotionData)
+}
+
+/**
+ * Xóa khuyến mãi
+ * @param {number|string} id - Promotion ID
+ * @returns {Promise}
+ */
+export async function deletePromotion(id) {
+  const url = buildUrl(ADMIN.PROMOTIONS.DELETE, { id })
+  return http.delete(url)
+}
+
+// ==================== POST MANAGEMENT ====================
+
+/**
+ * Lấy danh sách tất cả bài viết
+ * @param {Object} params - { page, limit, category_id, status }
+ * @returns {Promise}
+ */
+export async function getAllPosts(params = {}) {
+  return http.get(ADMIN.POSTS.LIST, { params })
+}
+
+/**
+ * Lấy thông tin bài viết theo ID
+ * @param {number|string} id - Post ID
+ * @returns {Promise}
+ */
+export async function getPostById(id) {
+  const url = buildUrl(ADMIN.POSTS.DETAIL, { id })
+  return http.get(url)
+}
+
+/**
+ * Tạo bài viết mới
+ * @param {FormData} postData - Thông tin bài viết
+ * @returns {Promise}
+ */
+export async function createPost(postData) {
+  return http.post(ADMIN.POSTS.CREATE, postData)
+}
+
+/**
+ * Cập nhật bài viết
+ * @param {number|string} id - Post ID
+ * @param {FormData} postData - Thông tin cần cập nhật
+ * @returns {Promise}
+ */
+export async function updatePost(id, postData) {
+  const url = buildUrl(ADMIN.POSTS.UPDATE, { id })
+  return http.put(url, postData)
+}
+
+/**
+ * Xóa bài viết
+ * @param {number|string} id - Post ID
+ * @returns {Promise}
+ */
+export async function deletePost(id) {
+  const url = buildUrl(ADMIN.POSTS.DELETE, { id })
+  return http.delete(url)
+}
+
+/**
+ * Lấy danh sách danh mục bài viết
+ * @param {Object} params - { page, limit }
+ * @returns {Promise}
+ */
+export async function getAllCategories(params = {}) {
+  return http.get(ADMIN.CATEGORIES.LIST, { params })
+}
+
+/**
+ * Lấy thông tin danh mục theo ID
+ * @param {number|string} id - Category ID
+ * @returns {Promise}
+ */
+export async function getCategoryById(id) {
+  const url = buildUrl(ADMIN.CATEGORIES.DETAIL, { id })
+  return http.get(url)
+}
+
+/**
+ * Tạo danh mục mới
+ * @param {Object} categoryData - Thông tin danh mục
+ * @returns {Promise}
+ */
+export async function createCategory(categoryData) {
+  return http.post(ADMIN.CATEGORIES.CREATE, categoryData)
+}
+
+/**
+ * Cập nhật danh mục
+ * @param {number|string} id - Category ID
+ * @param {Object} categoryData - Thông tin cần cập nhật
+ * @returns {Promise}
+ */
+export async function updateCategory(id, categoryData) {
+  const url = buildUrl(ADMIN.CATEGORIES.UPDATE, { id })
+  return http.put(url, categoryData)
+}
+
+/**
+ * Xóa danh mục
+ * @param {number|string} id - Category ID
+ * @returns {Promise}
+ */
+export async function deleteCategory(id) {
+  const url = buildUrl(ADMIN.CATEGORIES.DELETE, { id })
+  return http.delete(url)
+}
+
 export default {
   // Users
   getAllUsers,
@@ -343,5 +494,23 @@ export default {
   createService,
   updateService,
   deleteService,
+  // Promotions
+  getAllPromotions,
+  getPromotionById,
+  createPromotion,
+  updatePromotion,
+  deletePromotion,
+  // Posts
+  getAllPosts,
+  getPostById,
+  createPost,
+  updatePost,
+  deletePost,
+  // Categories
+  getAllCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory
 }
 

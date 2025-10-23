@@ -271,8 +271,10 @@ function Users() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div
+     style={{ padding: 24 }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
         <Title level={2} style={{ margin: 0 }}>Quản lý người dùng</Title>
         <Button 
           type="primary" 

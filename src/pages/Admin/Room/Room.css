@@ -6,6 +6,18 @@
   min-height: calc(100vh - 64px);
 }
 
+/* Room Number Display */
+.room-number-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0f8ff;
+  border-radius: 6px;
+  border: 1px solid #d6e4ff;
+  min-width: 60px;
+}
+
 /* Room Types Header - same style */
 .room-types-header {
   display: flex;

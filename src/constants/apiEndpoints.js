@@ -55,8 +55,11 @@ export const API_ENDPOINTS = {
 
   // Services
   SERVICES: {
-    LIST: '/services',
-    DETAIL: '/services/:id',
+    GET_SERVICES: '/services',
+    GET_SERVICE_BY_ID: (id) => `/services/${id}`,
+    CREATE_SERVICE: '/services',
+    UPDATE_SERVICE: (id) => `/services/${id}`,
+    DELETE_SERVICE: (id) => `/services/${id}`,
     CATEGORIES: '/services/categories',
   },
 
@@ -85,6 +88,16 @@ export const API_ENDPOINTS = {
     CREATE_POST: '/posts',
     UPDATE_POST: (id) => `/posts/${id}`,
     DELETE_POST: (id) => `/posts/${id}`,
+  },
+
+  // Categories
+  CATEGORIES: {
+    GET_CATEGORIES: '/categories',
+    GET_CATEGORY_BY_ID: (id) => `/categories/${id}`,
+    GET_CATEGORY_BY_SLUG: (slug) => `/categories/slug/${slug}`,
+    CREATE_CATEGORY: '/categories',
+    UPDATE_CATEGORY: (id) => `/categories/${id}`,
+    DELETE_CATEGORY: (id) => `/categories/${id}`,
   },
 
   // General
@@ -144,6 +157,30 @@ export const API_ENDPOINTS = {
       UPDATE: '/services/:id',
       DELETE: '/services/:id',
     },
+    // Promotion Management
+    PROMOTIONS: {
+      LIST: '/promotions',
+      DETAIL: '/promotions/:id',
+      CREATE: '/promotions',
+      UPDATE: '/promotions/:id',
+      DELETE: '/promotions/:id',
+    },
+    // Post Management
+    POSTS: {
+      LIST: '/posts',
+      DETAIL: '/posts/:id',
+      CREATE: '/posts',
+      UPDATE: '/posts/:id',
+      DELETE: '/posts/:id',
+    },
+    // Category Management
+    CATEGORIES: {
+      LIST: '/categories',
+      DETAIL: '/categories/:id',
+      CREATE: '/categories',
+      UPDATE: '/categories/:id',
+      DELETE: '/categories/:id',
+    },
   }
 }
 
@@ -167,6 +204,7 @@ export const {
   REVIEWS,
   PAYMENTS,
   POSTS,
+  CATEGORIES,
   GENERAL,
   ADMIN
 } = API_ENDPOINTS

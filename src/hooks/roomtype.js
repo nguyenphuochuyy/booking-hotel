@@ -173,6 +173,9 @@ export function useRoomTypeDetail(roomTypeId, { autoFetch = true } = {}) {
 
     try {
       const res = await getRoomTypeById(id, { signal: controller.signal })
+      const roomPrice = await getCurrentRoomPrice(id);
+      const priceData = Array.isArray(roomPrice?.prices[0]) ? roomPrice.prices[0] : roomPrice?.prices[0]
+      res.roomType.price_per_night = priceData?.price_per_night ?? null
       // Backend trả về: { roomType, statusCode }
       setData(res?.roomType || null)
     } catch (err) {

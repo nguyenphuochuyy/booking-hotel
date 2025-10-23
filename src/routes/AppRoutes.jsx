@@ -23,7 +23,7 @@ import AdminHotels from '../pages/Admin/Hotel'
 import AdminRoomTypes from '../pages/Admin/RoomType'
 import AdminRooms from '../pages/Admin/Room'
 import AdminRoomPrices from '../pages/Admin/RoomPrice'
-import AdminServices from '../pages/Admin/Service'
+import AdminPosts from '../pages/Admin/Posts'
 import { useAuth } from '../context/AuthContext'
 import UserLayout from '../layouts/UserLayout'
 import AdminLayout from '../layouts/AdminLayout'
@@ -112,9 +112,11 @@ function AppRoutes() {
         } />
         <Route path="/admin/services" element={
           <AdminRoute>
-            <AdminServices />
+            {/* <AdminServices /> */}
+            <div>Quản lý dịch vụ</div>
           </AdminRoute>
         } />
+ 
         <Route path="/admin/bookings" element={
           <AdminRoute>
             <div>Quản lý đặt phòng</div>
@@ -123,6 +125,11 @@ function AppRoutes() {
         <Route path="/admin/promotions" element={
           <AdminRoute>
             <div>Quản lý khuyến mãi</div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/posts" element={
+          <AdminRoute>
+            <AdminPosts />
           </AdminRoute>
         } />
         <Route path="/admin/reviews" element={
