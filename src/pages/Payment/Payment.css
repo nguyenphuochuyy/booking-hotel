@@ -1,0 +1,233 @@
+/* Payment Page Styles - New Design */
+.payment-page-new {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 40px 20px;
+}
+
+.payment-page-new .container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.payment-header-new {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* QR Code Card */
+.qr-code-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: 100%;
+}
+
+.qr-code-section {
+  text-align: center;
+  padding: 20px;
+}
+
+.qr-icon {
+  font-size: 48px;
+  color: #1890ff;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.qr-code-image {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.qr-code-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 60px 20px;
+  margin: 16px 0;
+}
+
+.payment-status {
+  margin-top: 24px;
+}
+
+.security-info {
+  margin-top: 24px;
+}
+
+/* Invoice Card */
+.invoice-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.invoice-section {
+  margin-bottom: 24px;
+}
+
+.invoice-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.invoice-item.total {
+  border-top: 2px solid #f0f0f0;
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+.invoice-item:last-child {
+  margin-bottom: 0;
+}
+
+.invoice-card .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.invoice-card .ant-card-body {
+  padding: 24px;
+}
+
+/* Responsive Styles */
+
+/* Phone (max-width: 767px) */
+@media (max-width: 767px) {
+  .payment-page-new {
+    padding: 20px 12px;
+  }
+
+  .payment-header-new {
+    padding: 20px 16px;
+    margin-bottom: 24px;
+  }
+
+  .payment-header-new h2 {
+    font-size: 20px;
+  }
+
+  .payment-page-new .ant-col {
+    margin-bottom: 24px;
+  }
+
+  .qr-code-section {
+    padding: 16px;
+  }
+
+  .qr-code-image {
+    max-width: 250px;
+  }
+
+  .invoice-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .invoice-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .invoice-item > *:last-child {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+  .payment-page-new {
+    padding: 32px 16px;
+  }
+
+  .payment-page-new .ant-col {
+    margin-bottom: 24px;
+  }
+
+  .qr-code-image {
+    max-width: 280px;
+  }
+}
+
+/* Desktop (min-width: 992px) */
+@media (min-width: 992px) {
+  .payment-page-new .ant-row {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .qr-code-card,
+  .invoice-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .qr-code-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .invoice-card .ant-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+}
+
+/* Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.qr-code-placeholder {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Print Styles */
+@media print {
+  .payment-page-new {
+    padding: 0;
+    background: white;
+  }
+
+  .qr-code-card {
+    display: none;
+  }
+
+  .payment-header-new {
+    box-shadow: none;
+  }
+
+  .invoice-card {
+    box-shadow: none;
+    border: 1px solid #d9d9d9;
+  }
+}

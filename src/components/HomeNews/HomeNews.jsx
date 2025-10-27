@@ -29,6 +29,14 @@ const HomeNews = () => {
       description: 'Các quản lý khách sạn phát hiện ra dịch vụ này nhận được nhiều lời khen từ khách thuê phòng hơn bất kỳ hoạt động...',
       author: 'Bean Hotel',
       date: '06/12/2022'
+    },
+    {
+      id: 4,
+      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      title: 'Ý nghĩa việc khách sạn để chocolate lên gối khi dọn phòng',
+      description: 'Các quản lý khách sạn phát hiện ra dịch vụ này nhận được nhiều lời khen từ khách thuê phòng hơn bất kỳ hoạt động...',
+      author: 'Bean Hotel',
+      date: '06/12/2022'
     }
   ]
 

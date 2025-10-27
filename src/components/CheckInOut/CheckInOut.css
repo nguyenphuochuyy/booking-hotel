@@ -1,0 +1,323 @@
+/* CheckInOut Modal Styles */
+.checkinout-modal {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Search Step */
+.search-step {
+  padding: 20px 0;
+}
+
+.search-step .ant-form-item-label > label {
+  font-weight: 600;
+  color: #262626;
+}
+
+.search-step .ant-input {
+  border-radius: 6px;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.search-step .ant-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.search-step .ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+  height: 44px;
+}
+
+/* Confirm Step */
+.confirm-step {
+  padding: 20px 0;
+}
+
+.confirm-step .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.confirm-step .ant-card-head {
+  border-bottom: 2px solid #f0f0f0;
+  padding: 12px 16px;
+}
+
+.confirm-step .ant-card-head-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.confirm-step .ant-card-body {
+  padding: 16px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .ant-typography {
+  margin: 0;
+}
+
+.info-item .anticon {
+  font-size: 14px;
+}
+
+/* Success Step */
+.success-step {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.success-content {
+  margin-bottom: 32px;
+}
+
+.success-icon {
+  font-size: 64px;
+  color: #52c41a;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.success-content .ant-typography {
+  margin-bottom: 16px;
+}
+
+.success-content .ant-typography:last-child {
+  margin-bottom: 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.action-buttons .ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.action-buttons .ant-btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.action-buttons .ant-btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Alert */
+.ant-alert {
+  border-radius: 6px;
+  border: none;
+}
+
+.ant-alert-info {
+  background: #f0f8ff;
+  border: 1px solid #91d5ff;
+}
+
+.ant-alert-message {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.ant-alert-description {
+  font-size: 14px;
+}
+
+/* Tag */
+.ant-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .checkinout-modal {
+    max-height: 60vh;
+  }
+  
+  .search-step {
+    padding: 16px 0;
+  }
+  
+  .search-step .ant-input {
+    font-size: 14px;
+  }
+  
+  .search-step .ant-btn {
+    height: 40px;
+  }
+  
+  .confirm-step {
+    padding: 16px 0;
+  }
+  
+  .confirm-step .ant-card-body {
+    padding: 12px;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .success-step {
+    padding: 32px 16px;
+  }
+  
+  .success-icon {
+    font-size: 48px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-buttons .ant-btn {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .checkinout-modal {
+    max-height: 50vh;
+  }
+  
+  .search-step .ant-input {
+    font-size: 12px;
+  }
+  
+  .confirm-step .ant-card-head-title {
+    font-size: 14px;
+  }
+  
+  .confirm-step .ant-card-body {
+    padding: 8px;
+  }
+  
+  .success-step {
+    padding: 24px 12px;
+  }
+  
+  .success-icon {
+    font-size: 40px;
+  }
+  
+  .success-content .ant-typography {
+    font-size: 12px;
+  }
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-step,
+.confirm-step,
+.success-step {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.success-icon {
+  animation: bounce 2s infinite;
+}
+
+/* Loading States */
+.checkinout-modal .ant-spin-container {
+  min-height: 100px;
+}
+
+/* Custom Scrollbar */
+.checkinout-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.checkinout-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.checkinout-modal::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.checkinout-modal::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Focus States */
+.search-step .ant-input:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+}
+
+.action-buttons .ant-btn:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .checkinout-modal {
+    background: white;
+  }
+  
+  .action-buttons {
+    display: none;
+  }
+  
+  .confirm-step .ant-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
+

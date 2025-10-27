@@ -31,6 +31,12 @@ import RegistrationSuccess from '../pages/RegistrationSuccess'
 import VerifyEmail from '../pages/VerifyEmail'
 import RoomDetail from '../pages/RoomDetail'
 import AuthGuard from '../components/AuthGuard'
+import PromotionManagement from '../pages/Admin/Promotion'
+import ServiceManagement from '../pages/Admin/Service'
+import BookingConfirmation from '../pages/BookingConfirmation'
+import Payment from '../pages/Payment'
+import BookingSuccess from '../pages/BookingSuccess'
+import BookingManagement from '../pages/Admin/Booking'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -56,6 +62,9 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/hotels" element={<Hotels />} />
         <Route path="/rooms/:id" element={<RoomDetail />} />
+        <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/booking-success" element={<BookingSuccess />} />
         <Route path="/about" element={<About />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/news" element={<News />} />
@@ -110,26 +119,24 @@ function AppRoutes() {
             <AdminRoomPrices />
           </AdminRoute>
         } />
-        <Route path="/admin/services" element={
-          <AdminRoute>
-            {/* <AdminServices /> */}
-            <div>Quản lý dịch vụ</div>
-          </AdminRoute>
-        } />
- 
         <Route path="/admin/bookings" element={
           <AdminRoute>
-            <div>Quản lý đặt phòng</div>
+            <BookingManagement />
           </AdminRoute>
         } />
         <Route path="/admin/promotions" element={
           <AdminRoute>
-            <div>Quản lý khuyến mãi</div>
+            <PromotionManagement/>
           </AdminRoute>
         } />
         <Route path="/admin/posts" element={
           <AdminRoute>
             <AdminPosts />
+          </AdminRoute>
+        } />
+        <Route path="/admin/services" element={
+          <AdminRoute>
+            <ServiceManagement />
           </AdminRoute>
         } />
         <Route path="/admin/reviews" element={

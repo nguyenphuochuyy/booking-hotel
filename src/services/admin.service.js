@@ -263,7 +263,8 @@ export async function deleteRoomPrice(id) {
  * @returns {Promise}
  */
 export async function getAllServices(params = {}) {
-  return http.get(ADMIN.SERVICES.LIST, { params })
+  // Use public API endpoint for services
+  return http.get('/services', { params })
 }
 
 /**
@@ -272,8 +273,7 @@ export async function getAllServices(params = {}) {
  * @returns {Promise}
  */
 export async function getServiceById(id) {
-  const url = buildUrl(ADMIN.SERVICES.DETAIL, { id })
-  return http.get(url)
+  return http.get(`/services/${id}`)
 }
 
 /**
@@ -282,7 +282,7 @@ export async function getServiceById(id) {
  * @returns {Promise}
  */
 export async function createService(formData) {
-  return http.post(ADMIN.SERVICES.CREATE, formData)
+  return http.post('/services', formData)
 }
 
 /**
@@ -292,8 +292,7 @@ export async function createService(formData) {
  * @returns {Promise}
  */
 export async function updateService(id, formData) {
-  const url = buildUrl(ADMIN.SERVICES.UPDATE, { id })
-  return http.put(url, formData)
+  return http.put(`/services/${id}`, formData)
 }
 
 /**
@@ -302,8 +301,7 @@ export async function updateService(id, formData) {
  * @returns {Promise}
  */
 export async function deleteService(id) {
-  const url = buildUrl(ADMIN.SERVICES.DELETE, { id })
-  return http.delete(url)
+  return http.delete(`/services/${id}`)
 }
 
 // ==================== PROMOTION MANAGEMENT ====================
@@ -314,7 +312,8 @@ export async function deleteService(id) {
  * @returns {Promise}
  */
 export async function getAllPromotions(params = {}) {
-  return http.get(ADMIN.PROMOTIONS.LIST, { params })
+  // Use public API endpoint for promotions
+  return http.get('/promotions', { params })
 }
 
 /**
@@ -323,8 +322,7 @@ export async function getAllPromotions(params = {}) {
  * @returns {Promise}
  */
 export async function getPromotionById(id) {
-  const url = buildUrl(ADMIN.PROMOTIONS.DETAIL, { id })
-  return http.get(url)
+  return http.get(`/promotions/${id}`)
 }
 
 /**
@@ -333,7 +331,7 @@ export async function getPromotionById(id) {
  * @returns {Promise}
  */
 export async function createPromotion(promotionData) {
-  return http.post(ADMIN.PROMOTIONS.CREATE, promotionData)
+  return http.post('/promotions', promotionData)
 }
 
 /**
@@ -343,8 +341,7 @@ export async function createPromotion(promotionData) {
  * @returns {Promise}
  */
 export async function updatePromotion(id, promotionData) {
-  const url = buildUrl(ADMIN.PROMOTIONS.UPDATE, { id })
-  return http.put(url, promotionData)
+  return http.put(`/promotions/${id}`, promotionData)
 }
 
 /**
@@ -353,8 +350,7 @@ export async function updatePromotion(id, promotionData) {
  * @returns {Promise}
  */
 export async function deletePromotion(id) {
-  const url = buildUrl(ADMIN.PROMOTIONS.DELETE, { id })
-  return http.delete(url)
+  return http.delete(`/promotions/${id}`)
 }
 
 // ==================== POST MANAGEMENT ====================
@@ -457,6 +453,90 @@ export async function deleteCategory(id) {
   return http.delete(url)
 }
 
+// ==================== BOOKING MANAGEMENT ====================
+
+/**
+ * Lấy danh sách tất cả đặt phòng (Admin only)
+ * @param {Object} params - { page, limit, status, type, user_id, check_in_date, check_out_date }
+ * @returns {Promise}
+ */
+export async function getAllBookings(params = {}) {
+  return http.get('/bookings', { params })
+}
+
+/**
+ * Lấy thông tin đặt phòng theo ID
+ * @param {number|string} id - Booking ID
+ * @returns {Promise}
+ */
+export async function getBookingById(id) {
+  return http.get(`/bookings/${id}`)
+}
+
+/**
+ * Hủy đặt phòng
+ * @param {number|string} id - Booking ID
+ * @param {string} reason - Lý do hủy
+ * @returns {Promise}
+ */
+export async function cancelBooking(id, reason = '') {
+  return http.post(`/bookings/${id}/cancel`, { reason })
+}
+
+/**
+ * Check-in khách hàng
+ * @param {string} bookingCode - Mã đặt phòng
+ * @returns {Promise}
+ */
+export async function checkInGuest(bookingCode) {
+  return http.post(`/bookings/${bookingCode}/check-in`)
+}
+
+/**
+ * Check-out khách hàng
+ * @param {string} bookingCode - Mã đặt phòng
+ * @returns {Promise}
+ */
+export async function checkOutGuest(bookingCode) {
+  return http.post(`/bookings/${bookingCode}/check-out`)
+}
+
+/**
+ * Tìm đặt phòng theo mã
+ * @param {string} bookingCode - Mã đặt phòng
+ * @returns {Promise}
+ */
+export async function findBookingByCode(bookingCode) {
+  return http.get(`/bookings/code/${bookingCode}`)
+}
+
+/**
+ * Lấy danh sách phòng trống theo loại phòng
+ * @param {Object} params - { room_type_id, check_in_date, check_out_date }
+ * @returns {Promise}
+ */
+export async function getAvailableRoomsForType(params) {
+  return http.get('/bookings/available-rooms', { params })
+}
+
+/**
+ * Tạo hóa đơn PDF
+ * @param {number|string} id - Booking ID
+ * @returns {Promise}
+ */
+export async function generateInvoicePDF(id) {
+  return http.get(`/bookings/${id}/invoice/pdf`, { responseType: 'blob' })
+}
+
+/**
+ * Xem hóa đơn HTML
+ * @param {number|string} id - Booking ID
+ * @returns {Promise}
+ */
+export async function viewInvoice(id) {
+  return http.get(`/bookings/${id}/invoice`)
+}
+
 export default {
   // Users
   getAllUsers,
@@ -511,6 +591,16 @@ export default {
   getCategoryById,
   createCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  // Bookings
+  getAllBookings,
+  getBookingById,
+  cancelBooking,
+  checkInGuest,
+  checkOutGuest,
+  findBookingByCode,
+  getAvailableRoomsForType,
+  generateInvoicePDF,
+  viewInvoice
 }
 

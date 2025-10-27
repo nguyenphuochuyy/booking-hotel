@@ -4,81 +4,63 @@
   width: 100%;
   height: 82vh;
   margin-top: 1rem !important;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.banner-carousel {
-  height: 82vh;
-}
-
-.banner-carousel .slick-slider {
-  height: 100%;
-}
-
-.banner-carousel .slick-list {
-  height: 100%;
-}
-
-.banner-carousel .slick-track {
-  height: 100%;
-}
-
-.banner-slide {
-  height: 100%;
+.banner-image-container {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
-.banner-slide img {
+.banner-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  aspect-ratio: 1;
-  transition: opacity 0.5s ease-in-out;
 }
 
-/* Smooth transitions for carousel */
-.banner-carousel .slick-slide {
-  transition: all 0.5s ease-in-out;
+.banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60px 0 40px 0;
+  background: rgba(0, 0, 0, 0.3);
 }
 
-.banner-carousel .slick-slide.slick-active {
-  opacity: 1;
-}
-
-.banner-carousel .slick-slide:not(.slick-active) {
-  opacity: 0;
-}
-
-/* Custom dots styling */
-.banner-carousel .slick-dots {
-  bottom: 30px;
-  z-index: 10;
-}
-
-.banner-carousel .slick-dots li button {
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-  width: 12px;
-  height: 12px;
-}
-
-.banner-carousel .slick-dots li.slick-active button {
-  background: #c08a19;
-}
-
-.banner-carousel .slick-dots li button:hover {
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.banner-carousel .slick-dots li.slick-active button:hover {
-  background: #c08a19;
+.banner-title {
+  align-self: center;
+  font-size: 72px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 8px !important;
+  margin: 0 !important;
+  font-family: 'Roboto', sans-serif !important;
 }
 
 .about{
   background-color: #fff;
+  padding: 60px 0;
 }
+
 .about-container{
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.about-row {
+  margin: 0 !important;
+}
+
+.home-page {
+  padding-top: 40px;
 }
 
 .features{
@@ -86,42 +68,39 @@
 }
 
 /* About Section Styles */
-.about-content {
-  position: relative;
+.about-content-card {
+  background: #fefefe;
+  border-radius: 24px;
+  padding: 56px 48px;
+  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.08);
+  border: 1px solid rgba(192, 138, 25, 0.1);
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 20px 0;
 }
 
-.about-header {
-  border: 4px solid #e9e9e9;
-  padding: 16px 20px;
-  display: inline-block;
-  margin-bottom: 24px;
-}
-
-.about-brand-title {
-  margin: 0 !important;
-  color: #1f2937 !important;
+.about-subtitle {
+  color: #c08a19 !important;
   font-weight: 600 !important;
-  font-size: 20px !important;
+  margin: 0 0 24px 0 !important;
 }
 
 .about-main-title {
-  margin: 6px 0 0 0 !important;
-  color: #1f2937 !important;
+  margin: 0 0 32px 0 !important;
+  color: #1a1a1a !important;
   font-weight: 700 !important;
-  font-size: 28px !important;
+  font-size: 40px !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.5px !important;
 }
 
 .about-description {
-  color: #4b5563 !important;
-  margin-bottom: 32px !important;
-  max-width: 640px;
-  line-height: 1.7 !important;
+  color: #4a4a4a !important;
+  margin-bottom: 40px !important;
+  max-width: 100%;
+  line-height: 1.85 !important;
   font-size: 16px !important;
+  flex: 1;
 }
 
 .about-button-wrapper {
@@ -131,10 +110,76 @@
 .about-cta-button {
   background: #c08a19 !important;
   border-color: #c08a19 !important;
-  padding: 0 28px !important;
-  height: 48px !important;
-  font-weight: 600 !important;
-  font-size: 16px !important;
+  border-radius: 12px !important;
+  padding: 0 40px !important;
+  height: 56px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(192, 138, 25, 0.2) !important;
+}
+
+.about-cta-button:hover {
+  background: #b07916 !important;
+  border-color: #b07916 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(192, 138, 25, 0.35) !important;
+}
+
+/* About Image */
+.about-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.about-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 500px;
+  transition: transform 0.5s ease;
+}
+
+.about-image-container:hover .about-image {
+  transform: scale(1.05);
+}
+
+/* About Banner Container */
+.about-banner-container {
+  width: 100%;
+  height: 100%;
+}
+
+.about-banner-images {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+}
+
+.about-banner-item {
+  flex: 1;
+  width: 100%;
+}
+
+.about-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.5s ease;
+}
+
+.about-banner-image:hover {
+  transform: scale(1.05);
 }
 
 /* Phone - Extra Small devices (< 576px) */
@@ -144,47 +189,59 @@
     margin-top: 0.5rem !important;
   }
   
-  .banner-slide {
-    height: 100vh;
+  .banner-overlay {
+    padding: 40px 0 20px 0;
   }
   
-  .banner-carousel .slick-dots {
-    bottom: 20px;
+  .banner-title {
+    font-size: 32px !important;
+    letter-spacing: 4px !important;
   }
-  
-  .banner-carousel .slick-dots li button {
-    width: 10px;
-    height: 10px;
+
+  .about {
+    padding: 40px 0;
+  }
+
+  .about-container {
+    padding: 0 15px;
   }
   
   .about-content {
     padding: 16px 0;
-  }
-  
-  .about-header {
-    padding: 12px 16px;
-    margin-bottom: 20px;
-  }
-  
-  .about-brand-title {
-    font-size: 16px !important;
+    text-align: center;
   }
   
   .about-main-title {
-    font-size: 22px !important;
+    font-size: 26px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .about-subtitle {
+    font-size: 15px !important;
+    margin-bottom: 20px !important;
   }
   
   .about-description {
     font-size: 14px !important;
-    margin-bottom: 24px !important;
+    margin-bottom: 32px !important;
     max-width: 100%;
+    line-height: 1.7 !important;
   }
-  
-  .about-cta-button {
-    width: 100% !important;
-    height: 44px !important;
-    font-size: 14px !important;
-    padding: 0 20px !important;
+
+  .about-banner-images {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .about-banner-image {
+    min-height: 280px !important;
+    border-radius: 16px !important;
+    display: block;
+  }
+
+  .about-banner-container {
+    margin-top: 24px;
   }
 }
 
@@ -195,45 +252,53 @@
     margin-top: 0.75rem !important;
   }
   
-  .banner-slide {
-    height: 100vh;
+  .banner-overlay {
+    padding: 50px 0 30px 0;
   }
   
-  .banner-carousel .slick-dots {
-    bottom: 25px;
+  .banner-title {
+    font-size: 40px !important;
+    letter-spacing: 5px !important;
   }
-  
-  .banner-carousel .slick-dots li button {
-    width: 11px;
-    height: 11px;
+
+  .about {
+    padding: 50px 0;
   }
-  
+
   .about-content {
-    padding: 18px 0;
-  }
-  
-  .about-header {
-    padding: 14px 18px;
-    margin-bottom: 22px;
-  }
-  
-  .about-brand-title {
-    font-size: 18px !important;
+    padding: 20px 0;
+    text-align: center;
   }
   
   .about-main-title {
-    font-size: 24px !important;
+    font-size: 30px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 20px !important;
+  }
+
+  .about-subtitle {
+    font-size: 17px !important;
+    margin-bottom: 24px !important;
   }
   
   .about-description {
     font-size: 15px !important;
-    margin-bottom: 28px !important;
+    margin-bottom: 32px !important;
+    line-height: 1.75 !important;
   }
-  
-  .about-cta-button {
-    height: 46px !important;
-    font-size: 15px !important;
-    padding: 0 24px !important;
+
+  .about-banner-images {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .about-banner-image {
+    min-height: 350px !important;
+    border-radius: 20px !important;
+  }
+
+  .about-banner-container {
+    margin-top: 32px;
   }
 }
 
@@ -244,45 +309,51 @@
     margin-top: 1rem !important;
   }
   
-  .banner-slide {
-    height: 100vh;
+  .banner-overlay {
+    padding: 55px 0 35px 0;
   }
   
-  .banner-carousel .slick-dots {
-    bottom: 30px;
+  .banner-title {
+    font-size: 52px !important;
+    letter-spacing: 6px !important;
   }
-  
-  .banner-carousel .slick-dots li button {
-    width: 12px;
-    height: 12px;
+
+  .about {
+    padding: 60px 0;
   }
-  
+
   .about-content {
-    padding: 20px 0;
-  }
-  
-  .about-header {
-    padding: 15px 19px;
-    margin-bottom: 23px;
-  }
-  
-  .about-brand-title {
-    font-size: 19px !important;
+    padding: 24px 0;
   }
   
   .about-main-title {
-    font-size: 26px !important;
+    font-size: 34px !important;
+    line-height: 1.25 !important;
+    margin-bottom: 24px !important;
+  }
+
+  .about-subtitle {
+    font-size: 18px !important;
+    margin-bottom: 24px !important;
   }
   
   .about-description {
     font-size: 15px !important;
-    margin-bottom: 30px !important;
+    margin-bottom: 32px !important;
+    line-height: 1.8 !important;
   }
-  
-  .about-cta-button {
-    height: 47px !important;
-    font-size: 15px !important;
-    padding: 0 26px !important;
+
+  .about-banner-images {
+    gap: 0;
+  }
+
+  .about-banner-image {
+    min-height: 400px !important;
+    border-radius: 20px !important;
+  }
+
+  .about-banner-container {
+    margin-top: 0;
   }
 }
 
@@ -293,49 +364,797 @@
     margin-top: 1rem !important;
   }
   
-  .banner-slide {
-    height: 100vh;
+  .banner-overlay {
+    padding: 60px 0 40px 0;
   }
   
-  .banner-carousel .slick-dots {
-    bottom: 40px;
+  .banner-title {
+    font-size: 72px !important;
+    letter-spacing: 8px !important;
   }
-  
-  .banner-carousel .slick-dots li button {
-    width: 14px;
-    height: 14px;
+
+  .about {
+    padding: 80px 0;
   }
   
   .about-content {
-    padding: 20px 0;
-  }
-  
-  .about-header {
-    padding: 16px 20px;
-    margin-bottom: 24px;
-  }
-  
-  .about-brand-title {
-    font-size: 20px !important;
+    padding: 32px 0;
+    text-align: left;
   }
   
   .about-main-title {
-    font-size: 28px !important;
+    font-size: 42px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 24px !important;
+  }
+
+  .about-subtitle {
+    font-size: 22px !important;
+    margin-bottom: 32px !important;
   }
   
   .about-description {
     font-size: 16px !important;
     margin-bottom: 32px !important;
+    line-height: 1.8 !important;
   }
-  
-  .about-cta-button {
-    height: 48px !important;
-    font-size: 16px !important;
-    padding: 0 28px !important;
+
+  .about-banner-images {
+    gap: 0;
+  }
+
+  .about-banner-image {
+    min-height: 550px !important;
+    border-radius: 24px !important;
+  }
+
+  .about-banner-container {
+    margin-top: 0;
   }
 }
 
-/* Old responsive rules */
+/* Extra Large devices - Large Desktop (≥ 1200px) */
+@media (min-width: 1200px) {
+  .banner-overlay {
+    padding: 70px 0 50px 0;
+  }
+
+  .banner-title {
+    font-size: 84px !important;
+    letter-spacing: 10px !important;
+  }
+
+  .about {
+    padding: 100px 0;
+  }
+
+  .about-container {
+    max-width: 1400px;
+  }
+
+  .about-main-title {
+    font-size: 48px !important;
+  }
+
+  .about-subtitle {
+    font-size: 24px !important;
+  }
+
+  .about-description {
+    font-size: 17px !important;
+  }
+
+  .about-banner-image {
+    min-height: 600px !important;
+  }
+}
+
+/* Luxury Section Styles */
+.luxury-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #f5f7fa 100%);
+  padding: 80px 0;
+}
+
+.luxury-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.luxury-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.luxury-subtitle {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: #c08a19;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.luxury-title {
+  font-size: 42px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.luxury-content-row {
+  margin: 0 !important;
+}
+
+.luxury-text-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(192, 138, 25, 0.1);
+}
+
+.luxury-card-title {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  margin: 0 0 24px 0 !important;
+  line-height: 1.3 !important;
+}
+
+.luxury-card-description {
+  color: #4a4a4a !important;
+  font-size: 16px !important;
+  line-height: 1.8 !important;
+  margin: 0 !important;
+}
+
+.luxury-image-container {
+  width: 100%;
+  height: 100%;
+}
+
+.luxury-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: transform 0.5s ease;
+  min-height: 500px;
+}
+
+.luxury-image:hover {
+  transform: scale(1.03);
+}
+
+/* Phone - Extra Small devices (< 576px) */
+@media (max-width: 575px) {
+  .luxury-section {
+    padding: 40px 0;
+  }
+
+  .luxury-container {
+    padding: 0 15px;
+  }
+
+  .luxury-header {
+    margin-bottom: 32px;
+  }
+
+  .luxury-subtitle {
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+
+  .luxury-title {
+    font-size: 24px !important;
+  }
+
+  .luxury-text-card {
+    padding: 24px;
+  }
+
+  .luxury-card-title {
+    font-size: 22px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .luxury-card-description {
+    font-size: 14px !important;
+    margin: 0 !important;
+    line-height: 1.7 !important;
+  }
+
+  .luxury-image {
+    border-radius: 16px;
+    min-height: 280px !important;
+  }
+}
+
+/* Small devices - Large phones (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .luxury-section {
+    padding: 50px 0;
+  }
+
+  .luxury-container {
+    padding: 0 20px;
+  }
+
+  .luxury-header {
+    margin-bottom: 40px;
+  }
+
+  .luxury-subtitle {
+    font-size: 13px;
+    letter-spacing: 3.5px;
+    margin-bottom: 14px;
+  }
+
+  .luxury-title {
+    font-size: 28px !important;
+  }
+
+  .luxury-text-card {
+    padding: 32px;
+  }
+
+  .luxury-card-title {
+    font-size: 26px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .luxury-card-description {
+    font-size: 15px !important;
+    margin: 0 !important;
+  }
+
+  .luxury-image {
+    border-radius: 20px;
+    min-height: 320px !important;
+  }
+}
+
+/* Medium devices - Tablets (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .luxury-section {
+    padding: 60px 0;
+  }
+
+  .luxury-container {
+    padding: 0 24px;
+  }
+
+  .luxury-header {
+    margin-bottom: 50px;
+  }
+
+  .luxury-subtitle {
+    font-size: 13px;
+    margin-bottom: 15px;
+  }
+
+  .luxury-title {
+    font-size: 34px !important;
+  }
+
+  .luxury-text-card {
+    padding: 40px;
+  }
+
+  .luxury-card-title {
+    font-size: 28px !important;
+    margin-bottom: 22px !important;
+  }
+
+  .luxury-card-description {
+    font-size: 15px !important;
+    margin: 0 !important;
+  }
+
+  .luxury-image {
+    min-height: 400px !important;
+  }
+}
+
+/* Large devices and up - Desktop (≥ 992px) */
+@media (min-width: 992px) {
+  .luxury-section {
+    padding: 80px 0;
+  }
+
+  .luxury-container {
+    padding: 0 40px;
+  }
+
+  .luxury-header {
+    margin-bottom: 64px;
+  }
+
+  .luxury-subtitle {
+    font-size: 14px;
+  }
+
+  .luxury-title {
+    font-size: 42px !important;
+  }
+
+  .luxury-text-card {
+    padding: 48px;
+  }
+
+  .luxury-card-title {
+    font-size: 32px !important;
+  }
+
+  .luxury-card-description {
+    font-size: 16px !important;
+  }
+
+  .luxury-image {
+    min-height: 500px !important;
+  }
+}
+
+/* Extra Large devices - Large Desktop (≥ 1200px) */
+@media (min-width: 1200px) {
+  .luxury-section {
+    padding: 100px 0;
+  }
+
+  .luxury-container {
+    max-width: 1400px;
+    padding: 0 60px;
+  }
+
+  .luxury-header {
+    margin-bottom: 80px;
+  }
+
+  .luxury-subtitle {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .luxury-title {
+    font-size: 48px !important;
+  }
+
+  .luxury-text-card {
+    padding: 56px;
+  }
+
+  .luxury-card-title {
+    font-size: 36px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .luxury-card-description {
+    font-size: 17px !important;
+    margin: 0 !important;
+  }
+
+  .luxury-image {
+    min-height: 600px !important;
+  }
+}
+
+/* Culinary Section Styles */
+.culinary-section {
+  background: #ffffff;
+  padding: 80px 0;
+}
+
+.culinary-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.culinary-content-row {
+  margin: 0 !important;
+}
+
+.culinary-text-card {
+  background: linear-gradient(135deg, #fffbf7 0%, #faf9f7 100%);
+  border-radius: 24px;
+  padding: 48px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(192, 138, 25, 0.15);
+}
+
+.culinary-card-title {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  margin: 0 0 24px 0 !important;
+  line-height: 1.3 !important;
+}
+
+.culinary-card-description {
+  color: #4a4a4a !important;
+  font-size: 16px !important;
+  line-height: 1.8 !important;
+  margin: 0 !important;
+}
+
+.culinary-image-container {
+  width: 100%;
+  height: 100%;
+}
+
+.culinary-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: transform 0.5s ease;
+  min-height: 500px;
+}
+
+.culinary-image:hover {
+  transform: scale(1.03);
+}
+
+/* Phone - Extra Small devices (< 576px) */
+@media (max-width: 575px) {
+  .culinary-section {
+    padding: 40px 0;
+  }
+
+  .culinary-container {
+    padding: 0 15px;
+  }
+
+  .culinary-text-card {
+    padding: 24px;
+  }
+
+  .culinary-card-title {
+    font-size: 22px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .culinary-card-description {
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+  }
+
+  .culinary-image {
+    border-radius: 16px;
+    min-height: 280px !important;
+  }
+}
+
+/* Small devices - Large phones (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .culinary-section {
+    padding: 50px 0;
+  }
+
+  .culinary-container {
+    padding: 0 20px;
+  }
+
+  .culinary-text-card {
+    padding: 32px;
+  }
+
+  .culinary-card-title {
+    font-size: 26px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .culinary-card-description {
+    font-size: 15px !important;
+  }
+
+  .culinary-image {
+    border-radius: 20px;
+    min-height: 320px !important;
+  }
+}
+
+/* Medium devices - Tablets (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .culinary-section {
+    padding: 60px 0;
+  }
+
+  .culinary-container {
+    padding: 0 24px;
+  }
+
+  .culinary-text-card {
+    padding: 40px;
+  }
+
+  .culinary-card-title {
+    font-size: 28px !important;
+    margin-bottom: 22px !important;
+  }
+
+  .culinary-card-description {
+    font-size: 15px !important;
+  }
+
+  .culinary-image {
+    min-height: 400px !important;
+  }
+}
+
+/* Large devices and up - Desktop (≥ 992px) */
+@media (min-width: 992px) {
+  .culinary-section {
+    padding: 80px 0;
+  }
+
+  .culinary-container {
+    padding: 0 40px;
+  }
+
+  .culinary-text-card {
+    padding: 48px;
+  }
+
+  .culinary-card-title {
+    font-size: 32px !important;
+  }
+
+  .culinary-card-description {
+    font-size: 16px !important;
+  }
+
+  .culinary-image {
+    min-height: 500px !important;
+  }
+}
+
+/* Extra Large devices - Large Desktop (≥ 1200px) */
+@media (min-width: 1200px) {
+  .culinary-section {
+    padding: 100px 0;
+  }
+
+  .culinary-container {
+    max-width: 1400px;
+    padding: 0 60px;
+  }
+
+  .culinary-text-card {
+    padding: 56px;
+  }
+
+  .culinary-card-title {
+    font-size: 36px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .culinary-card-description {
+    font-size: 17px !important;
+  }
+
+  .culinary-image {
+    min-height: 600px !important;
+  }
+}
+
+/* Spa Section Styles */
+.spa-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #f5f7fa 100%);
+  padding: 80px 0;
+}
+
+.spa-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.spa-content-row {
+  margin: 0 !important;
+}
+
+.spa-text-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(192, 138, 25, 0.1);
+}
+
+.spa-card-title {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  margin: 0 0 24px 0 !important;
+  line-height: 1.3 !important;
+}
+
+.spa-card-description {
+  color: #4a4a4a !important;
+  font-size: 16px !important;
+  line-height: 1.8 !important;
+  margin: 0 !important;
+}
+
+.spa-image-container {
+  width: 100%;
+  height: 100%;
+}
+
+.spa-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: transform 0.5s ease;
+  min-height: 500px;
+}
+
+.spa-image:hover {
+  transform: scale(1.03);
+}
+
+/* Phone - Extra Small devices (< 576px) */
+@media (max-width: 575px) {
+  .spa-section {
+    padding: 40px 0;
+  }
+
+  .spa-container {
+    padding: 0 15px;
+  }
+
+  .spa-text-card {
+    padding: 24px;
+  }
+
+  .spa-card-title {
+    font-size: 22px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .spa-card-description {
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+  }
+
+  .spa-image {
+    border-radius: 16px;
+    min-height: 280px !important;
+  }
+}
+
+/* Small devices - Large phones (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .spa-section {
+    padding: 50px 0;
+  }
+
+  .spa-container {
+    padding: 0 20px;
+  }
+
+  .spa-text-card {
+    padding: 32px;
+  }
+
+  .spa-card-title {
+    font-size: 26px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .spa-card-description {
+    font-size: 15px !important;
+  }
+
+  .spa-image {
+    border-radius: 20px;
+    min-height: 320px !important;
+  }
+}
+
+/* Medium devices - Tablets (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .spa-section {
+    padding: 60px 0;
+  }
+
+  .spa-container {
+    padding: 0 24px;
+  }
+
+  .spa-text-card {
+    padding: 40px;
+  }
+
+  .spa-card-title {
+    font-size: 28px !important;
+    margin-bottom: 22px !important;
+  }
+
+  .spa-card-description {
+    font-size: 15px !important;
+  }
+
+  .spa-image {
+    min-height: 400px !important;
+  }
+}
+
+/* Large devices and up - Desktop (≥ 992px) */
+@media (min-width: 992px) {
+  .spa-section {
+    padding: 80px 0;
+  }
+
+  .spa-container {
+    padding: 0 40px;
+  }
+
+  .spa-text-card {
+    padding: 48px;
+  }
+
+  .spa-card-title {
+    font-size: 32px !important;
+  }
+
+  .spa-card-description {
+    font-size: 16px !important;
+  }
+
+  .spa-image {
+    min-height: 500px !important;
+  }
+}
+
+/* Extra Large devices - Large Desktop (≥ 1200px) */
+@media (min-width: 1200px) {
+  .spa-section {
+    padding: 100px 0;
+  }
+
+  .spa-container {
+    max-width: 1400px;
+    padding: 0 60px;
+  }
+
+  .spa-text-card {
+    padding: 56px;
+  }
+
+  .spa-card-title {
+    font-size: 36px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .spa-card-description {
+    font-size: 17px !important;
+  }
+
+  .spa-image {
+    min-height: 600px !important;
+  }
+}
+
+/* Features section responsive */
 @media (max-width: 768px) {
   .features {
     grid-template-columns: 1fr;

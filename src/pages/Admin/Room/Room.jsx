@@ -115,13 +115,12 @@ const RoomManagement = () => {
         status: values.status,
         room_type_id: values.room_type_id
       }
-
       if (editingRoom) {
         await updateRoom(editingRoom.room_id, roomData)
-        message.success('Cập nhật phòng thành công!')
+        message.success('Cập nhật phòng thành công !')
       } else {
         await createRoom(roomData)
-        message.success('Tạo phòng mới thành công!')
+        message.success('Tạo phòng mới thành công !')
       }
 
       setIsModalVisible(false)
@@ -129,7 +128,6 @@ const RoomManagement = () => {
       form.resetFields()
       fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
     } catch (error) {
-      console.error('Error saving room:', error)
       const errMsg = error?.message || (editingRoom ? 'Không thể cập nhật phòng!' : 'Không thể tạo phòng!')
       message.error(errMsg)
     }
@@ -178,11 +176,15 @@ const RoomManagement = () => {
   }
 
   // Get status tag
-  const getStatusTag = (status) => {
+  const getStatusTag = (status) => { 
+    // lấy status từ database và hiển thị tương ứng với status từ danh sách các phòng
     const statusConfig = {
+
       available: { color: 'success', icon: <CheckCircleOutlined />, text: 'Có sẵn' },
       booked: { color: 'error', icon: <CloseCircleOutlined />, text: 'Đã đặt' },
-      cleaning: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang dọn' }
+      cleaning: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang dọn' },
+      in_use: { color: '#27669e', icon: <CheckCircleOutlined />, text: 'Đang sử dụng' },
+      checked_out: { color: '#ccc', icon: <CloseCircleOutlined />, text: 'Đã trả phòng' },
     }
     const config = statusConfig[status] || statusConfig.available
     return (
@@ -273,7 +275,9 @@ const RoomManagement = () => {
       filters: [
         { text: 'Có sẵn', value: 'available' },
         { text: 'Đã đặt', value: 'booked' },
-        { text: 'Đang dọn', value: 'cleaning' }
+        { text: 'Đang dọn', value: 'cleaning' },
+        { text: 'Đang sử dụng', value: 'in_use' },
+        { text: 'Đã trả phòng', value: 'checked_out' }
       ],
       onFilter: (value, record) => record.status === value
     },
@@ -546,8 +550,14 @@ const RoomManagement = () => {
                   <Option value="booked">
                     <CloseCircleOutlined style={{ color: '#ff4d4f' }} /> Đã đặt
                   </Option>
-                  <Option value="cleaning">
-                    <ClockCircleOutlined style={{ color: '#faad14' }} /> Đang dọn
+                    <Option value="cleaning">
+                      <ClockCircleOutlined style={{ color: '#faad14' }} /> Đang dọn
+                    </Option>
+                  <Option value="in_use">
+                    <CheckCircleOutlined style={{ color: '#27669e' }} /> Đang sử dụng
+                  </Option>
+                  <Option value="checked_out">
+                    <CloseCircleOutlined style={{ color: '#ccc' }} /> Đã trả phòng
                   </Option>
                 </Select>
               </Form.Item>

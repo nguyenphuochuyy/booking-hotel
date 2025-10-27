@@ -1,0 +1,461 @@
+/* Service Selector Styles */
+.service-selector-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.service-selector-header {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.service-selector-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Services List */
+.services-list {
+  margin-bottom: 24px;
+}
+
+.service-card {
+  height: 100%;
+  border-radius: 8px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.service-card.selected {
+  border-color: #52c41a;
+  background: #f6ffed;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.2);
+}
+
+.service-image-container {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+}
+
+.service-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-image {
+  transform: scale(1.05);
+}
+
+.selected-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #52c41a;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.service-content {
+  padding: 16px;
+}
+
+.service-name {
+  margin-bottom: 8px;
+  color: #262626;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.service-description {
+  margin-bottom: 12px;
+  color: #595959;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.service-meta {
+  margin-bottom: 12px;
+}
+
+.service-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-amount {
+  font-size: 18px;
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.price-unit {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* Selected Services Summary */
+.selected-services-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.selected-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.selected-service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.service-info .ant-typography {
+  margin: 0;
+}
+
+.service-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.quantity-control,
+.payment-type-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.quantity-control .ant-typography,
+.payment-type-control .ant-typography {
+  margin: 0;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.service-total {
+  text-align: right;
+}
+
+.service-total .ant-typography {
+  margin: 0;
+  font-size: 16px;
+  color: #52c41a;
+}
+
+.total-summary {
+  border-top: 2px solid #e8e8e8;
+  padding-top: 16px;
+}
+
+.total-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-price .ant-typography {
+  margin: 0;
+}
+
+.total-amount {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+/* Actions */
+.service-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.service-actions .ant-btn {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.service-actions .ant-btn-primary {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.service-actions .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+}
+
+.service-actions .ant-btn-primary:disabled {
+  background: #d9d9d9;
+  color: #8c8c8c;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .service-selector-modal .ant-modal {
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+  }
+  
+  .service-selector-content {
+    max-height: 60vh;
+  }
+  
+  .service-card {
+    margin-bottom: 16px;
+  }
+  
+  .service-image-container {
+    height: 100px;
+  }
+  
+  .service-content {
+    padding: 12px;
+  }
+  
+  .service-name {
+    font-size: 14px;
+  }
+  
+  .service-description {
+    font-size: 12px;
+  }
+  
+  .price-amount {
+    font-size: 16px;
+  }
+  
+  .selected-service-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .service-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .quantity-control,
+  .payment-type-control {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .service-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .service-actions .ant-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .service-selector-modal .ant-modal {
+    margin: 8px;
+    max-width: calc(100vw - 16px);
+  }
+  
+  .service-selector-header {
+    font-size: 16px;
+  }
+  
+  .selected-services-summary {
+    padding: 16px;
+  }
+  
+  .selected-service-item {
+    padding: 12px;
+  }
+  
+  .service-controls {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .quantity-control,
+  .payment-type-control {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .total-amount {
+    font-size: 18px;
+  }
+}
+
+/* Animation */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.service-card {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.selected-service-item {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Custom Scrollbar */
+.service-selector-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.service-selector-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.service-selector-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.service-selector-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Focus States */
+.service-card:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+}
+
+/* Loading States */
+.service-actions .ant-btn-loading {
+  pointer-events: none;
+}
+
+/* Empty State */
+.ant-empty {
+  padding: 40px 20px;
+}
+
+.ant-empty-description {
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* Tag Styles */
+.ant-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  margin: 2px;
+}
+
+/* Input Number Styles */
+.ant-input-number {
+  border-radius: 6px;
+}
+
+.ant-input-number-addon {
+  background: #f0f0f0;
+  border-color: #d9d9d9;
+}
+
+.ant-input-number-addon:hover {
+  background: #e6f7ff;
+  border-color: #1890ff;
+}
+
+/* Radio Group Styles */
+.ant-radio-group {
+  display: flex;
+  gap: 8px;
+}
+
+.ant-radio-wrapper {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.ant-radio-wrapper:hover {
+  border-color: #1890ff;
+  background: #f0f8ff;
+}
+
+.ant-radio-wrapper-checked {
+  border-color: #1890ff;
+  background: #f0f8ff;
+}
+
+/* Print Styles */
+@media print {
+  .service-selector-modal .ant-modal-content {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .service-actions {
+    display: none;
+  }
+  
+  .service-card {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+

@@ -44,7 +44,7 @@ function AdminLayout() {
     {
       key: '/admin',
       icon: <DashboardOutlined />,
-      label: 'Trang Chủ',
+      label: 'Dashboard',
     },
     {
       key: '/admin/users',

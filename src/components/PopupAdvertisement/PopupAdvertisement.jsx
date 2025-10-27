@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Row, Col, Typography, Button, Image } from 'antd'
 import { CloseOutlined, GiftOutlined, CalendarOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import './PopupAdvertisement.css'
 
 const { Title, Paragraph } = Typography
 
 function PopupAdvertisement() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [visible, setVisible] = useState(false)
 
-  useEffect(() => {
-    // Hiển thị popup sau 1 giây khi component mount
-    const timer = setTimeout(() => {
-      setVisible(true)
-    }, 1000)
+  // Kiểm tra xem có đang ở trang admin không
+  const isAdminPage = location.pathname.startsWith('/admin')
 
-    return () => clearTimeout(timer)
-  }, [])
+  useEffect(() => {
+    // Chỉ hiển thị popup nếu không phải trang admin
+    if (!isAdminPage) {
+      // Hiển thị popup sau 1 giây khi component mount
+      const timer = setTimeout(() => {
+        setVisible(true)
+      }, 1000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isAdminPage])
 
   const handleClose = () => {
     setVisible(false)
@@ -31,6 +38,11 @@ function PopupAdvertisement() {
   const handleOverlayClick = (e) => {
     // Ngăn đóng popup khi click vào overlay
     e.stopPropagation()
+  }
+
+  // Không render popup nếu đang ở trang admin
+  if (isAdminPage) {
+    return null
   }
 
   return (

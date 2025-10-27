@@ -15,7 +15,9 @@ import {
   Divider,
   Spin,
   Empty,
-  Input
+  Input,
+  Modal,
+  Carousel
 } from 'antd'
 import { 
   HomeOutlined, 
@@ -24,11 +26,17 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   StarOutlined,
-  SearchOutlined
+  SearchOutlined,
+  ExpandOutlined,
+  CloseOutlined,
+  EyeOutlined,
 } from '@ant-design/icons'
 import { useRoomTypes } from '../../hooks/roomtype'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import formatPrice from '../../utils/formatPrice'
+import BookingWidget from '../../components/BookingWidget'
+import { searchAvailableRooms } from '../../services/booking.service'
+import { message } from 'antd'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -36,9 +44,58 @@ const { Search } = Input
 
 function Hotels() {
   const navigate = useNavigate()
-  const { roomTypes, loading, error, search, setSearch, category, setCategory } = useRoomTypes({
+  const location = useLocation()
+  const { roomTypes, loading: roomTypesLoading, error, search, setSearch, category, setCategory } = useRoomTypes({
     limit: 50 // Lấy nhiều room types để hiển thị
   })
+  
+  // State cho search results from API
+  const [searchResults, setSearchResults] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  
+  // Lấy query params từ URL
+  const searchParams = new URLSearchParams(location.search)
+  const checkIn = searchParams.get('checkIn')
+  const checkOut = searchParams.get('checkOut')
+  const adults = searchParams.get('adults')
+  const children = searchParams.get('children')
+  
+  // Load available rooms khi có search params
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const loadAvailableRooms = async () => {
+        try {
+          setSearchLoading(true)
+          const guests = parseInt(adults || 1) + parseInt(children || 0)
+          const params = {
+            check_in: checkIn,
+            check_out: checkOut,
+            guests: guests,
+            sort: 'price_asc',
+            page: 1,
+            limit: 50
+          }
+          const response = await searchAvailableRooms(params)
+          console.log(response.rooms);
+          
+          const rooms = response?.rooms || []
+          setSearchResults(rooms)
+          
+          if (rooms.length > 0) {
+            message.success(`Tìm thấy ${rooms.length} phòng khả dụng`)
+          } else {
+            message.warning('Không tìm thấy phòng trống trong khoảng thời gian này')
+          }
+        } catch (error) {
+          console.error('Error loading available rooms:', error)
+        } finally {
+          setSearchLoading(false)
+        }
+      }
+      
+      loadAvailableRooms()
+    }
+  }, [checkIn, checkOut, adults, children])
 
   // State cho filters
   const [sortBy, setSortBy] = useState('default')
@@ -47,100 +104,78 @@ function Hotels() {
   const [allowChildren, setAllowChildren] = useState(false)
   const [allowPets, setAllowPets] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
+  
+  // State cho booking summary
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  
+  // State cho modal
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [roomInModal, setRoomInModal] = useState(null)
+  
+  // Determine loading state
+  const loading = checkIn && checkOut ? searchLoading : roomTypesLoading
 
-  // Lấy danh sách categories từ roomTypes
-  const availableCategories = useMemo(() => {
-    const categories = [...new Set(roomTypes.map(rt => rt.category).filter(Boolean))]
-    return categories
-  }, [roomTypes])
-
-  // Lấy min/max price từ roomTypes
-  const priceBounds = useMemo(() => {
-    const prices = roomTypes
-      .map(rt => rt.price_per_night)
-      .filter(price => price && price > 0)
-    
-    if (prices.length === 0) return { min: 0, max: 10000000 }
-    
-    return {
-      min: Math.min(...prices),
-      max: Math.max(...prices)
-    }
-  }, [roomTypes])
+  // Determine data source: searchResults nếu có search params, ngược lại roomTypes
+  const dataSource = checkIn && checkOut ? searchResults : roomTypes.map(room => ({
+    ...room,
+    room_type: {
+      room_type_id: room.room_type_id,
+      room_type_name: room.room_type_name,
+      capacity: room.capacity,
+      images: room.images,
+      amenities: room.amenities,
+      area: room.area
+    },
+    prices: room.price_per_night ? [{
+      price_per_night: room.price_per_night
+    }] : []
+  }))
 
   // Filtered rooms dựa trên các tiêu chí
   const filteredRooms = useMemo(() => {
-    let filtered = [...roomTypes]
-
-    // Lọc theo search keyword
-    if (searchKeyword) {
-      filtered = filtered.filter(room => 
-        room.room_type_name?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        room.description?.toLowerCase().includes(searchKeyword.toLowerCase())
-      )
-    }
-
+    let filtered = [...dataSource]
     // Lọc theo khoảng giá
     filtered = filtered.filter(room => {
-      if (!room.price_per_night) return false
-      return room.price_per_night >= priceRange[0] && room.price_per_night <= priceRange[1]
+      const price = room.room_type?.prices?.[0]?.price_per_night || 
+                    room.prices?.[0]?.price_per_night || 
+                    room.price_per_night
+      if (!price) return false
+      return price >= priceRange[0] && price <= priceRange[1]
     })
 
     // Lọc theo loại phòng (category)
     if (selectedRoomType !== 'all') {
-      filtered = filtered.filter(room => room.category === selectedRoomType)
+      filtered = filtered.filter(room => {
+        const categoryValue = room.room_type?.category || room.category
+        return categoryValue === selectedRoomType
+      })
     }
 
     // Lọc theo capacity (trẻ em)
     if (allowChildren) {
-      filtered = filtered.filter(room => room.capacity && room.capacity > 1)
+      filtered = filtered.filter(room => {
+        const cap = room.room_type?.capacity || room.capacity
+        return cap && cap > 1
+      })
     }
 
     // Lọc theo amenities (thú cưng) - giả sử có amenity "pet-friendly"
     if (allowPets) {
-      filtered = filtered.filter(room => 
-        room.amenities && 
-        Array.isArray(room.amenities) && 
-        room.amenities.some(amenity => 
-          amenity.toLowerCase().includes('pet') || 
-          amenity.toLowerCase().includes('thú cưng')
-        )
-      )
-    }
-
-    // Sắp xếp
-    switch(sortBy) {
-      case 'price-asc':
-        filtered.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0))
-        break
-      case 'price-desc':
-        filtered.sort((a, b) => (b.price_per_night || 0) - (a.price_per_night || 0))
-        break
-      case 'name-asc':
-        filtered.sort((a, b) => (a.room_type_name || '').localeCompare(b.room_type_name || ''))
-        break
-      case 'name-desc':
-        filtered.sort((a, b) => (b.room_type_name || '').localeCompare(a.room_type_name || ''))
-        break
-      case 'capacity-asc':
-        filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0))
-        break
-      case 'capacity-desc':
-        filtered.sort((a, b) => (b.capacity || 0) - (a.capacity || 0))
-        break
-      default:
-        break
+      filtered = filtered.filter(room => {
+        const amenities = room.room_type?.amenities || room.amenities
+        return amenities && 
+               Array.isArray(amenities) && 
+               amenities.some(amenity => 
+                 amenity.toLowerCase().includes('pet') ||
+                 amenity.toLowerCase().includes('thú cưng')
+               )
+      })
     }
 
     return filtered
-  }, [roomTypes, searchKeyword, priceRange, selectedRoomType, allowChildren, allowPets, sortBy])
+  }, [dataSource, searchKeyword, priceRange, selectedRoomType, allowChildren, allowPets, sortBy])
 
   // Reset price range khi có data mới
-  useEffect(() => {
-    if (priceBounds.min !== priceBounds.max) {
-      setPriceRange([priceBounds.min, priceBounds.max])
-    }
-  }, [priceBounds])
 
   const handleSearch = (value) => {
     setSearchKeyword(value)
@@ -150,18 +185,54 @@ function Hotels() {
     setSelectedRoomType(value)
   }
 
-  const handleBookRoom = (roomTypeId) => {
-    navigate(`/rooms/${roomTypeId}`)
+  const handleSelectRoom = (room) => {
+    setSelectedRoom(room)
   }
 
-  const resetFilters = () => {
-    setSortBy('default')
-    setPriceRange([priceBounds.min, priceBounds.max])
-    setSelectedRoomType('all')
-    setAllowChildren(false)
-    setAllowPets(false)
-    setSearchKeyword('')
+  const handleRemoveRoom = () => {
+    setSelectedRoom(null)
   }
+
+  const handleBookNow = () => {
+    if (selectedRoom) {
+      navigate('/booking-confirmation', {
+        state: {
+          roomType: selectedRoom,
+          checkIn: '2025-10-27',
+          checkOut: '2025-10-28',
+          guests: { adults: 2, children: 0 }
+        }
+      })
+    }
+  }
+
+  const handleShowModal = (room) => {
+    setRoomInModal(room)
+    setIsModalVisible(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false)
+    setRoomInModal(null)
+  }
+
+  const handleSelectFromModal = () => {
+    if (roomInModal) {
+      setSelectedRoom(roomInModal)
+      handleCloseModal()
+      // Tự động chuyển đến trang xác nhận
+      navigate('/booking-confirmation', {
+        state: {
+          roomType: roomInModal,
+          checkIn: '2025-10-27',
+          checkOut: '2025-10-28',
+          guests: { adults: 2, children: 0 }
+        }
+      })
+    }
+  }
+
+
 
   return (
     <div className="hotels-page">
@@ -175,131 +246,18 @@ function Hotels() {
           <Breadcrumb.Item>Danh sách phòng</Breadcrumb.Item>
         </Breadcrumb>
 
-        {/* Page Title */}
-        <h1 style={{ textAlign: 'center', color: '#000',fontSize: '2rem', fontWeight: '700' , marginBottom: '2rem' }}>
-          Danh sách phòng khách sạn
-        </h1>
 
-        {/* Main Layout */}
+        {/* Booking Widget */}
+        <div style={{ margin: '10rem 0' }}>
+          <BookingWidget />
+        </div>
+
+        {/* Main Layout - Room List và Booking Summary */}
         <Row gutter={[24, 24]}>
-          {/* Bên phải - Filter (8 col ~ 4 phần) */}
-          <Col xs={24} lg={8}>
-            <Card className="filter-card" title={
-              <Space>
-                <FilterOutlined style={{ color: '#c08a19' }} />
-                <span>Bộ lọc tìm kiếm</span>
-              </Space>
-            }>
-              {/* Tìm kiếm */}
-              <div className="filter-section">
-                <Text strong className="filter-label">Tìm kiếm</Text>
-                <Search
-                  placeholder="Tìm theo tên phòng..."
-                  allowClear
-                  enterButton={<SearchOutlined />}
-                  size="large"
-                  onSearch={handleSearch}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-              </div>
-
-              <Divider />
-
-              {/* Lọc theo giá */}
-              <div className="filter-section">
-                <Text strong className="filter-label">Khoảng giá</Text>
-                <Slider
-                  range
-                  min={priceBounds.min}
-                  max={priceBounds.max}
-                  step={100000}
-                  value={priceRange}
-                  onChange={setPriceRange}
-                  tooltip={{
-                    formatter: (value) => formatPrice(value)
-                  }}
-                />
-                <div className="price-range-display">
-                  <Text>{formatPrice(priceRange[0])}</Text>
-                  <Text>{formatPrice(priceRange[1])}</Text>
-                </div>
-              </div>
-
-              <Divider />
-
-              {/* Lọc theo loại phòng */}
-              <div className="filter-section">
-                <Text strong className="filter-label">Loại phòng</Text>
-                <Select
-                  value={selectedRoomType}
-                  onChange={handleRoomTypeChange}
-                  style={{ width: '100%' }}
-                  size="large"
-                >
-                  <Option value="all">Tất cả</Option>
-                  {availableCategories.map(cat => (
-                    <Option key={cat} value={cat}>{cat}</Option>
-                  ))}
-                </Select>
-              </div>
-
-              <Divider />
-
-              {/* Cho phép trẻ em */}
-              <div className="filter-section">
-                <Space>
-                  <Switch checked={allowChildren} onChange={setAllowChildren} />
-                  <Text strong>Phù hợp cho gia đình (2+ người)</Text>
-                </Space>
-              </div>
-
-              <Divider />
-
-              {/* Cho phép thú cưng */}
-              <div className="filter-section">
-                <Space>
-                  <Switch checked={allowPets} onChange={setAllowPets} />
-                  <Text strong>Cho phép thú cưng</Text>
-                </Space>
-              </div>
-
-              <Divider />
-
-              {/* Nút reset */}
-              <Button 
-                block 
-                size="large"
-                onClick={resetFilters}
-              >
-                Đặt lại bộ lọc
-              </Button>
-            </Card>
-          </Col>
-
-          {/* Bên trái - Danh sách phòng (16 col ~ 6 phần) */}
+          {/* Danh sách phòng - Cột trái */}
           <Col xs={24} lg={16}>
             {/* Sort Section */}
-            <Card className="sort-card">
-              <Space align="center" size="middle">
-                <SortAscendingOutlined style={{ fontSize: '20px', color: '#c08a19' }} />
-                <Text strong>Sắp xếp theo:</Text>
-                <Select
-                  value={sortBy}
-                  onChange={setSortBy}
-                  style={{ width: 200 }}
-                  size="large"
-                >
-                  <Option value="default">Mặc định</Option>
-                  <Option value="price-asc">Giá tăng dần</Option>
-                  <Option value="price-desc">Giá giảm dần</Option>
-                  <Option value="name-asc">Tên A → Z</Option>
-                  <Option value="name-desc">Tên Z → A</Option>
-                  <Option value="capacity-asc">Sức chứa tăng dần</Option>
-                  <Option value="capacity-desc">Sức chứa giảm dần</Option>
-                </Select>
-                <Text type="secondary">({filteredRooms.length} phòng)</Text>
-              </Space>
-            </Card>
+          
 
             {/* Room List */}
             <div className="rooms-list">
@@ -326,80 +284,100 @@ function Hotels() {
                 </div>
               ) : (
                 filteredRooms.map(room => (
-                  <Card key={room.room_type_id} className="room-card" hoverable>
-                    <Row gutter={16}>
-                      <Col xs={24} sm={8} md={6}>
-                        <div className="room-image">
+                  <Card key={room.room_type_id} className="room-card-new" hoverable>
+                    <Row gutter={24} align="stretch">
+                      <Col xs={24} sm={24} md={8}>
+                        <div className="room-image-new">
                           {room.images && room.images.length > 0 ? (
                             <img 
                               alt={room.room_type_name} 
                               src={room.images[0]} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '12px' }}
                             />
                           ) : (
                             <div style={{ 
                               width: '100%', 
-                              height: '200px', 
+                              height: '300px', 
                               background: '#f0f0f0', 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'center',
-                              color: '#999'
+                              color: '#999',
+                              borderRadius: '12px'
                             }}>
                               Không có hình ảnh
                             </div>
                           )}
                         </div>
                       </Col>
-                      <Col xs={24} sm={16} md={18}>
-                        <div className="room-info">
-                          <Title level={4} className="room-name">{room.room_type_name}</Title>
-                          <Space size="small" wrap>
-                            <Tag color="blue">{room.category}</Tag>
-                            <Tag icon={<UserOutlined />}>{room.capacity} người</Tag>
-                            {room.area && <Tag color="green">{room.area}m²</Tag>}
-                            {room.amenities && Array.isArray(room.amenities) && room.amenities.some(amenity => 
-                              amenity.toLowerCase().includes('pet') || amenity.toLowerCase().includes('thú cưng')
-                            ) && <Tag color="orange">Cho phép thú cưng</Tag>}
-                          </Space>
-                          <Text className="room-description">
-                            {room.description || 'Phòng tiện nghi với đầy đủ trang thiết bị hiện đại'}
-                          </Text>
+                      <Col xs={24} sm={24} md={16}>
+                        <div className="room-info-new">
+                          <Title level={3} className="room-name-new">{room.room_type_name}</Title>
                           
-                          {/* Amenities */}
+                          {/* Key Details */}
+                          <div className="key-details" style={{ marginTop: '12px', marginBottom: '16px' }}>
+                            <Space size="middle" wrap>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <UserOutlined style={{ color: '#6b7280' }} />
+                                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.capacity || 2} người</Text>
+                              </span>
+                              
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <ExpandOutlined style={{ color: '#6b7280' }} />
+                                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.area || 0} m²</Text>
+                              </span>
+                            </Space>
+                          </div>
+
+                          {/* Amenities List */}
                           {room.amenities && Array.isArray(room.amenities) && room.amenities.length > 0 && (
-                            <div style={{ marginTop: '8px' }}>
-                              <Space size={4} wrap>
-                                {room.amenities.slice(0, 4).map((amenity, index) => (
-                                  <Tag key={index} size="small">{amenity}</Tag>
+                            <div className="amenities-list" style={{ marginBottom: '20px' }}>
+                              <ul style={{ margin: 0, padding: '0 0 0 20px', fontSize: '14px', color: '#6b7280', listStyleType: 'none' }}>
+                                {room.amenities.slice(0, 6).map((amenity, index) => (
+                                  <li key={index} style={{ marginBottom: '4px' }}>{amenity}</li>
                                 ))}
-                                {room.amenities.length > 4 && (
-                                  <Tag size="small">+{room.amenities.length - 4} khác</Tag>
-                                )}
-                              </Space>
+                              </ul>
+                              {room.amenities.length > 6 && (
+                                <Text 
+                                  style={{ fontSize: '14px', color: '#c08a19', cursor: 'pointer' }}
+                                  onClick={() => handleShowModal(room)}
+                                >
+                                  Xem thêm
+                                </Text>
+                              )}
                             </div>
                           )}
 
-                          <div className="room-footer">
-                            <div className="room-rating">
-                              <StarOutlined style={{ color: '#faad14' }} />
-                              <Text strong>4.5</Text>
+                          {/* Rate Information */}
+                          <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                            <Text strong style={{ fontSize: '14px' }}>Giá tiêu chuẩn</Text>
+                            <div style={{ marginTop: '8px', marginBottom: '16px' }}>
+                              <Space size="small" style={{ color: '#059669', fontSize: '14px' }}>
+                                <Text style={{ color: '#059669' }}>✓ Hủy miễn phí!</Text>
+                                <Text style={{ color: '#059669' }}>✓ Đặt ngay, trả sau</Text>
+                              </Space>
+                              <div>
+                                <Text type="secondary" style={{ fontSize: '14px' }}>Xem thêm</Text>
+                              </div>
                             </div>
-                            <div className="room-price-action">
-                              <div className="room-price">
-                                <Text type="secondary" style={{ fontSize: '12px' }}>Từ</Text>
-                                <Text strong style={{ color: '#c08a19', fontSize: '20px' }}>
+
+                            {/* Price and Select Button */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <Text strong style={{ fontSize: '24px', color: '#c08a19' }}>
                                   {room.price_per_night ? formatPrice(room.price_per_night) : 'Liên hệ'}
                                 </Text>
-                                <Text type="secondary" style={{ fontSize: '12px' }}>/đêm</Text>
+                                <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+                                  Chi phí cho 1 đêm, 2 khách
+                                </Text>
                               </div>
                               <Button 
                                 type="primary" 
                                 size="large" 
-                                className="book-btn"
-                                onClick={() => handleBookRoom(room.room_type_id)}
+                                className="select-btn"
+                                onClick={() => handleSelectRoom(room)}
                               >
-                                Đặt phòng
+                                Chọn
                               </Button>
                             </div>
                           </div>
@@ -411,8 +389,334 @@ function Hotels() {
               )}
             </div>
           </Col>
+
+          {/* Cột phải - Booking Summary */}
+          <Col xs={24} lg={8}>
+            <Card className="booking-summary-card">
+              <div className="summary-header">
+                <Title level={3} style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>
+                  {selectedRoom ? formatPrice(selectedRoom.price_per_night) : 'VND 0'} tổng cộng
+                </Title>
+              </div>
+
+              <Divider />
+
+              <div className="summary-dates">
+                <Text strong style={{ fontSize: '14px' }}>T2, 27 Th10 25 - T3, 28 Th10 25</Text>
+                <Text type="secondary" style={{ marginLeft: '8px', fontSize: '14px' }}>1 đêm</Text>
+              </div>
+              <div className="summary-guests" style={{ marginTop: '8px' }}>
+                <Text style={{ fontSize: '14px', color: '#6b7280' }}>1 phòng, 2 khách</Text>
+              </div>
+
+              <Divider />
+
+              <div className="summary-room-details">
+                {selectedRoom ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <Text strong style={{ fontSize: '14px' }}>{selectedRoom.room_type_name} - Giá tiêu chuẩn</Text>
+                        <div style={{ marginTop: '4px' }}>
+                          <Text style={{ fontSize: '14px', color: '#6b7280' }}>2 khách 1 đêm</Text>
+                        </div>
+                        <div style={{ marginTop: '4px' }}>
+                          <Text style={{ color: '#059669', fontSize: '14px' }}>Hủy miễn phí!</Text>
+                        </div>
+                      </div>
+                      <Button 
+                        type="text" 
+                        icon={<span>🗑️</span>}
+                        onClick={handleRemoveRoom}
+                        style={{ marginLeft: '8px' }}
+                      />
+                    </div>
+                    <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                      <Text strong style={{ fontSize: '18px', color: '#1f2937' }}>
+                        {formatPrice(selectedRoom.price_per_night)}
+                      </Text>
+                    </div>
+                  </>
+                ) : (
+                  <Empty description="Chưa chọn phòng" />
+                )}
+              </div>
+
+              <Divider />
+
+              <div className="summary-total">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text strong style={{ fontSize: '16px' }}>Tổng cộng</Text>
+                  <Text strong style={{ fontSize: '18px', color: '#1f2937' }}>
+                    {selectedRoom ? formatPrice(selectedRoom.price_per_night) : 'VND 0'}
+                  </Text>
+                </div>
+                <Text type="secondary" style={{ fontSize: '13px' }}>Bao gồm thuế + phí</Text>
+              </div>
+
+              <Divider />
+
+              {selectedRoom && (
+                <div className="summary-payment-info" style={{ 
+                  background: '#ecfdf5', 
+                  padding: '16px', 
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <Text strong style={{ color: '#059669', fontSize: '14px' }}>Đặt ngay, trả sau!</Text>
+                  <div style={{ marginTop: '8px' }}>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>
+                      Số dư còn lại: {formatPrice(selectedRoom.price_per_night)}
+                    </Text>
+                  </div>
+                </div>
+              )}
+
+              <Button 
+                type="primary" 
+                size="large" 
+                block
+                className="book-now-btn"
+                onClick={handleBookNow}
+                disabled={!selectedRoom}
+              >
+                Đặt phòng
+              </Button>
+            </Card>
+          </Col>
         </Row>
       </div>
+
+      {/* Modal Chi tiết phòng */}
+      <Modal
+        open={isModalVisible}
+        onCancel={handleCloseModal}
+        footer={null}
+        width={1000}
+        className="room-detail-modal"
+        closeIcon={<CloseOutlined />}
+      >
+        {roomInModal && (
+          <div className="modal-content">
+            {/* Header */}
+            <div className="modal-header">
+              <Title level={3} style={{ margin: 0 }}>
+                {roomInModal.room_type_name} - Giá tiêu chuẩn
+              </Title>
+            </div>
+
+            <Divider />
+
+            {/* Content - 2 Cột */}
+            <Row gutter={24}>
+              {/* Cột trái - Chi tiết */}
+              <Col xs={24} md={14}>
+                {/* Thông tin nổi bật */}
+                <div className="highlight-info">
+                  <Space size="middle" direction="vertical" style={{ width: '100%' }}>
+                    <div>
+                      <Text strong style={{ color: '#059669', fontSize: '14px' }}>
+                        ✓ Hủy miễn phí!
+                      </Text>
+                    </div>
+                    <div>
+                      <Text strong style={{ color: '#059669', fontSize: '14px' }}>
+                        ✓ Đặt ngay, trả sau
+                      </Text>
+                    </div>
+                    <div>
+                      <Text style={{ fontSize: '14px', color: '#6b7280' }}>
+                        Phòng bao gồm bữa sáng và tầm nhìn thành phố
+                      </Text>
+                    </div>
+                  </Space>
+                </div>
+
+                <Divider />
+
+                {/* Chính sách hủy */}
+                <div>
+                  <Title level={5}>Chính sách hủy của khách sạn</Title>
+                  <Text style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.8' }}>
+                    Tất cả các đặt phòng phải được đảm bảo bằng thẻ tín dụng và sẽ được xác minh sau khi đặt phòng. 
+                    Bất kỳ hủy bỏ nào nhận được trong vòng 2 ngày trước ngày đến sẽ chịu phí 100%. 
+                    Việc không đến khách sạn hoặc cơ sở lưu trú sẽ được coi là không đến và sẽ chịu phí 100% (chính sách của khách sạn).
+                  </Text>
+                </div>
+
+                <Divider />
+
+                {/* Tính năng phòng */}
+                <div>
+                  <Title level={5}>Tính năng phòng</Title>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#6b7280' }}>
+                    <li>Giường cỡ King</li>
+                    <li>Truy cập WIFI miễn phí</li>
+                    <li>Bồn tắm và vòi sen</li>
+                    <li>TV LED</li>
+                    <li>Quầy mini bar & máy pha cà phê và trà</li>
+                    <li>Két an toàn</li>
+                    <li>Hồ bơi vô cực miễn phí</li>
+                    <li>Trả phòng muộn 13:00 (tùy thuộc vào tình trạng phòng)</li>
+                  </ul>
+                </div>
+
+                <Divider />
+
+                {/* Thông số kỹ thuật */}
+                <div>
+                  <Title level={5}>Thông số phòng</Title>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={12}>
+                      <Space size="small">
+                        <UserOutlined style={{ color: '#6b7280' }} />
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Sức chứa tối đa</Text>
+                          <div><Text strong>Số người: {roomInModal.capacity || 2}</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={12}>
+                      <Space size="small">
+                        {/* <BedOutlined style={{ color: '#6b7280' }} /> */}
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Cấu hình giường</Text>
+                          <div><Text strong>1 Giường King</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={12}>
+                      <Space size="small">
+                        <ExpandOutlined style={{ color: '#6b7280' }} />
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Diện tích phòng</Text>
+                          <div><Text strong>{roomInModal.area || 28}m²</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={12}>
+                      <Space size="small">
+                        <Text style={{ color: '#6b7280', fontSize: '18px' }}>🛁</Text>
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Số phòng tắm</Text>
+                          <div><Text strong>1</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={12}>
+                      <Space size="small">
+                        <EyeOutlined style={{ color: '#6b7280' }} />
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Tầm nhìn</Text>
+                          <div><Text strong>Tầm nhìn thành phố</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={12}>
+                      <Space size="small">
+                        {/* <SmokeOutlined style={{ color: '#6b7280' }} /> */}
+                        <div>
+                          <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Chính sách hút thuốc</Text>
+                          <div><Text strong>Không hút thuốc</Text></div>
+                        </div>
+                      </Space>
+                    </Col>
+                  </Row>
+                </div>
+
+                <Divider />
+
+                {/* Amenities */}
+                <div>
+                  <Title level={5}>Tiện nghi</Title>
+                  <Text style={{ fontSize: '14px', color: '#6b7280' }}>
+                    {roomInModal.amenities && Array.isArray(roomInModal.amenities) 
+                      ? roomInModal.amenities.join(', ')
+                      : 'Điều hòa, Nôi, Ban công, Truyền hình cáp, Dép đi trong nhà, Áo choàng tắm, TV cáp/vệ tinh, Đầu báo khói, Vòi sen, Máy sấy tóc, TV, Tủ quần áo trong phòng, Xà phòng tắm, Dầu gội, Chậu rửa vệ sinh, Mini Bar, Điện thoại, Khăn trải giường và Khăn tắm, Két an toàn trong phòng, Vòi sen trên bồn tắm, Đồ dùng vệ sinh cá nhân, Bàn làm việc, Khu vực vệ sinh riêng, Bồn tắm, Phòng tắm riêng'
+                    }
+                  </Text>
+                </div>
+              </Col>
+
+              {/* Cột phải - Hình ảnh và giá */}
+              <Col xs={24} md={10}>
+                <div className="modal-image-section">
+                  {roomInModal.images && roomInModal.images.length > 0 ? (
+                    <Carousel arrows style={{ marginBottom: '24px' }}>
+                      {roomInModal.images.map((img, index) => (
+                        <div key={index}>
+                          <img 
+                            src={img} 
+                            alt={`${roomInModal.room_type_name} ${index + 1}`}
+                            style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '12px' }}
+                          />
+                        </div>
+                      ))}
+                    </Carousel>
+                  ) : (
+                    <div style={{ 
+                      width: '100%', 
+                      height: '300px', 
+                      background: '#f0f0f0', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      color: '#999',
+                      borderRadius: '12px'
+                    }}>
+                      Không có hình ảnh
+                    </div>
+                  )}
+                </div>
+
+                <Divider />
+
+                {/* Chi tiết giá */}
+                <div className="price-breakdown">
+                  <div style={{ marginBottom: '12px' }}>
+                    <Text style={{ fontSize: '14px', color: '#6b7280' }}>T2, 27 Th10</Text>
+                    <Text strong style={{ fontSize: '18px', color: '#1f2937', marginLeft: '8px' }}>
+                      {formatPrice(roomInModal.price_per_night)}
+                    </Text>
+                  </div>
+                  <Text style={{ fontSize: '13px', color: '#9ca3af' }}>Bao gồm thuế + phí</Text>
+                  <Divider style={{ margin: '12px 0' }} />
+                  <div>
+                    <Text style={{ fontSize: '14px', color: '#6b7280' }}>Tổng cộng cho 1 đêm</Text>
+                    <Text strong style={{ fontSize: '18px', color: '#1f2937', marginLeft: '8px' }}>
+                      {formatPrice(roomInModal.price_per_night)}
+                    </Text>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+
+            {/* Footer cố định */}
+            <div className="modal-footer-fixed">
+              <Row justify="space-between" align="middle">
+                <Col>
+                  <Text strong style={{ fontSize: '24px', color: '#1f2937' }}>
+                    {formatPrice(roomInModal.price_per_night)}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+                    Chi phí cho 1 đêm, 2 khách
+                  </Text>
+                </Col>
+                <Col>
+                  <Button 
+                    type="primary" 
+                    size="large"
+                    className="select-btn"
+                    onClick={handleSelectFromModal}
+                  >
+                    Chọn
+                  </Button>
+                </Col>
+              </Row>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

@@ -18,7 +18,8 @@ import {
   Spin,
   Empty,
   Tag,
-  Space
+  Space,
+  message
 } from 'antd'
 import {
   UserOutlined,
@@ -36,7 +37,6 @@ import dayjs from 'dayjs'
 import { useRoomTypeDetail } from '../../hooks/roomtype'
 import formatPrice from '../../utils/formatPrice'
 import './RoomDetail.css'
-
 const { Title, Text, Paragraph } = Typography
 const { useBreakpoint } = Grid
 
@@ -45,11 +45,9 @@ function RoomDetail() {
   const navigate = useNavigate()
   const screens = useBreakpoint()
   const [bookingForm] = Form.useForm()
-  const [bookingLoading, setBookingLoading] = useState(false)
-
   // Sử dụng hook để lấy thông tin room type
   const { data: roomData, loading, error, fetchDetail } = useRoomTypeDetail(id)
-
+ 
   useEffect(() => {
     if (id) {
       fetchDetail()
@@ -386,11 +384,37 @@ function RoomDetail() {
                   </Col>
                   <Col span={12}>
                     <Button 
+                      className='book-now-button'
                       type="primary"
-                      block 
+                      block
                       size={screens.xs ? 'middle' : 'large'}
-                      className="book-now-button"
-                      loading={bookingLoading}
+                      onClick={() => {
+                        const values = bookingForm.getFieldsValue()
+                        if (!values.fullName || !values.phone) {
+                          // alert('Vui lòng điền đầy đủ thông tin!')
+                          message.error('Vui lòng điền đầy đủ thông tin để tiến hành đặt phòng !')
+                          return
+                        }
+                        
+                        navigate('/booking-confirmation', {
+                          state: {
+                            bookingInfo: {
+                              roomType: roomData,
+                              checkIn: values.checkIn?.format('YYYY-MM-DD'),
+                              checkOut: values.checkOut?.format('YYYY-MM-DD'),
+                              guests: {
+                                adults: values.adults || 1,
+                                children: values.children || 0
+                              },
+                              customerInfo: {
+                                fullName: values.fullName,
+                                phone: values.phone,
+                                // email: values.email
+                              }
+                            }
+                          }
+                        })
+                      }}
                     >
                       ĐẶT PHÒNG
                     </Button>
@@ -520,7 +544,9 @@ function RoomDetail() {
 
                     <div className="room-list-footer">
                       <span className="room-list-price">{room.price.toLocaleString('vi-VN')}đ/Đêm</span>
-                      <button className="room-list-book-btn">ĐẶT PHÒNG</button>
+                      <button className="room-list-book-btn"
+                      onClick={() => handleOpenBookingModal(room)}
+                      >ĐẶT PHÒNG</button>
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   TagOutlined, ReloadOutlined, ExclamationCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
-  PercentageOutlined, DollarOutlined
+  PercentageOutlined, DollarOutlined, GiftOutlined
 } from '@ant-design/icons'
 import { 
   getAllPromotions, createPromotion, updatePromotion, deletePromotion
@@ -26,6 +26,7 @@ const PromotionManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingPromotion, setEditingPromotion] = useState(null)
   const [searchText, setSearchText] = useState('')
+  const [statusFilter, setStatusFilter] = useState(null)
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -42,15 +43,37 @@ const PromotionManagement = () => {
         limit: pageSize
       }
       const response = await getAllPromotions(params)
-      setPromotions(response.promotions || [])
+      // Handle different response structures
+      let promotions = []
+      let total = 0
+      if (response) {
+        if (Array.isArray(response)) {
+          // If response is directly an array
+          promotions = response
+          total = response.length
+        } else if (response.promotions) {
+          // If response has promotions property
+          promotions = response.promotions
+          total = response.total || response.promotions.length
+        } else if (response.data) {
+          // If response has data property
+          promotions = response.data.promotions || response.data
+          total = response.data.total || response.data.length
+        }
+      }
+      
+      
+      setPromotions(promotions)
       setPagination({
         current: page,
         pageSize,
-        total: response.total || 0
+        total: total
       })
     } catch (error) {
       console.error('Error fetching promotions:', error)
-      message.error('Không thể tải danh sách khuyến mãi')
+      console.error('Error status:', error.status)
+      console.error('Error data:', error.data)
+      message.error(`Không thể tải danh sách khuyến mãi: ${error.message || 'Lỗi không xác định'}`)
     } finally {
       setLoading(false)
     }
@@ -62,37 +85,50 @@ const PromotionManagement = () => {
 
   // Filter promotions based on search
   const filteredPromotions = useMemo(() => {
-    if (!searchText) return promotions
-    
-    const searchLower = searchText.toLowerCase()
-    return promotions.filter(promotion => {
-      const code = promotion.promotion_code?.toLowerCase() || ''
-      const name = promotion.name?.toLowerCase() || ''
-      const description = promotion.description?.toLowerCase() || ''
-      
-      return code.includes(searchLower) ||
-             name.includes(searchLower) ||
-             description.includes(searchLower)
-    })
-  }, [promotions, searchText])
+    let filtered = promotions
+
+    if (searchText) {
+      const searchLower = searchText.toLowerCase()
+      filtered = filtered.filter(promotion => {
+        const name = promotion.name?.toLowerCase() || ''
+        const description = promotion.description?.toLowerCase() || ''
+        const promotion_code = promotion.promotion_code?.toLowerCase() || ''
+        
+        return name.includes(searchLower) ||
+               description.includes(searchLower) ||
+               promotion_code.includes(searchLower)
+      })
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(promotion => promotion.status === statusFilter)
+    }
+
+    return filtered
+  }, [promotions, searchText, statusFilter])
 
   // Handle create/update promotion
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
       
+      // Map frontend field names to backend field names
       const promotionData = {
-        promotion_code: values.promotion_code,
         name: values.name,
         description: values.description,
+        promotion_code: values.code, // Backend expects 'promotion_code', not 'code'
         discount_type: values.discount_type,
-        amount: values.amount,
-        start_date: values.date_range[0].format('YYYY-MM-DD HH:mm:ss'),
-        end_date: values.date_range[1].format('YYYY-MM-DD HH:mm:ss'),
-        status: values.status,
-        max_usage: values.max_usage,
-        min_order_amount: values.min_order_amount
+        amount: values.discount_value, // Backend expects 'amount', not 'discount_value'
+        start_date: values.date_range[0].format('YYYY-MM-DD'),
+        end_date: values.date_range[1].format('YYYY-MM-DD'),
+        quantity: values.usage_limit || 0, // Backend expects 'quantity', not 'usage_limit'
+        status: values.status
       }
+      
+      // Remove fields that backend doesn't support
+      // min_order_amount and max_discount_amount are not in backend model
+
+      console.log('Sending promotion data:', promotionData)
 
       if (editingPromotion) {
         await updatePromotion(editingPromotion.promotion_id, promotionData)
@@ -108,7 +144,31 @@ const PromotionManagement = () => {
       fetchPromotions(pagination.current, pagination.pageSize)
     } catch (error) {
       console.error('Error saving promotion:', error)
-      const errMsg = error?.message || (editingPromotion ? 'Không thể cập nhật khuyến mãi!' : 'Không thể tạo khuyến mãi!')
+      console.error('Error details:', error.response?.data)
+      console.error('Error status:', error.status)
+      
+      let errMsg = 'Có lỗi xảy ra!'
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data
+        if (errorData.message) {
+          errMsg = errorData.message
+        } else if (errorData.error) {
+          errMsg = errorData.error
+        }
+      } else if (error?.message) {
+        errMsg = error.message
+      }
+      
+      // Specific error handling
+      if (errMsg.includes('Unauthorized')) {
+        errMsg = 'Bạn không có quyền thực hiện thao tác này!'
+      } else if (errMsg.includes('Token')) {
+        errMsg = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
+      } else if (errMsg.includes('duplicate') || errMsg.includes('unique')) {
+        errMsg = 'Mã khuyến mãi đã tồn tại!'
+      }
+      
       message.error(errMsg)
     }
   }
@@ -124,18 +184,19 @@ const PromotionManagement = () => {
   const handleEdit = (record) => {
     setEditingPromotion(record)
     form.setFieldsValue({
-      promotion_code: record.promotion_code,
       name: record.name,
       description: record.description,
+      code: record.promotion_code, // Map backend field to frontend field
       discount_type: record.discount_type,
-      amount: record.amount,
+      discount_value: record.amount, // Map backend field to frontend field
+      min_order_amount: record.min_order_amount || null,
+      max_discount_amount: record.max_discount_amount || null,
+      usage_limit: record.quantity, // Map backend field to frontend field
       date_range: [
         dayjs(record.start_date),
         dayjs(record.end_date)
       ],
-      status: record.status,
-      max_usage: record.max_usage,
-      min_order_amount: record.min_order_amount
+      status: record.status
     })
     setIsModalVisible(true)
   }
@@ -148,7 +209,29 @@ const PromotionManagement = () => {
       fetchPromotions(pagination.current, pagination.pageSize)
     } catch (error) {
       console.error('Error deleting promotion:', error)
-      message.error('Không thể xóa khuyến mãi!')
+      console.error('Error details:', error.response?.data)
+      
+      let errMsg = 'Không thể xóa khuyến mãi!'
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data
+        if (errorData.message) {
+          errMsg = errorData.message
+        } else if (errorData.error) {
+          errMsg = errorData.error
+        }
+      }
+      
+      // Specific error handling
+      if (errMsg.includes('Unauthorized')) {
+        errMsg = 'Bạn không có quyền xóa khuyến mãi này!'
+      } else if (errMsg.includes('Token')) {
+        errMsg = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
+      } else if (errMsg.includes('constraint') || errMsg.includes('foreign key')) {
+        errMsg = 'Không thể xóa khuyến mãi đang được sử dụng!'
+      }
+      
+      message.error(errMsg)
     }
   }
 
@@ -157,12 +240,17 @@ const PromotionManagement = () => {
     fetchPromotions(paginationInfo.current, paginationInfo.pageSize)
   }
 
+  // Handle status filter change
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status)
+  }
+
   // Get status tag
   const getStatusTag = (status) => {
     const statusConfig = {
-      active: { color: 'success', icon: <CheckCircleOutlined />, text: 'Hoạt động' },
-      inactive: { color: 'default', icon: <ClockCircleOutlined />, text: 'Tạm dừng' },
-      expired: { color: 'error', icon: <CloseCircleOutlined />, text: 'Hết hạn' }
+      active: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đang hoạt động' },
+      inactive: { color: 'default', icon: <CloseCircleOutlined />, text: 'Không hoạt động' },
+      expired: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Hết hạn' }
     }
     const config = statusConfig[status] || statusConfig.inactive
     return (
@@ -172,24 +260,13 @@ const PromotionManagement = () => {
     )
   }
 
-  // Get discount type tag
-  const getDiscountTypeTag = (type, amount) => {
-    const isPercentage = type === 'percentage'
-    return (
-      <Tag color={isPercentage ? 'blue' : 'green'} icon={isPercentage ? <PercentageOutlined /> : <DollarOutlined />}>
-        {isPercentage ? `${amount}%` : `${amount.toLocaleString('vi-VN')} VNĐ`}
-      </Tag>
-    )
-  }
-
   // Calculate statistics
   const statistics = useMemo(() => {
-    const now = dayjs()
     const stats = {
       total: promotions.length,
-      active: promotions.filter(p => p.status === 'active' && dayjs(p.end_date).isAfter(now)).length,
+      active: promotions.filter(p => p.status === 'active').length,
       inactive: promotions.filter(p => p.status === 'inactive').length,
-      expired: promotions.filter(p => dayjs(p.end_date).isBefore(now)).length
+      expired: promotions.filter(p => p.status === 'expired').length
     }
     return stats
   }, [promotions])
@@ -205,74 +282,64 @@ const PromotionManagement = () => {
       sorter: (a, b) => a.promotion_id - b.promotion_id
     },
     {
-      title: 'Mã khuyến mãi',
-      dataIndex: 'promotion_code',
-      key: 'promotion_code',
-      width: 150,
-      render: (code) => (
-        <div className="promotion-code-display">
-          <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
-            {code}
-          </Text>
-        </div>
-      ),
-      sorter: (a, b) => a.promotion_code.localeCompare(b.promotion_code)
-    },
-    {
       title: 'Tên khuyến mãi',
       dataIndex: 'name',
       key: 'name',
       width: 200,
       render: (name) => (
         <Tooltip title={name}>
-          <Text strong>{name}</Text>
+          <Text strong style={{ fontSize: '14px' }}>
+            {name}
+          </Text>
         </Tooltip>
+      ),
+      ellipsis: true
+    },
+    {
+      title: 'Mã khuyến mãi',
+      dataIndex: 'promotion_code',
+      key: 'code',
+      width: 120,
+      render: (code) => (
+        <div className="promotion-code-display">
+          <Text code style={{ fontSize: '12px', color: '#1890ff' }}>
+            {code}
+          </Text>
+        </div>
       )
     },
     {
       title: 'Loại giảm giá',
       dataIndex: 'discount_type',
       key: 'discount_type',
-      width: 150,
-      align: 'center',
-      render: (type, record) => getDiscountTypeTag(type, record.amount),
-      filters: [
-        { text: 'Phần trăm', value: 'percentage' },
-        { text: 'Số tiền', value: 'fixed' }
-      ],
-      onFilter: (value, record) => record.discount_type === value
-    },
-    {
-      title: 'Giá trị',
-      dataIndex: 'amount',
-      key: 'amount',
       width: 120,
       align: 'center',
-      render: (amount, record) => (
-        <Text strong style={{ color: '#52c41a' }}>
-          {record.discount_type === 'percentage' 
-            ? `${amount}%` 
-            : `${amount.toLocaleString('vi-VN')} VNĐ`
-          }
-        </Text>
-      ),
-      sorter: (a, b) => a.amount - b.amount
+      render: (type) => (
+        <Tag color={type === 'percentage' ? 'blue' : 'green'} icon={type === 'percentage' ? <PercentageOutlined /> : <DollarOutlined />}>
+          {type === 'percentage' ? 'Phần trăm' : 'Số tiền'}
+        </Tag>
+      )
     },
     {
-      title: 'Thời gian',
-      dataIndex: 'start_date',
-      key: 'date_range',
-      width: 200,
-      render: (_, record) => (
-        <div className="date-range-display">
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Từ: {dayjs(record.start_date).format('DD/MM/YYYY')}
-          </Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            Đến: {dayjs(record.end_date).format('DD/MM/YYYY')}
-          </Text>
-        </div>
+      title: 'Giá trị giảm',
+      dataIndex: 'amount',
+      key: 'discount_value',
+      width: 120,
+      align: 'center',
+      render: (value, record) => (
+        <Text strong style={{ color: '#52c41a' }}>
+          {record.discount_type === 'percentage' ? `${value}%` : `${value.toLocaleString()}đ`}
+        </Text>
+      )
+    },
+    {
+      title: 'Đơn tối thiểu',
+      dataIndex: 'min_order_amount',
+      key: 'min_order_amount',
+      width: 120,
+      align: 'center',
+      render: (amount) => (
+        <Text>{amount ? `${amount.toLocaleString()}đ` : 'Không giới hạn'}</Text>
       )
     },
     {
@@ -281,44 +348,29 @@ const PromotionManagement = () => {
       key: 'status',
       width: 120,
       align: 'center',
-      render: (status, record) => {
-        const now = dayjs()
-        const isExpired = dayjs(record.end_date).isBefore(now)
-        const actualStatus = isExpired ? 'expired' : status
-        return getStatusTag(actualStatus)
-      },
+      render: (status) => getStatusTag(status),
       filters: [
-        { text: 'Hoạt động', value: 'active' },
-        { text: 'Tạm dừng', value: 'inactive' },
+        { text: 'Đang hoạt động', value: 'active' },
+        { text: 'Không hoạt động', value: 'inactive' },
         { text: 'Hết hạn', value: 'expired' }
       ],
-      onFilter: (value, record) => {
-        const now = dayjs()
-        const isExpired = dayjs(record.end_date).isBefore(now)
-        if (value === 'expired') return isExpired
-        return !isExpired && record.status === value
-      }
+      onFilter: (value, record) => record.status === value
     },
     {
-      title: 'Số lần sử dụng',
-      dataIndex: 'usage_count',
-      key: 'usage_count',
+      title: 'Ngày bắt đầu',
+      dataIndex: 'start_date',
+      key: 'start_date',
       width: 120,
-      align: 'center',
-      render: (count, record) => (
-        <div className="usage-display">
-          <Badge 
-            count={count || 0} 
-            style={{ backgroundColor: '#1890ff' }} 
-            showZero 
-          />
-          {record.max_usage && (
-            <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
-              / {record.max_usage}
-            </Text>
-          )}
-        </div>
-      )
+      render: (date) => dayjs(date).format('DD/MM/YYYY'),
+      sorter: (a, b) => new Date(a.start_date) - new Date(b.start_date)
+    },
+    {
+      title: 'Ngày kết thúc',
+      dataIndex: 'end_date',
+      key: 'end_date',
+      width: 120,
+      render: (date) => dayjs(date).format('DD/MM/YYYY'),
+      sorter: (a, b) => new Date(a.end_date) - new Date(b.end_date)
     },
     {
       title: 'Hành động',
@@ -363,7 +415,7 @@ const PromotionManagement = () => {
       {/* Header */}
       <div className="promotion-header">
         <h2 className="page-title">
-          <TagOutlined /> Quản lý khuyến mãi
+          <GiftOutlined /> Quản lý khuyến mãi
         </h2>
         <Space>
           <Button
@@ -391,7 +443,7 @@ const PromotionManagement = () => {
             <Statistic
               title="Tổng khuyến mãi"
               value={statistics.total}
-              prefix={<TagOutlined />}
+              prefix={<GiftOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
@@ -409,9 +461,9 @@ const PromotionManagement = () => {
         <Col xs={12} sm={12} md={6}>
           <Card className="stat-card">
             <Statistic
-              title="Tạm dừng"
+              title="Không hoạt động"
               value={statistics.inactive}
-              prefix={<ClockCircleOutlined />}
+              prefix={<CloseCircleOutlined />}
               valueStyle={{ color: '#faad14' }}
             />
           </Card>
@@ -421,19 +473,19 @@ const PromotionManagement = () => {
             <Statistic
               title="Hết hạn"
               value={statistics.expired}
-              prefix={<CloseCircleOutlined />}
+              prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <div className="promotion-search">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={24} md={12} lg={10}>
             <Input
-              placeholder="Tìm kiếm theo mã, tên, mô tả khuyến mãi..."
+              placeholder="Tìm kiếm theo tên, mô tả, mã khuyến mãi..."
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -441,6 +493,20 @@ const PromotionManagement = () => {
               className="search-input"
               size="large"
             />
+          </Col>
+          <Col xs={24} sm={12} md={12} lg={8}>
+            <Select
+              placeholder="Lọc theo trạng thái"
+              style={{ width: '100%' }}
+              onChange={handleStatusFilterChange}
+              allowClear
+              value={statusFilter}
+              size="large"
+            >
+              <Option value="active">Đang hoạt động</Option>
+              <Option value="inactive">Không hoạt động</Option>
+              <Option value="expired">Hết hạn</Option>
+            </Select>
           </Col>
         </Row>
       </div>
@@ -458,7 +524,7 @@ const PromotionManagement = () => {
         }}
         onChange={handleTableChange}
         loading={loading}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1200 }}
         locale={{
           emptyText: (
             <Empty
@@ -494,23 +560,25 @@ const PromotionManagement = () => {
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item
-                name="promotion_code"
-                label="Mã khuyến mãi"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mã khuyến mãi!' },
-                  { pattern: /^[A-Z0-9_-]+$/, message: 'Mã chỉ chứa chữ hoa, số, gạch ngang và gạch dưới!' }
-                ]}
-              >
-                <Input placeholder="Nhập mã khuyến mãi (ví dụ: SUMMER2024)" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
                 name="name"
                 label="Tên khuyến mãi"
                 rules={[{ required: true, message: 'Vui lòng nhập tên khuyến mãi!' }]}
               >
                 <Input placeholder="Nhập tên khuyến mãi" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="code"
+                label="Mã khuyến mãi"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập mã khuyến mãi!' },
+                  { pattern: /^[A-Z0-9]+$/, message: 'Mã khuyến mãi chỉ chứa chữ hoa và số!' },
+                  { min: 3, message: 'Mã khuyến mãi phải có ít nhất 3 ký tự!' },
+                  { max: 20, message: 'Mã khuyến mãi không được quá 20 ký tự!' }
+                ]}
+              >
+                <Input placeholder="PROMO2024" />
               </Form.Item>
             </Col>
           </Row>
@@ -520,9 +588,9 @@ const PromotionManagement = () => {
             label="Mô tả"
             rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}
           >
-            <Input.TextArea 
-              placeholder="Nhập mô tả khuyến mãi" 
+            <Input.TextArea
               rows={3}
+              placeholder="Nhập mô tả khuyến mãi..."
             />
           </Form.Item>
 
@@ -536,7 +604,7 @@ const PromotionManagement = () => {
               >
                 <Select placeholder="Chọn loại giảm giá">
                   <Option value="percentage">
-                    <PercentageOutlined /> Phần trăm (%)
+                    <PercentageOutlined /> Phần trăm
                   </Option>
                   <Option value="fixed">
                     <DollarOutlined /> Số tiền cố định
@@ -546,16 +614,30 @@ const PromotionManagement = () => {
             </Col>
             <Col xs={24} md={8}>
               <Form.Item
-                name="amount"
+                name="discount_value"
                 label="Giá trị giảm"
                 rules={[
                   { required: true, message: 'Vui lòng nhập giá trị giảm!' },
-                  { type: 'number', min: 0, message: 'Giá trị phải lớn hơn 0!' }
+                  { type: 'number', min: 0, message: 'Giá trị giảm phải lớn hơn 0!' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const discountType = getFieldValue('discount_type')
+                      if (discountType === 'percentage' && (value < 0 || value > 100)) {
+                        return Promise.reject(new Error('Phần trăm giảm giá phải từ 0-100%'))
+                      }
+                      if (discountType === 'fixed' && value <= 0) {
+                        return Promise.reject(new Error('Số tiền giảm phải lớn hơn 0'))
+                      }
+                      return Promise.resolve()
+                    }
+                  })
                 ]}
+                dependencies={['discount_type']}
               >
                 <InputNumber
-                  placeholder="Nhập giá trị"
                   style={{ width: '100%' }}
+                  placeholder="Nhập giá trị giảm"
+                  min={0}
                   formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
                 />
@@ -570,59 +652,82 @@ const PromotionManagement = () => {
               >
                 <Select placeholder="Chọn trạng thái">
                   <Option value="active">
-                    <CheckCircleOutlined style={{ color: '#52c41a' }} /> Hoạt động
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} /> Đang hoạt động
                   </Option>
                   <Option value="inactive">
-                    <ClockCircleOutlined style={{ color: '#faad14' }} /> Tạm dừng
+                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} /> Không hoạt động
                   </Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            name="date_range"
-            label="Thời gian áp dụng"
-            rules={[{ required: true, message: 'Vui lòng chọn thời gian áp dụng!' }]}
-          >
-            <RangePicker
-              showTime
-              format="DD/MM/YYYY HH:mm"
-              style={{ width: '100%' }}
-              placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="min_order_amount"
+                label="Đơn hàng tối thiểu (đ)"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="Nhập số tiền tối thiểu"
+                  min={0}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="max_discount_amount"
+                label="Giảm tối đa (đ)"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="Nhập số tiền giảm tối đa"
+                  min={0}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item
-                name="max_usage"
-                label="Số lần sử dụng tối đa"
-                rules={[
-                  { type: 'number', min: 1, message: 'Số lần sử dụng phải lớn hơn 0!' }
-                ]}
+                name="usage_limit"
+                label="Giới hạn sử dụng"
               >
                 <InputNumber
-                  placeholder="Nhập số lần sử dụng tối đa"
                   style={{ width: '100%' }}
+                  placeholder="Nhập số lần sử dụng tối đa"
                   min={1}
                 />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                name="min_order_amount"
-                label="Đơn hàng tối thiểu (VNĐ)"
+                name="date_range"
+                label="Thời gian áp dụng"
                 rules={[
-                  { type: 'number', min: 0, message: 'Số tiền phải lớn hơn hoặc bằng 0!' }
+                  { required: true, message: 'Vui lòng chọn thời gian áp dụng!' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (value && value.length === 2) {
+                        const [startDate, endDate] = value
+                        if (endDate.isBefore(startDate)) {
+                          return Promise.reject(new Error('Ngày kết thúc phải sau ngày bắt đầu'))
+                        }
+                      }
+                      return Promise.resolve()
+                    }
+                  })
                 ]}
               >
-                <InputNumber
-                  placeholder="Nhập số tiền tối thiểu"
+                <RangePicker
                   style={{ width: '100%' }}
-                  min={0}
-                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                  placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
                 />
               </Form.Item>
             </Col>

@@ -1,0 +1,400 @@
+/* Booking Success Styles */
+.booking-success {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 24px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Success Header */
+.success-header {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.success-header .ant-result {
+  padding: 0;
+}
+
+.success-header .ant-result-title {
+  font-size: 28px;
+  color: #52c41a;
+  margin-bottom: 16px;
+}
+
+.success-header .ant-result-subtitle {
+  font-size: 16px;
+  color: #8c8c8c;
+  margin-bottom: 24px;
+}
+
+.success-header .ant-result-extra {
+  gap: 12px;
+}
+
+.success-header .ant-btn {
+  min-width: 160px;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.success-header .ant-btn-primary {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.success-header .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+}
+
+/* Cards */
+.next-steps-card,
+.important-info-card,
+.summary-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.next-steps-card .ant-card-head,
+.important-info-card .ant-card-head,
+.summary-card .ant-card-head {
+  border-bottom: 2px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.next-steps-card .ant-card-head-title,
+.important-info-card .ant-card-head-title,
+.summary-card .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.next-steps-card .ant-card-body,
+.important-info-card .ant-card-body,
+.summary-card .ant-card-body {
+  padding: 24px;
+}
+
+/* Steps */
+.next-steps-card .ant-steps {
+  padding: 0;
+}
+
+.next-steps-card .ant-steps-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.next-steps-card .ant-steps-item-description {
+  color: #8c8c8c;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.next-steps-card .ant-steps-item-icon {
+  background: #f0f0f0;
+  border-color: #d9d9d9;
+  color: #8c8c8c;
+}
+
+.next-steps-card .ant-steps-item-process .ant-steps-item-icon {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: white;
+}
+
+.next-steps-card .ant-steps-item-finish .ant-steps-item-icon {
+  background: #52c41a;
+  border-color: #52c41a;
+  color: white;
+}
+
+/* Alerts */
+.important-info-card .ant-alert {
+  border-radius: 8px;
+  border: none;
+}
+
+.important-info-card .ant-alert-info {
+  background: #f0f8ff;
+  border: 1px solid #91d5ff;
+}
+
+.important-info-card .ant-alert-success {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.important-info-card .ant-alert-message {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.important-info-card .ant-alert-description {
+  font-size: 14px;
+}
+
+.important-info-card .ant-typography {
+  margin-bottom: 8px;
+}
+
+.important-info-card .ant-typography:last-child {
+  margin-bottom: 0;
+}
+
+/* Booking Summary */
+.booking-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item .ant-typography {
+  margin: 0;
+}
+
+.total-amount {
+  font-size: 18px;
+  color: #52c41a;
+}
+
+/* Action Buttons */
+.action-buttons {
+  margin-top: 24px;
+}
+
+.book-again-button {
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  border: none;
+  border-radius: 8px;
+  height: 44px;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.book-again-button:hover {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+}
+
+/* Security Info */
+.security-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #f6ffed;
+  border-radius: 6px;
+  border: 1px solid #b7eb8f;
+}
+
+.security-info .anticon {
+  font-size: 16px;
+}
+
+.security-info .ant-typography {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .success-header {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .success-header .ant-result-title {
+    font-size: 24px;
+  }
+  
+  .success-header .ant-result-subtitle {
+    font-size: 14px;
+  }
+  
+  .success-header .ant-result-extra {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .success-header .ant-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .next-steps-card .ant-card-body,
+  .important-info-card .ant-card-body,
+  .summary-card .ant-card-body {
+    padding: 16px;
+  }
+  
+  .next-steps-card .ant-steps-item-title {
+    font-size: 14px;
+  }
+  
+  .next-steps-card .ant-steps-item-description {
+    font-size: 12px;
+  }
+  
+  .summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .total-amount {
+    font-size: 16px;
+  }
+  
+  .book-again-button {
+    height: 40px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 576px) {
+  .booking-success {
+    padding: 12px 0;
+  }
+  
+  .success-header .ant-result-title {
+    font-size: 20px;
+  }
+  
+  .next-steps-card .ant-card-head-title,
+  .important-info-card .ant-card-head-title,
+  .summary-card .ant-card-head-title {
+    font-size: 16px;
+  }
+  
+  .important-info-card .ant-alert-message {
+    font-size: 14px;
+  }
+  
+  .important-info-card .ant-alert-description {
+    font-size: 12px;
+  }
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-header,
+.next-steps-card,
+.important-info-card,
+.summary-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.success-header .ant-result-icon {
+  animation: bounce 2s infinite;
+}
+
+/* Hover Effects */
+.summary-item:hover {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+/* Focus States */
+.action-buttons .ant-btn:focus {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbar */
+.booking-success::-webkit-scrollbar {
+  width: 6px;
+}
+
+.booking-success::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.booking-success::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.booking-success::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Print Styles */
+@media print {
+  .booking-success {
+    background: white;
+  }
+  
+  .action-buttons {
+    display: none;
+  }
+  
+  .next-steps-card,
+  .important-info-card,
+  .summary-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
+
