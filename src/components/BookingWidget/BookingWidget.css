@@ -1,5 +1,5 @@
 .booking-widget {
-  position: absolute;
+  position: relative;
   z-index: 10;
   width: 100%;
   top: 50%;

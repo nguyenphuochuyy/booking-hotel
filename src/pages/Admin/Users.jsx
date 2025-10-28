@@ -28,6 +28,16 @@ import {
 const { Title } = Typography
 const { Search } = Input
 
+// Format date to dd/MM/YYYY
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
 function Users() {
   const [loading, setLoading] = useState(false)
   const [allUsers, setAllUsers] = useState([]) // Lưu toàn bộ users từ API
@@ -160,6 +170,7 @@ function Users() {
       title: 'Ngày tạo',
       dataIndex: 'created_at',
       key: 'created_at',
+      render: (date) => formatDate(date),
     },
     {
       title: 'Thao tác',
@@ -228,6 +239,7 @@ function Users() {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
+      console.log(values);
       
       if (editingUser) {
         // Cập nhật user
@@ -235,8 +247,13 @@ function Users() {
         message.success('Cập nhật người dùng thành công')
       } else {
         // Tạo user mới
-        await createUser(values)
-        message.success('Tạo người dùng thành công')
+        const response = await createUser(values)
+        if (response.status === 201) {
+          message.success('Tạo người dùng thành công')
+        } else {
+          message.error(response.message || 'Có lỗi xảy ra')
+        }
+        
       }
       
       setIsModalVisible(false)

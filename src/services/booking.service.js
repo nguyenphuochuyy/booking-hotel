@@ -202,6 +202,17 @@ export const searchAvailableRooms = async (params) => {
   }
 }
 
+// Get all bookings for admin dashboard
+export const getAllBookings = async (params = {}) => {
+  try {
+    const response = await httpClient.get('/bookings', { params })
+    return response
+  } catch (error) {
+    console.error('Error getting all bookings:', error)
+    throw error
+  }
+}
+
 // Validate booking dates
 export const validateBookingDates = (checkIn, checkOut) => {
   const today = new Date()
@@ -280,6 +291,7 @@ export const checkPaymentStatus = async (paymentData) => {
     throw error
   }
 }
+// tạo user cho walk-in
 export default {
   createTempBooking,
   addServiceToTempBooking,
@@ -302,5 +314,6 @@ export default {
   calculateTotalPrice,
   generateBookingSummary,
   checkPaymentStatus,
-  searchAvailableRooms
+  searchAvailableRooms,
+  getAllBookings
 }

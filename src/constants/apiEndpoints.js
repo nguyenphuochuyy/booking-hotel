@@ -52,7 +52,9 @@ export const API_ENDPOINTS = {
     CANCEL: '/bookings/:id/cancel',
     CONFIRM: '/bookings/:id/confirm',
   },
-
+  WALK_IN: {
+    CREATE_USER: '/users/quick-create',
+  },
   // Services
   SERVICES: {
     GET_SERVICES: '/services',

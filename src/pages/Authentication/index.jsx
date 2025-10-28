@@ -78,6 +78,14 @@ const Authentication = () => {
         const profileUser = userProfile?.user
         if (profileUser) {
           setUser(profileUser)
+          try {
+            localStorage.setItem('user', JSON.stringify(profileUser))
+          } catch (_) {}
+        }
+        // lưu access token nếu có trong response
+        if (response?.accessToken) {
+          try { localStorage.setItem('accessToken', response.accessToken) } catch(_) {}
+          if (setAccessToken) setAccessToken(response.accessToken)
         }
         setTimeout(() => {
           const role = profileUser?.role

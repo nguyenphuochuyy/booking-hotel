@@ -24,7 +24,6 @@ const BookingWidget = () => {
   const handleSearch = async (values) => {
     try {
       setLoading(true)
-      
       // Validate dates
       if (!values.checkIn || !values.checkOut) {
         message.error('Vui lòng chọn ngày nhận và trả phòng!')
@@ -40,33 +39,6 @@ const BookingWidget = () => {
         message.error('Ngày trả phòng phải sau ngày nhận phòng!')
         return
       }
-
-      // Call API to search available rooms
-      const guests = (adults || 1) + (children || 0)
-      const searchParams = {
-        check_in: checkIn,
-        check_out: checkOut,
-        guests: guests,
-        sort: 'price_asc',
-        page: 1,
-        limit: 50
-      }
-
-      try {
-        const response = await searchAvailableRooms(searchParams)
-        const availableRooms = response?.rooms || []
-        
-        if (availableRooms.length === 0) {
-          message.warning('Không tìm thấy phòng trống trong khoảng thời gian này!')
-          return
-        }
-
-        message.success(`Tìm thấy ${availableRooms.length} phòng khả dụng`)
-      } catch (error) {
-        console.error('Error searching rooms:', error)
-        message.warning('Không thể kiểm tra phòng trống. Đang chuyển hướng...')
-      }
-
       // Navigate to hotels page with search parameters in URL
       const params = new URLSearchParams({
         checkIn,

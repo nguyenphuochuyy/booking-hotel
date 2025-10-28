@@ -12,7 +12,7 @@ import formatPrice from '../../utils/formatPrice'
 import './Payment.css'
 import QRCode from 'antd/es/qr-code'
 const { Title, Text } = Typography
-import { checkPaymentStatus } from '../../services/booking.service'
+import { calculateNights, checkPaymentStatus } from '../../services/booking.service'
 const Payment = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -35,39 +35,34 @@ const Payment = () => {
     amount,
     bookingInfo
   } = bookingData
-  const OrderCode = orderCode
-  const status = 'PAID'
-  const buyerName = bookingInfo.customerInfo.firstName + ' ' + bookingInfo.customerInfo.lastName
-  const buyerEmail = bookingInfo.customerInfo.email
+  
+  const nights = calculateNights(bookingInfo.checkIn, bookingInfo.checkOut)
+  const totalPrice = bookingInfo?.roomType?.price_per_night * nights || 0
+
   // Xử lý thanh toán thành công
   const handlePaymentSuccess = async () => {
-    const checkPaymentStatusResponse = await checkPaymentStatus({
-      OrderCode,
-      status,
-      buyerName,
-      buyerEmail
-    })
-    console.log(checkPaymentStatusResponse)
-    // Chuyển sang trang thành công sau 2 giây
-    setTimeout(() => {
-      navigate('/booking-success', {
-        state: {
-          bookingCode,
-          amount
-        }
-      })
-    }, 2000)
+    try {
+      const res = await checkPaymentStatus({ orderCode })
+      const data = res?.data || res
+      if (data?.status === 'success' || data?.statusCode === 200) {
+        navigate('/booking-success', { state: { bookingCode, amount } })
+      } else {
+        message.error('Thanh toán chưa được xác nhận. Vui lòng thử lại.')
+      }
+    } catch (err) {
+      message.error('Không thể xác nhận thanh toán. Vui lòng thử lại.')
+    }
   }
 
   // Polling để kiểm tra trạng thái thanh toán
   useEffect(() => {
-    console.log(OrderCode, status, buyerName, buyerEmail);
     
-
     return () => {
       // Cleanup if needed
     }
   }, [])
+
+
   return (
     <div className="payment-page-new">
       <div className="container">
@@ -203,6 +198,11 @@ const Payment = () => {
                         {bookingInfo.guests?.children > 0 && `, ${bookingInfo.guests?.children} trẻ em`}
                       </Text>
                     </div>
+
+                    <div className="invoice-item">
+                      <Text type="secondary">Số đêm:</Text>
+                      <Text strong>{nights}</Text>
+                    </div>
                   </div>
 
                   <Divider />
@@ -219,9 +219,9 @@ const Payment = () => {
                 </div>
                 
                 <div className="invoice-item">
-                  <Text type="secondary">Thuế (10%)</Text>
+                  <Text type="secondary">Số đêm: </Text>
                   <Text type="secondary">
-                    {formatPrice((amount || 0) * 0.1)}
+                    {nights | 0}
                   </Text>
                 </div>
                 
@@ -230,7 +230,7 @@ const Payment = () => {
                 <div className="invoice-item total">
                   <Text strong style={{ fontSize: '18px' }}>Tổng cộng</Text>
                   <Text strong style={{ fontSize: '20px', color: '#1890ff' }}>
-                    {formatPrice(amount || 0)}
+                    {formatPrice(totalPrice|| 0)}
                   </Text>
                 </div>
               </div>
@@ -246,7 +246,7 @@ const Payment = () => {
                     <div className="invoice-item">
                       <Text type="secondary">Họ tên:</Text>
                       <Text>
-                        {bookingInfo.customerInfo.firstName} {bookingInfo.customerInfo.lastName}
+                        {bookingInfo.customerInfo.fullName}
                       </Text>
                     </div>
                     

@@ -124,7 +124,7 @@ const PostManagement = () => {
     fetchCategories()
   }, [])
 
-  // Filter posts based on search
+  // lọc bài viết theo từ khóa 
   const filteredPosts = useMemo(() => {
     if (!searchText) return posts
     
@@ -374,7 +374,8 @@ const PostManagement = () => {
       title: 'Slug',
       dataIndex: 'slug',
       key: 'slug',
-      width: 150,
+      width: 100,
+      align: 'center',
       render: (slug) => (
         <div className="slug-display">
           <Text code style={{ fontSize: '12px', color: '#1890ff' }}>
@@ -388,6 +389,7 @@ const PostManagement = () => {
       dataIndex: 'category_id',
       key: 'category_id',
       width: 150,
+      align: 'center',
       render: (categoryId) => {
         const category = categories.find(c => c.category_id === categoryId)
         return category ? (
@@ -420,6 +422,7 @@ const PostManagement = () => {
       dataIndex: 'author',
       key: 'author',
       width: 120,
+      align: 'center',
       render: (author) => author?.full_name || 'N/A'
     },
     {
@@ -427,6 +430,7 @@ const PostManagement = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 120,
+      align: 'center',
       render: (date) => dayjs(date).format('DD/MM/YYYY'),
       sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at)
     },

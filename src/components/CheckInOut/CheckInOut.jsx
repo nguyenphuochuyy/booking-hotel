@@ -8,26 +8,42 @@ import {
   HomeOutlined, CalendarOutlined, CreditCardOutlined
 } from '@ant-design/icons'
 import { findBookingByCode, checkInGuest, checkOutGuest } from '../../../src/services/admin.service'
-// import { formatPrice, formatDate } from '../../../src/services/booking.service'
+import formatPrice from '../../utils/formatPrice'
 import './CheckInOut.css'
 
 const { Title, Text } = Typography
 
-const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
+// Format date to dd/MM/YYYY
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+const CheckInOut = ({ visible, onCancel, type = 'checkin', onSuccess }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [bookingData, setBookingData] = useState(null)
   const [step, setStep] = useState(1) // 1: Search, 2: Confirm, 3: Success
+  const [success, setSuccess] = useState(false)
 
   const handleSearch = async (values) => {
     try {
       setLoading(true)
       const response = await findBookingByCode(values.bookingCode)
-      setBookingData(response.booking)
-      setStep(2)
+      if (response && response.booking) {
+        setBookingData(response.booking)
+        setStep(2)
+        message.success('Tìm thấy đơn đặt phòng!')
+      } else {
+        message.error('Không tìm thấy đơn đặt phòng phù hợp')
+      }
     } catch (error) {
       console.error('Error finding booking:', error)
-      message.error('Không tìm thấy đặt phòng với mã này')
+      message.error('Không tìm thấy đơn đặt phòng phù hợp')
     } finally {
       setLoading(false)
     }
@@ -36,18 +52,28 @@ const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
   const handleConfirm = async () => {
     try {
       setLoading(true)
-      
+      let response
       if (type === 'checkin') {
-        await checkInGuest(bookingData.booking_code)
-        message.success('Check-in thành công!')
+        response = await checkInGuest(bookingData.booking_code)
       } else {
-        await checkOutGuest(bookingData.booking_code)
-        message.success('Check-out thành công!')
+        response = await checkOutGuest(bookingData.booking_code)
       }
-      
-      setStep(3)
+      if (response?.statusCode === 200 || response?.success) {
+        setSuccess(true)
+        setStep(3) 
+        // Call onSuccess callback to refresh booking list
+        if (onSuccess) {
+          onSuccess()
+        }
+      } else {
+        setSuccess(false)
+        setStep(3)
+        message.error(`Không thể thực hiện ${type === 'checkin' ? 'check-in' : 'check-out'}!`)
+      }
     } catch (error) {
       console.error(`Error ${type}:`, error)
+      setSuccess(false)
+      setStep(3)
       message.error(`Không thể thực hiện ${type === 'checkin' ? 'check-in' : 'check-out'}!`)
     } finally {
       setLoading(false)
@@ -57,6 +83,7 @@ const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
   const handleClose = () => {
     setStep(1)
     setBookingData(null)
+    setSuccess(false)
     form.resetFields()
     onCancel()
   }
@@ -165,7 +192,7 @@ const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
                   <div className="info-item">
                     <Text strong>Tổng tiền:</Text>
                     <Text strong style={{ color: '#52c41a' }}>
-                      {bookingData.final_price}
+                      {formatPrice(bookingData.final_price || bookingData.total_price)}
                     </Text>
                   </div>
                 </Col>
@@ -191,7 +218,7 @@ const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
                   </div>
                   <div className="info-item">
                     <Text strong>Ngày tạo:</Text>
-                    <Text>bookingData.created_at</Text>
+                    <Text>{formatDate(bookingData.created_at)}</Text>
                   </div>
                 </Col>
               </Row>
@@ -253,24 +280,52 @@ const CheckInOut = ({ visible, onCancel, type = 'checkin' }) => {
 
         {step === 3 && (
           <div className="success-step">
-            <div className="success-content">
-              <CheckCircleOutlined className="success-icon" />
-              <Title level={3} style={{ color: '#52c41a' }}>
-                {type === 'checkin' ? 'Check-in thành công!' : 'Check-out thành công!'}
-              </Title>
-              <Text>
-                {type === 'checkin' 
-                  ? 'Khách hàng đã được check-in thành công. Phòng đã được gán và sẵn sàng sử dụng.'
-                  : 'Khách hàng đã được check-out thành công. Phòng đã được giải phóng.'
-                }
-              </Text>
-            </div>
-            
-            <div className="action-buttons">
-              <Button type="primary" size="large" onClick={handleClose}>
-                Đóng
-              </Button>
-            </div>
+            {success ? (
+              <>
+                <div className="success-content">
+                  <CheckCircleOutlined className="success-icon" style={{ color: '#52c41a', fontSize: '64px' }} />
+                  <Title level={3} style={{ color: '#52c41a' }}>
+                    {type === 'checkin' ? 'Check-in thành công!' : 'Check-out thành công!'}
+                  </Title>
+                  <Text style={{ fontSize: '16px', color: '#666' }}>
+                    {type === 'checkin' 
+                      ? 'Khách hàng đã được check-in thành công. Phòng đã được gán và sẵn sàng sử dụng.'
+                      : 'Khách hàng đã được check-out thành công. Phòng đã được giải phóng.'
+                    }
+                  </Text>
+                </div>
+                
+                <div className="action-buttons" style={{ marginTop: 24 }}>
+                  <Button type="primary" size="large" onClick={handleClose}>
+                    Đóng
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="success-content">
+                  <CheckCircleOutlined className="success-icon" style={{ color: '#ff4d4f', fontSize: '64px' }} />
+                  <Title level={3} style={{ color: '#ff4d4f' }}>
+                    {type === 'checkin' ? 'Check-in thất bại!' : 'Check-out thất bại!'}
+                  </Title>
+                  <Text style={{ fontSize: '16px', color: '#666' }}>
+                    {type === 'checkin' 
+                      ? 'Không thể thực hiện check-in. Vui lòng kiểm tra lại thông tin đặt phòng.'
+                      : 'Không thể thực hiện check-out. Vui lòng kiểm tra lại thông tin đặt phòng.'
+                    }
+                  </Text>
+                </div>
+                
+                <div className="action-buttons" style={{ marginTop: 24 }}>
+                  <Button onClick={() => setStep(2)} style={{ marginRight: 8 }}>
+                    Quay lại
+                  </Button>
+                  <Button type="primary" onClick={handleClose}>
+                    Đóng
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

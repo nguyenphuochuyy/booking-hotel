@@ -6,35 +6,37 @@
 }
 
 /* Booking Widget Container on Hotels Page */
-.hotels-page .booking-widget {
-  margin-bottom: 2rem;
+.hotels-page .booking-widget-container {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 3rem; /* Tăng khoảng cách với danh sách ở dưới */
 }
 
 /* Phone - Extra Small devices (< 576px) */
 @media (max-width: 575px) {
-  .hotels-page .booking-widget {
-    margin-bottom: 1.5rem;
+  .hotels-page .booking-widget-container {
+    margin-bottom: 2rem;
   }
 }
 
 /* Small devices - Large phones (576px - 767px) */
 @media (min-width: 576px) and (max-width: 767px) {
-  .hotels-page .booking-widget {
-    margin-bottom: 2rem;
+  .hotels-page .booking-widget-container {
+    margin-bottom: 2.5rem;
   }
 }
 
 /* Medium devices - Tablets (768px - 991px) */
 @media (min-width: 768px) and (max-width: 991px) {
-  .hotels-page .booking-widget {
-    margin-bottom: 2.5rem;
+  .hotels-page .booking-widget-container {
+    margin-bottom: 3.5rem;
   }
 }
 
 /* Large devices and up - Desktop (≥ 992px) */
 @media (min-width: 992px) {
-  .hotels-page .booking-widget {
-    margin-bottom: 3rem;
+  .hotels-page .booking-widget-container {
+    margin-bottom: 4rem;
   }
 }
 

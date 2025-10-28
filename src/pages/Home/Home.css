@@ -2,9 +2,33 @@
 .banner-slider {
   position: relative;
   width: 100%;
-  height: 82vh;
-  margin-top: 1rem !important;
+  height: 100vh;
   overflow: visible;
+}
+
+/* Make BookingWidget float over the banner */
+.banner-slider .booking-widget-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 20%;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+/* Ensure overlay stays behind the widget */
+.banner-overlay {
+  z-index: 1;
+}
+
+/* Reset default transform from widget when inside banner */
+.banner-slider .booking-widget {
+  top: auto;
+  bottom: 0;
+  transform: none;
 }
 
 .banner-image-container {
@@ -186,7 +210,10 @@
 @media (max-width: 575px) {
   .banner-slider {
     height: 100vh;
-    margin-top: 0.5rem !important;
+  }
+  .banner-slider .booking-widget-container {
+    bottom: -20px;
+    padding: 0 12px;
   }
   
   .banner-overlay {
@@ -249,7 +276,9 @@
 @media (min-width: 576px) and (max-width: 767px) {
   .banner-slider {
     height: 100vh;
-    margin-top: 0.75rem !important;
+  }
+  .banner-slider .booking-widget-container {
+    bottom: -24px;
   }
   
   .banner-overlay {
@@ -306,7 +335,9 @@
 @media (min-width: 768px) and (max-width: 991px) {
   .banner-slider {
     height: 100vh;
-    margin-top: 1rem !important;
+  }
+  .banner-slider .booking-widget-container {
+    bottom: -32px;
   }
   
   .banner-overlay {
@@ -361,7 +392,9 @@
 @media (min-width: 992px) {
   .banner-slider {
     height: 100vh;
-    margin-top: 1rem !important;
+  }
+  .banner-slider .booking-widget-container {
+    bottom: -40px;
   }
   
   .banner-overlay {

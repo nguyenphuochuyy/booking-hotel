@@ -28,6 +28,7 @@ function Home() {
   return (
     <>
       <div className="banner-slider">
+     
         <div className="banner-image-container">
           <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">
@@ -38,7 +39,9 @@ function Home() {
         </div>
         
         {/* Booking Widget - Nổi trên banner */}
-        <BookingWidget />
+        <div className="booking-widget-container">
+          <BookingWidget />
+        </div>
       </div>
 
       <div className="home-page container">

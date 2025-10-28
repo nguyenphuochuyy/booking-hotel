@@ -59,7 +59,7 @@ function Hotels() {
   const checkOut = searchParams.get('checkOut')
   const adults = searchParams.get('adults')
   const children = searchParams.get('children')
-  
+   
   // Load available rooms khi có search params
   useEffect(() => {
     if (checkIn && checkOut) {
@@ -76,16 +76,8 @@ function Hotels() {
             limit: 50
           }
           const response = await searchAvailableRooms(params)
-          console.log(response.rooms);
-          
           const rooms = response?.rooms || []
           setSearchResults(rooms)
-          
-          if (rooms.length > 0) {
-            message.success(`Tìm thấy ${rooms.length} phòng khả dụng`)
-          } else {
-            message.warning('Không tìm thấy phòng trống trong khoảng thời gian này')
-          }
         } catch (error) {
           console.error('Error loading available rooms:', error)
         } finally {
@@ -95,7 +87,7 @@ function Hotels() {
       
       loadAvailableRooms()
     }
-  }, [checkIn, checkOut, adults, children])
+  }, [])
 
   // State cho filters
   const [sortBy, setSortBy] = useState('default')
@@ -111,25 +103,67 @@ function Hotels() {
   // State cho modal
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [roomInModal, setRoomInModal] = useState(null)
+  const [isLoginModalVisible, setIsLoginModalVisible] = useState(false)
   
   // Determine loading state
   const loading = checkIn && checkOut ? searchLoading : roomTypesLoading
 
-  // Determine data source: searchResults nếu có search params, ngược lại roomTypes
-  const dataSource = checkIn && checkOut ? searchResults : roomTypes.map(room => ({
-    ...room,
-    room_type: {
-      room_type_id: room.room_type_id,
-      room_type_name: room.room_type_name,
-      capacity: room.capacity,
-      images: room.images,
-      amenities: room.amenities,
-      area: room.area
-    },
-    prices: room.price_per_night ? [{
-      price_per_night: room.price_per_night
-    }] : []
-  }))
+  // Group available rooms by room type when searching by date range
+  const groupedAvailableRoomTypes = useMemo(() => {
+    if (!(checkIn && checkOut) || !Array.isArray(searchResults)) return []
+
+    const map = new Map()
+    for (const item of searchResults) {
+      const typeId = item?.room_type?.room_type_id ?? item?.room_type_id
+      if (!typeId) continue
+      const existing = map.get(typeId)
+
+      const typeName = item?.room_type?.room_type_name ?? item?.room_type_name
+      const images = item?.room_type?.images ?? item?.images ?? []
+      const capacity = item?.room_type?.capacity ?? item?.capacity
+      const area = item?.room_type?.area ?? item?.area
+      const amenities = item?.room_type?.amenities ?? item?.amenities ?? []
+      const price = item?.price_per_night ?? item?.room_type?.prices?.[0]?.price_per_night ?? item?.prices?.[0]?.price_per_night
+
+      if (!existing) {
+        map.set(typeId, {
+          room_type_id: typeId,
+          room_type_name: typeName,
+          images,
+          capacity,
+          area,
+          amenities,
+          price_per_night: price,
+          rooms: [item],
+        })
+      } else {
+        existing.rooms.push(item)
+        // keep the lowest price among rooms of this type if available
+        const currentPrice = existing.price_per_night
+        if (price && (!currentPrice || price < currentPrice)) {
+          existing.price_per_night = price
+        }
+      }
+    }
+
+    return Array.from(map.values())
+  }, [searchResults, checkIn, checkOut])
+
+  // Determine data source: grouped search results if any, else room types catalog
+  const dataSource = (checkIn && checkOut)
+    ? groupedAvailableRoomTypes
+    : roomTypes.map(room => ({
+        ...room,
+        room_type: {
+          room_type_id: room.room_type_id,
+          room_type_name: room.room_type_name,
+          capacity: room.capacity,
+          images: room.images,
+          amenities: room.amenities,
+          area: room.area
+        },
+        prices: room.price_per_night ? [{ price_per_night: room.price_per_night }] : []
+      }))
 
   // Filtered rooms dựa trên các tiêu chí
   const filteredRooms = useMemo(() => {
@@ -151,27 +185,7 @@ function Hotels() {
       })
     }
 
-    // Lọc theo capacity (trẻ em)
-    if (allowChildren) {
-      filtered = filtered.filter(room => {
-        const cap = room.room_type?.capacity || room.capacity
-        return cap && cap > 1
-      })
-    }
-
-    // Lọc theo amenities (thú cưng) - giả sử có amenity "pet-friendly"
-    if (allowPets) {
-      filtered = filtered.filter(room => {
-        const amenities = room.room_type?.amenities || room.amenities
-        return amenities && 
-               Array.isArray(amenities) && 
-               amenities.some(amenity => 
-                 amenity.toLowerCase().includes('pet') ||
-                 amenity.toLowerCase().includes('thú cưng')
-               )
-      })
-    }
-
+  
     return filtered
   }, [dataSource, searchKeyword, priceRange, selectedRoomType, allowChildren, allowPets, sortBy])
 
@@ -194,16 +208,23 @@ function Hotels() {
   }
 
   const handleBookNow = () => {
-    if (selectedRoom) {
-      navigate('/booking-confirmation', {
-        state: {
-          roomType: selectedRoom,
-          checkIn: '2025-10-27',
-          checkOut: '2025-10-28',
-          guests: { adults: 2, children: 0 }
-        }
-      })
+    if (!selectedRoom) return
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
+    const user = localStorage.getItem('user')
+    if (!token && !user) {
+      setIsLoginModalVisible(true)
+      return
     }
+    const adultsNum = parseInt(adults || '1', 10)
+    const childrenNum = parseInt(children || '0', 10)
+    navigate('/booking-confirmation', {
+      state: {
+        roomType: selectedRoom,
+        checkIn: checkIn || '',
+        checkOut: checkOut || '',
+        guests: { adults: adultsNum, children: childrenNum }
+      }
+    })
   }
 
   const handleShowModal = (room) => {
@@ -217,19 +238,19 @@ function Hotels() {
   }
 
   const handleSelectFromModal = () => {
-    if (roomInModal) {
-      setSelectedRoom(roomInModal)
-      handleCloseModal()
-      // Tự động chuyển đến trang xác nhận
-      navigate('/booking-confirmation', {
-        state: {
-          roomType: roomInModal,
-          checkIn: '2025-10-27',
-          checkOut: '2025-10-28',
-          guests: { adults: 2, children: 0 }
-        }
-      })
-    }
+    if (!roomInModal) return
+    setSelectedRoom(roomInModal)
+    handleCloseModal()
+    const adultsNum = parseInt(adults || '1', 10)
+    const childrenNum = parseInt(children || '0', 10)
+    navigate('/booking-confirmation', {
+      state: {
+        roomType: roomInModal,
+        checkIn: checkIn || '',
+        checkOut: checkOut || '',
+        guests: { adults: adultsNum, children: childrenNum }
+      }
+    })
   }
 
 
@@ -248,8 +269,10 @@ function Hotels() {
 
 
         {/* Booking Widget */}
-        <div style={{ margin: '10rem 0' }}>
-          <BookingWidget />
+        <div
+        className='booking-widget-container'
+        >
+          <BookingWidget checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} />
         </div>
 
         {/* Main Layout - Room List và Booking Summary */}
@@ -265,7 +288,7 @@ function Hotels() {
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
                   <Spin size="large" />
                   <div style={{ marginTop: '16px' }}>
-                    <Text>Đang tải danh sách phòng...</Text>
+                    <Spin size="large" />
                   </div>
                 </div>
               ) : error ? (
@@ -337,14 +360,14 @@ function Hotels() {
                                   <li key={index} style={{ marginBottom: '4px' }}>{amenity}</li>
                                 ))}
                               </ul>
-                              {room.amenities.length > 6 && (
+                          
                                 <Text 
                                   style={{ fontSize: '14px', color: '#c08a19', cursor: 'pointer' }}
                                   onClick={() => handleShowModal(room)}
                                 >
                                   Xem thêm
                                 </Text>
-                              )}
+                          
                             </div>
                           )}
 
@@ -402,8 +425,7 @@ function Hotels() {
               <Divider />
 
               <div className="summary-dates">
-                <Text strong style={{ fontSize: '14px' }}>T2, 27 Th10 25 - T3, 28 Th10 25</Text>
-                <Text type="secondary" style={{ marginLeft: '8px', fontSize: '14px' }}>1 đêm</Text>
+                <Text strong style={{ fontSize: '16px' }}>{checkIn} - {checkOut}</Text>
               </div>
               <div className="summary-guests" style={{ marginTop: '8px' }}>
                 <Text style={{ fontSize: '14px', color: '#6b7280' }}>1 phòng, 2 khách</Text>
@@ -416,9 +438,9 @@ function Hotels() {
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                       <div style={{ flex: 1 }}>
-                        <Text strong style={{ fontSize: '14px' }}>{selectedRoom.room_type_name} - Giá tiêu chuẩn</Text>
+                        <Text strong style={{ fontSize: '14px' }}>{selectedRoom.room_type_name}</Text>
                         <div style={{ marginTop: '4px' }}>
-                          <Text style={{ fontSize: '14px', color: '#6b7280' }}>2 khách 1 đêm</Text>
+                          <Text style={{ fontSize: '14px', color: '#6b7280' }}></Text>
                         </div>
                         <div style={{ marginTop: '4px' }}>
                           <Text style={{ color: '#059669', fontSize: '14px' }}>Hủy miễn phí!</Text>
@@ -456,21 +478,7 @@ function Hotels() {
 
               <Divider />
 
-              {selectedRoom && (
-                <div className="summary-payment-info" style={{ 
-                  background: '#ecfdf5', 
-                  padding: '16px', 
-                  borderRadius: '8px',
-                  marginBottom: '16px'
-                }}>
-                  <Text strong style={{ color: '#059669', fontSize: '14px' }}>Đặt ngay, trả sau!</Text>
-                  <div style={{ marginTop: '8px' }}>
-                    <Text type="secondary" style={{ fontSize: '14px' }}>
-                      Số dư còn lại: {formatPrice(selectedRoom.price_per_night)}
-                    </Text>
-                  </div>
-                </div>
-              )}
+            
 
               <Button 
                 type="primary" 
@@ -498,6 +506,15 @@ function Hotels() {
       >
         {roomInModal && (
           <div className="modal-content">
+            {(() => {
+              const detailRoom = roomInModal?.room || (Array.isArray(roomInModal?.rooms) ? roomInModal.rooms[0] : null) || roomInModal
+              const modalImages = detailRoom?.images || roomInModal?.images || []
+              const modalAmenities = Array.isArray(detailRoom?.amenities) ? detailRoom.amenities : (Array.isArray(roomInModal?.amenities) ? roomInModal.amenities : [])
+              const modalCapacity = detailRoom?.capacity ?? roomInModal?.capacity
+              const modalArea = detailRoom?.area ?? roomInModal?.area
+              const modalPrice = detailRoom?.price_per_night ?? roomInModal?.price_per_night
+              return (
+              <>
             {/* Header */}
             <div className="modal-header">
               <Title level={3} style={{ margin: 0 }}>
@@ -546,20 +563,19 @@ function Hotels() {
 
                 <Divider />
 
-                {/* Tính năng phòng */}
-                <div>
-                  <Title level={5}>Tính năng phòng</Title>
-                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#6b7280' }}>
-                    <li>Giường cỡ King</li>
-                    <li>Truy cập WIFI miễn phí</li>
-                    <li>Bồn tắm và vòi sen</li>
-                    <li>TV LED</li>
-                    <li>Quầy mini bar & máy pha cà phê và trà</li>
-                    <li>Két an toàn</li>
-                    <li>Hồ bơi vô cực miễn phí</li>
-                    <li>Trả phòng muộn 13:00 (tùy thuộc vào tình trạng phòng)</li>
-                  </ul>
-                </div>
+            {/* Tính năng phòng - từ room */}
+            <div>
+              <Title level={5}>Tính năng phòng</Title>
+              {modalAmenities && modalAmenities.length > 0 ? (
+                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#6b7280' }}>
+                  {modalAmenities.map((amenity, idx) => (
+                    <li key={idx}>{amenity}</li>
+                  ))}
+                </ul>
+              ) : (
+                <Text style={{ fontSize: '14px', color: '#6b7280' }}>Đang cập nhật tiện nghi</Text>
+              )}
+            </div>
 
                 <Divider />
 
@@ -572,7 +588,7 @@ function Hotels() {
                         <UserOutlined style={{ color: '#6b7280' }} />
                         <div>
                           <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Sức chứa tối đa</Text>
-                          <div><Text strong>Số người: {roomInModal.capacity || 2}</Text></div>
+                  <div><Text strong>Số người: {modalCapacity || 2}</Text></div>
                         </div>
                       </Space>
                     </Col>
@@ -590,7 +606,7 @@ function Hotels() {
                         <ExpandOutlined style={{ color: '#6b7280' }} />
                         <div>
                           <Text style={{ fontSize: '12px', color: '#9ca3af' }}>Diện tích phòng</Text>
-                          <div><Text strong>{roomInModal.area || 28}m²</Text></div>
+                  <div><Text strong>{modalArea || 28}m²</Text></div>
                         </div>
                       </Space>
                     </Col>
@@ -641,9 +657,9 @@ function Hotels() {
               {/* Cột phải - Hình ảnh và giá */}
               <Col xs={24} md={10}>
                 <div className="modal-image-section">
-                  {roomInModal.images && roomInModal.images.length > 0 ? (
+                  {modalImages && modalImages.length > 0 ? (
                     <Carousel arrows style={{ marginBottom: '24px' }}>
-                      {roomInModal.images.map((img, index) => (
+                      {modalImages.map((img, index) => (
                         <div key={index}>
                           <img 
                             src={img} 
@@ -676,7 +692,7 @@ function Hotels() {
                   <div style={{ marginBottom: '12px' }}>
                     <Text style={{ fontSize: '14px', color: '#6b7280' }}>T2, 27 Th10</Text>
                     <Text strong style={{ fontSize: '18px', color: '#1f2937', marginLeft: '8px' }}>
-                      {formatPrice(roomInModal.price_per_night)}
+                      {formatPrice(modalPrice)}
                     </Text>
                   </div>
                   <Text style={{ fontSize: '13px', color: '#9ca3af' }}>Bao gồm thuế + phí</Text>
@@ -684,7 +700,7 @@ function Hotels() {
                   <div>
                     <Text style={{ fontSize: '14px', color: '#6b7280' }}>Tổng cộng cho 1 đêm</Text>
                     <Text strong style={{ fontSize: '18px', color: '#1f2937', marginLeft: '8px' }}>
-                      {formatPrice(roomInModal.price_per_night)}
+                      {formatPrice(modalPrice)}
                     </Text>
                   </div>
                 </div>
@@ -696,7 +712,7 @@ function Hotels() {
               <Row justify="space-between" align="middle">
                 <Col>
                   <Text strong style={{ fontSize: '24px', color: '#1f2937' }}>
-                    {formatPrice(roomInModal.price_per_night)}
+                    {formatPrice(modalPrice)}
                   </Text>
                   <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
                     Chi phí cho 1 đêm, 2 khách
@@ -714,8 +730,24 @@ function Hotels() {
                 </Col>
               </Row>
             </div>
+              </>
+              )})()}
           </div>
         )}
+      </Modal>
+
+      {/* Modal yêu cầu đăng nhập */}
+      <Modal
+        open={isLoginModalVisible}
+        onCancel={() => setIsLoginModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsLoginModalVisible(false)}>Đóng</Button>,
+          <Button key="login" type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>
+        ]}
+        title="Yêu cầu đăng nhập"
+        centered
+      >
+        <Text>Vui lòng đăng nhập để tiếp tục đặt phòng.</Text>
       </Modal>
     </div>
   )

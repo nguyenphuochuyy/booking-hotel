@@ -13,6 +13,7 @@ import {
 import { 
   getAllPromotions, createPromotion, updatePromotion, deletePromotion
 } from '../../../services/admin.service'
+import formatPrice from '../../../utils/formatPrice'
 import './promotion.css'
 import dayjs from 'dayjs'
 
@@ -328,7 +329,7 @@ const PromotionManagement = () => {
       align: 'center',
       render: (value, record) => (
         <Text strong style={{ color: '#52c41a' }}>
-          {record.discount_type === 'percentage' ? `${value}%` : `${value.toLocaleString()}đ`}
+          {record.discount_type === 'percentage' ? `${value}%` : formatPrice(value)}
         </Text>
       )
     },
@@ -339,7 +340,7 @@ const PromotionManagement = () => {
       width: 120,
       align: 'center',
       render: (amount) => (
-        <Text>{amount ? `${amount.toLocaleString()}đ` : 'Không giới hạn'}</Text>
+        <Text>{amount ? formatPrice(amount) : 'Không giới hạn'}</Text>
       )
     },
     {

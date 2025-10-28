@@ -13,6 +13,7 @@ import {
 import { 
   getAllServices, createService, updateService, deleteService
 } from '../../../services/admin.service'
+import formatPrice from '../../../utils/formatPrice'
 import './service.css'
 import dayjs from 'dayjs'
 
@@ -331,7 +332,7 @@ const ServiceManagement = () => {
       title: 'Tên dịch vụ',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: 100,
       render: (name) => (
         <Tooltip title={name}>
           <Text strong style={{ fontSize: '14px' }}>
@@ -345,9 +346,9 @@ const ServiceManagement = () => {
       title: 'Loại dịch vụ',
       dataIndex: 'service_type',
       key: 'service_type',
-      width: 120,
+      width: 90,
       render: (serviceType) => (
-        <Tag color={serviceType === 'prepaid' ? 'green' : 'orange'} icon={<StarOutlined />}>
+        <Tag color={serviceType === 'prepaid' ? 'green' : 'orange' }>
           {serviceType === 'prepaid' ? 'Trả trước' : 'Trả sau'}
         </Tag>
       ),
@@ -361,12 +362,12 @@ const ServiceManagement = () => {
       title: 'Giá',
       dataIndex: 'price',
       key: 'price',
-      width: 120,
+      width: 100,
       align: 'center',
       render: (price) => (
         <div className="price-display">
           <Text strong style={{ color: '#52c41a', fontSize: '14px' }}>
-            {price.toLocaleString()}đ
+            {formatPrice(price)}
           </Text>
         </div>
       ),
@@ -376,7 +377,7 @@ const ServiceManagement = () => {
       title: 'Trạng thái',
       dataIndex: 'is_available',
       key: 'is_available',
-      width: 120,
+      width: 100,
       align: 'center',
       render: (isAvailable) => getAvailabilityTag(isAvailable),
       filters: [

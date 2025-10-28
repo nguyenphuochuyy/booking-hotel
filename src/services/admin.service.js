@@ -502,6 +502,15 @@ export async function checkOutGuest(bookingCode) {
 }
 
 /**
+ * Tạo đặt phòng trực tiếp (Walk-in)
+ * @param {Object} data - { full_name, phone, national_id, room_type_id, room_id, check_in_date, check_out_date, num_person }
+ * @returns {Promise}
+ */
+export async function createWalkInBooking(data) {
+  return http.post('/bookings/walk-in', data)
+}
+
+/**
  * Tìm đặt phòng theo mã
  * @param {string} bookingCode - Mã đặt phòng
  * @returns {Promise}
@@ -537,6 +546,14 @@ export async function viewInvoice(id) {
   return http.get(`/bookings/${id}/invoice`)
 }
 
+/**
+ * Tạo user cho walk-in
+ * @param {Object} data - { full_name, cccd }
+ * @returns {Promise}
+ */
+export async function createWalkInUser(data) {
+  return http.post(ADMIN.WALK_IN.CREATE_USER, data)
+}
 export default {
   // Users
   getAllUsers,
@@ -601,6 +618,7 @@ export default {
   findBookingByCode,
   getAvailableRoomsForType,
   generateInvoicePDF,
-  viewInvoice
+  viewInvoice,
+  createWalkInUser,
 }
 

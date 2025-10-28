@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Card, Row, Col, Button, Typography, Space, Divider, 
   Image, Form, Input, Select, message, Collapse, Spin
@@ -8,6 +8,7 @@ import formatPrice from '../../utils/formatPrice'
 import { UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { createTempBooking, createPaymentLink } from '../../services/booking.service'
 import './BookingConfirmation.css'
+import { useAuth } from '../../context/AuthContext'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -18,18 +19,27 @@ const BookingConfirmation = () => {
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  
+
   const bookingInfo = location.state
   
-    if (!bookingInfo) {
-      message.error('Thông tin đặt phòng không hợp lệ')
-    navigate('/hotels')
-    return null
-  }
-
+  const {user} = useAuth()
+  
+  // Prefill user info into form
+  useEffect(() => {
+    if (user) {
+      form.setFieldsValue({
+        fullName: user.full_name || '',
+        email: user.email || '',
+       
+      })
+    }
+  }, [user, form])
+  
   const handleSubmit = async (values) => {
     try {
       setLoading(true)
+     
+      
       
       // 1. Tạo temp booking
       const tempBookingResponse = await createTempBooking({
@@ -148,22 +158,13 @@ const BookingConfirmation = () => {
                 onFinish={handleSubmit}
               >
                   <Row gutter={16}>
-                    <Col span={12}>
+                    <Col span={24}>
                     <Form.Item
-                      name="firstName"
-                      label="Họ"
+                      name="fullName"
+                      label="Họ và tên"
                       rules={[{ required: true, message: 'Vui lòng nhập họ!' }]}
                     >
-                      <Input placeholder="Họ" size="large" />
-                    </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                    <Form.Item
-                      name="lastName"
-                      label="Tên"
-                      rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}
-                    >
-                      <Input placeholder="Tên" size="large" />
+                      <Input placeholder="Nhập họ và tên" size="large" />
                     </Form.Item>
                     </Col>
                   </Row>

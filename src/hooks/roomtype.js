@@ -46,9 +46,7 @@ export function useRoomTypes(initialParams = {}) {
     try {
       const res = await getRoomTypes({ ...(overrideParams || params), signal: controller.signal })
       // Backend trả về: { roomTypes, pagination, statusCode }
-      const rawRoomTypes = res?.roomTypes || []
-      console.log(rawRoomTypes);
-      
+      const rawRoomTypes = res?.roomTypes || []      
       // Nạp thêm giá hiện tại cho từng room type (song song)
       const enriched = await Promise.all(rawRoomTypes.map(async (rt) => {
         try {

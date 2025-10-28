@@ -32,28 +32,14 @@ import {
 } from '../../../services/admin.service'
 import './roomType.css'
 import { useRoomTypes } from '../../../hooks/roomtype'
-const { Title } = Typography
+import { getAmenitiesFromLocal, addAmenity, removeAmenity } from '../../../constants/amenities'
+
+const { Title, Text } = Typography
 const { Search } = Input
 const { TextArea } = Input
 
-// Danh sách tiện nghi mẫu
-const AMENITIES_OPTIONS = [
-  'WiFi miễn phí',
-  'Điều hòa',
-  'Tivi',
-  'Tủ lạnh',
-  'Nước nóng',
-  'Ban công',
-  'Bồn tắm',
-  'Máy sấy tóc',
-  'Két sắt',
-  'Minibar',
-  'Bàn làm việc',
-  'Sofa',
-  'Tầm nhìn biển',
-  'Tầm nhìn thành phố',
-  'Không hút thuốc'
-]
+// Lấy danh sách tiện nghi
+let AMENITIES_OPTIONS = getAmenitiesFromLocal()
 
 // Danh sách danh mục loại phòng
 const CATEGORY_OPTIONS = [
@@ -83,6 +69,10 @@ function RoomTypes() {
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImages, setPreviewImages] = useState([])
   const [previewIndex, setPreviewIndex] = useState(0)
+  const [isAmenityModalVisible, setIsAmenityModalVisible] = useState(false)
+  const [isManageAmenitiesModalVisible, setIsManageAmenitiesModalVisible] = useState(false)
+  const [newAmenity, setNewAmenity] = useState('')
+  const [amenitiesList, setAmenitiesList] = useState(() => getAmenitiesFromLocal())
 
   // Fetch danh sách room types từ API - chỉ gọi 1 lần hoặc khi có CRUD
   const fetchRoomTypes = async () => {
@@ -107,6 +97,24 @@ function RoomTypes() {
         ...prev,
         total: roomTypesWithKey.length,
       }))
+
+      // Extract amenities từ database và merge với localStorage
+      const allAmenitiesFromDB = new Set()
+      roomTypesData.forEach(roomType => {
+        if (roomType.amenities && Array.isArray(roomType.amenities)) {
+          roomType.amenities.forEach(amenity => {
+            if (amenity) allAmenitiesFromDB.add(amenity)
+          })
+        }
+      })
+
+      // Merge với amenities từ localStorage
+      const localAmenities = getAmenitiesFromLocal()
+      const combinedAmenities = Array.from(new Set([...localAmenities, ...allAmenitiesFromDB]))
+      
+      // Update amenities list
+      setAmenitiesList(combinedAmenities)
+
     } catch (error) {
       console.error('Error fetching room types:', error)
       message.error(error.message || 'Không thể tải danh sách loại phòng')
@@ -521,6 +529,98 @@ function RoomTypes() {
     setPreviewIndex(0)
   }
 
+  const handleAddAmenity = () => {
+    setIsAmenityModalVisible(true)
+  }
+
+  const handleAmenityModalOk = () => {
+    if (!newAmenity.trim()) {
+      message.warning('Vui lòng nhập tên tiện nghi!')
+      return
+    }
+
+    const amenityName = newAmenity.trim()
+    
+    // Kiểm tra trùng lặp
+    if (amenitiesList.includes(amenityName)) {
+      message.warning('Tiện nghi này đã tồn tại!')
+      return
+    }
+
+    const updated = addAmenity(amenityName)
+    setAmenitiesList(updated)
+    setIsAmenityModalVisible(false)
+    setNewAmenity('')
+    message.success(`Đã thêm tiện nghi "${amenityName}"`)
+  }
+
+  const handleAmenityModalCancel = () => {
+    setIsAmenityModalVisible(false)
+    setNewAmenity('')
+  }
+
+  const handleDeleteAmenity = (amenity) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa tiện nghi',
+      content: `Bạn có chắc chắn muốn xóa tiện nghi "${amenity}"?`,
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        const updated = removeAmenity(amenity)
+        setAmenitiesList(updated)
+        message.success(`Đã xóa tiện nghi "${amenity}"`)
+      }
+    })
+  }
+
+  const handleManageAmenities = () => {
+    setIsManageAmenitiesModalVisible(true)
+  }
+
+  const handleSaveAmenitiesToDB = async () => {
+    try {
+      // Reload data để lấy amenities mới nhất từ database
+      await fetchRoomTypes()
+      message.success('Đã cập nhật danh sách tiện nghi!')
+      setIsManageAmenitiesModalVisible(false)
+    } catch (error) {
+      console.error('Error saving amenities:', error)
+      message.error('Không thể lưu tiện nghi!')
+    }
+  }
+
+  const handleDeleteAmenityFromManage = (amenity) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa tiện nghi',
+      content: (
+        <div>
+          <p>Bạn có chắc chắn muốn xóa tiện nghi "<strong>{amenity}</strong>"?</p>
+          <div style={{ 
+            marginTop: 12, 
+            padding: 12, 
+            background: '#fff1f0',
+            borderRadius: 4,
+            border: '1px solid #ffccc7'
+          }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Lưu ý: Tiện nghi này sẽ bị xóa khỏi localStorage. 
+              Các phòng đã tạo sử dụng tiện nghi này sẽ không bị ảnh hưởng.
+            </Text>
+          </div>
+        </div>
+      ),
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        const updated = removeAmenity(amenity)
+        setAmenitiesList(updated)
+        message.success(`Đã xóa tiện nghi "${amenity}"`)
+      }
+    })
+  }
+
   // Upload handlers
   const handleUploadChange = ({ fileList: newFileList }) => {
     setFileList(newFileList)
@@ -579,14 +679,24 @@ function RoomTypes() {
     <div className="room-types-management">
       <div className="room-types-header">
         <Title level={2}>Quản lý loại phòng</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={handleAddNew}
-        >
-          Thêm loại phòng
-        </Button>
+        <Space>
+          <Button
+            type="default"
+            icon={<AppstoreOutlined />}
+            size="large"
+            onClick={handleManageAmenities}
+          >
+            Quản lý tiện nghi
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={handleAddNew}
+          >
+            Thêm loại phòng
+          </Button>
+        </Space>
       </div>
 
       <div className="room-types-search">
@@ -724,14 +834,26 @@ function RoomTypes() {
 
           <Form.Item
             name="amenities"
-            label="Tiện nghi"
+            label={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Tiện nghi</span>
+                <Button 
+                  type="dashed" 
+                  icon={<PlusOutlined />} 
+                  size="small"
+                  onClick={handleAddAmenity}
+                >
+                  Thêm tiện nghi
+                </Button>
+              </div>
+            }
             extra="Chọn các tiện nghi có sẵn trong phòng"
           >
             <Select
               mode="tags"
               size="large"
               placeholder="Chọn hoặc nhập tiện nghi"
-              options={AMENITIES_OPTIONS.map(item => ({ label: item, value: item }))}
+              options={amenitiesList.map(item => ({ label: item, value: item }))}
               maxTagCount="responsive"
             />
           </Form.Item>
@@ -788,6 +910,130 @@ function RoomTypes() {
               ))}
             </div>
           </Image.PreviewGroup>
+        </div>
+      </Modal>
+
+      {/* Add Amenity Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PlusOutlined />
+            <span>Thêm tiện nghi mới</span>
+          </div>
+        }
+        open={isAmenityModalVisible}
+        onOk={handleAmenityModalOk}
+        onCancel={handleAmenityModalCancel}
+        okText="Thêm"
+        cancelText="Hủy"
+        centered
+        destroyOnClose
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label="Tên tiện nghi"
+            rules={[{ required: true, message: 'Vui lòng nhập tên tiện nghi!' }]}
+          >
+            <Input
+              placeholder="VD: Máy giặt, Điện thoại bàn, Két sắt điện tử..."
+              value={newAmenity}
+              onChange={(e) => setNewAmenity(e.target.value)}
+              onPressEnter={handleAmenityModalOk}
+              size="large"
+            />
+          </Form.Item>
+        </Form>
+        
+        <div style={{ marginTop: 16, padding: 16, background: '#f5f5f5', borderRadius: 6 }}>
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>Danh sách tiện nghi hiện có:</Text>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {amenitiesList.map((amenity, index) => (
+              <Tag 
+                key={index} 
+                color="blue" 
+                closable 
+                onClose={() => handleDeleteAmenity(amenity)}
+                style={{ marginBottom: 4 }}
+              >
+                {amenity}
+              </Tag>
+            ))}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Manage Amenities Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AppstoreOutlined />
+            <span>Quản lý tiện nghi</span>
+          </div>
+        }
+        open={isManageAmenitiesModalVisible}
+        onOk={handleSaveAmenitiesToDB}
+        onCancel={() => setIsManageAmenitiesModalVisible(false)}
+        okText="Lưu"
+        cancelText="Hủy"
+        width={700}
+        centered
+        destroyOnClose
+      >
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text strong style={{ fontSize: 16 }}>Danh sách tiện nghi ({amenitiesList.length})</Text>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleAddAmenity}
+              size="small"
+            >
+              Thêm mới
+            </Button>
+          </div>
+          
+          <div style={{ 
+            maxHeight: '400px', 
+            overflowY: 'auto',
+            border: '1px solid #d9d9d9',
+            borderRadius: 6,
+            padding: 16
+          }}>
+            {amenitiesList.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {amenitiesList.map((amenity, index) => (
+                  <Tag 
+                    key={index} 
+                    color="blue" 
+                    closable 
+                    onClose={() => handleDeleteAmenityFromManage(amenity)}
+                    style={{ marginBottom: 4, fontSize: 14, padding: '4px 12px' }}
+                  >
+                    {amenity}
+                  </Tag>
+                ))}
+              </div>
+            ) : (
+              <Empty description="Chưa có tiện nghi nào" />
+            )}
+          </div>
+        </div>
+
+        <div style={{ 
+          padding: 16, 
+          background: '#e6f7ff', 
+          borderRadius: 6,
+          border: '1px solid #91d5ff'
+        }}>
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>
+            <ExclamationCircleOutlined style={{ color: '#1890ff', marginRight: 4 }} />
+            Lưu ý:
+          </Text>
+          <div style={{ fontSize: 14, color: '#595959' }}>
+            <div>• Danh sách tiện nghi được lấy từ tất cả loại phòng trong database</div>
+            <div>• Thêm mới sẽ lưu vào localStorage để sử dụng cho các phòng mới</div>
+            <div>• Xóa tiện nghi sẽ xóa khỏi localStorage, không ảnh hưởng đến phòng đã tạo</div>
+          </div>
         </div>
       </Modal>
     </div>
