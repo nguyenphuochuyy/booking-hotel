@@ -1,320 +1,124 @@
 import React, { useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Layout, Button, Grid, Drawer, Space, Typography, Avatar, Badge, Dropdown, Divider } from 'antd'
+import { Link, useLocation } from 'react-router-dom'
 import './Navigation.css'
-import { MenuOutlined, LoginOutlined, UserAddOutlined, BellOutlined, UserOutlined, HomeOutlined, BookOutlined, InfoCircleOutlined, ReadOutlined, ShoppingCartOutlined, SearchOutlined, LogoutOutlined, CalendarOutlined, AppstoreOutlined } from '@ant-design/icons'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 import { useAuth } from '../../context/AuthContext'
-const { Header } = Layout
-const { useBreakpoint } = Grid
-const { Text } = Typography
 
 function Navigation() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const screens = useBreakpoint()
-  const { user, setUser , logout , isAuthenticated } = useAuth()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const { user, isAuthenticated, logout } = useAuth()
 
-  // Responsive sizing tokens by device type 
-  const device = screens.lg ? 'pc' : (screens.md ? 'tablet' : 'phone')
-  const sizes = {
-    phone: {
-      topBarPaddingY: 8,
-      topBarPaddingX: 12,
-      topTextSize: 12,
-      headerHeight: 72,
-      containerPadX: 12,
-      logo: 80,
-      menuFont: 14,
-      menuPadY: 6,
-      menuPadX: 8,
-      iconSize: 16,
-      bookBtnSize: 'small',
-      drawerLogoSize: 45,
-      drawerTitleSize: 16,
-    },
-    tablet: {
-      topBarPaddingY: 10,
-      topBarPaddingX: 16,
-      topTextSize: 13,
-      headerHeight: 90,
-      containerPadX: 16,
-      logo: 110,
-      menuFont: 15,
-      menuPadY: 8,
-      menuPadX: 10,
-      iconSize: 18,
-      bookBtnSize: 'middle',
-      drawerLogoSize: 50,
-      drawerTitleSize: 18,
-    },
-    pc: {
-      topBarPaddingY: 10,
-      topBarPaddingX: 20,
-      topTextSize: 14,
-      headerHeight: 100,
-      containerPadX: 20,
-      logo: 130,
-      menuFont: 16,
-      menuPadY: 10,
-      menuPadX: 12,
-      iconSize: 20,
-      bookBtnSize: 'middle',
-      drawerLogoSize: 50,
-      drawerTitleSize: 18,
-    },
-  }
-  const S = sizes[device]
   const menuItems = useMemo(() => ([
     { key: '/', label: 'Trang chủ' },
     { key: '/about', label: 'Về chúng tôi' },
-    {
-      key: '/hotels',
-      label: 'Phòng',
-     
-    },
     { key: '/services', label: 'Dịch vụ' },
     { key: '/news', label: 'Tin tức' },
     { key: '/gallery', label: 'Thư viện ảnh' },
     { key: '/contact', label: 'Liên hệ' },
   ]), [])
-  // hàm xử lý đăng xuất 
-  const UserLogout = () => {
-    logout()
-    navigate('/login')
-  }
-  // đóng menu khi click vào menu
-  const onMenuClick = (e) => {
-    navigate(e.key)
-    setDrawerOpen(false)
-  }
-
-  const notificationBell = (
-    <Badge count={3} overflowCount={99} size="small">
-      <Button type="text" icon={<BellOutlined style={{  fontSize: S.iconSize }} />} />
-    </Badge>
-  )
-
-  
-  // Phần notificationBell là biểu tượng chuông thông báo với số lượng thông báo (ở đây là 3).
-  // Khi có nhiều thông báo hơn 99 thì sẽ hiển thị 99+.
-  // Sử dụng Badge của Ant Design để hiển thị số lượng, và Button để hiển thị icon chuông.
-  const userSection = (
-    <Dropdown
-      menu={{
-        items: isAuthenticated
-          ? [
-              { key: 'profile', label: 'Hồ sơ', onClick: () => navigate('/user/profile') },
-              { key: 'orders', label: 'Đơn đặt phòng', onClick: () => navigate('/user/bookings') },
-              { key: 'logout', label: 'Đăng xuất', onClick: () => UserLogout() },
-            ]
-          : [
-              { key: 'login', label: 'Đăng nhập', onClick: () => navigate('/login') },
-              { key: 'register', label: 'Đăng ký', onClick: () => navigate('/register') },
-            ],
-      }}
-      placement="bottomRight"
-    >
-      {isAuthenticated ? (
-        <Avatar style={{ backgroundColor: '#7265e6' }} icon={<UserOutlined style={{ fontSize: S.iconSize }} />} />
-      ) : (
-        <Button type="text" icon={<UserOutlined style={{ fontSize: S.iconSize }} />} />
-      )}
-    </Dropdown>
-  )
 
   const activeKey = menuItems.find(i => i.key === location.pathname)?.key || '/'
 
-  const renderMenuItems = (items, isMobile = false) => (
+  const renderMenu = (isMobile = false) => (
     <ul className={`nav-menu${isMobile ? ' mobile' : ''}`}>
-      {items.map((item) => (
-        <li key={item.key} className={`nav-item${activeKey === item.key ? ' active' : ''}${item.children ? ' has-children' : ''}`}>
-          <Link
-            to={item.key}
-            className="nav-link"
-            style={isMobile ? { fontSize: S.menuFont, padding: `${S.menuPadY}px ${S.menuPadX}px` } : {}}
-            onClick={() => {
-              if (isMobile) setDrawerOpen(false)
-            }}
-          >
-            {item.icon} <span style={{ marginLeft: 6 }}>{item.label}</span>
+      {menuItems.map(item => (
+        <li key={item.key} className={`nav-item${activeKey === item.key ? ' active' : ''}`}>
+          <Link to={item.key} className="nav-link" onClick={() => { if (isMobile) setIsMenuOpen(false) }}>
+            {item.label}
           </Link>
-          {Array.isArray(item.children) && item.children.length > 0 && (
-            <ul className="submenu">
-              {item.children.map((sub) => (
-                <li key={sub.key} className={`nav-subitem${activeKey === sub.key ? ' active' : ''}`}>
-                  <Link
-                    to={sub.key}
-                    className="nav-sublink"
-                    onClick={() => {
-                      if (isMobile) setDrawerOpen(false)
-                    }}
-                  >
-                    {sub.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
         </li>
       ))}
     </ul>
   )
 
   return (
-    <div className="header-yellow">
-      {/* Top wellcome bar */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        padding : `${S.topBarPaddingY}px ${S.topBarPaddingX}px`,
-        zIndex: 101,
-        width: '100%',
-        background: '#c08a19',
-        color: '#fff',
-        
-      }}>
-        <div style={{
-          height: 32,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          gap: 12,
-          maxWidth: 1280,
-          margin: '0 auto',
-          
-        }}>
-          <Text style={{ color: '#fff', fontSize: S.topTextSize}} ellipsis>
-            {device === 'phone' ? '' : 'Chào mừng bạn đến với Bean Hotel!'}
-          </Text>
-      
+    <div className="navigation">
+      <div className="nav-container">
+        {/* Left: Logo */}
+        <div className="nav-left">
+          <Link to="/" className="nav-logo">
+            <img src={logo} alt="Hotel Logo" className="hotel-logo" />
+            <span className="hotel-name">Bean Hotel</span>
+          </Link>
+        </div>
+
+        {/* Center: Menu (tablet/pc) */}
+        <nav className="nav-center" style={{ justifySelf: 'center' }}>
+          {renderMenu(false)}
+        </nav>
+
+        {/* Right: Actions (PC/Tablet) */}
+        <div className="nav-actions" style={{ justifySelf: 'end' }}>
+          {!isAuthenticated ? (
+            <>
+              <Link to="/login" className="action-link login-btn">Đăng nhập</Link>
+              <Link to="/register" className="action-link register-btn">Đăng ký</Link>
+            </>
+          ) : (
+            <div
+              className="user-menu"
+              onMouseEnter={() => setIsUserMenuOpen(true)}
+              onMouseLeave={() => setIsUserMenuOpen(false)}
+            >
+              <button
+                className="user-avatar"
+                onClick={() => setIsUserMenuOpen(v => !v)}
+                aria-haspopup="true"
+                aria-expanded={isUserMenuOpen}
+              >
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </button>
+              {isUserMenuOpen && (
+                <div className="user-dropdown">
+                  <Link to="/user/profile" className="user-item">Thông tin cá nhân</Link>
+                  <Link to="/user/bookings" className="user-item">Lịch sử đặt phòng</Link>
+                  {user?.role === 'ADMIN' && (
+                    <Link to="/admin" className="user-item">Trang quản lý</Link>
+                  )}
+                  <button className="user-item logout" onClick={logout}>Đăng xuất</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Mobile burger (<992px) */}
+        <div className="nav-right" style={{ justifySelf: 'end' }}>
+          <button
+            className={`menu-toggle${isMenuOpen ? ' open' : ''}`}
+            aria-label="Toggle navigation menu"
+            onClick={() => setIsMenuOpen(v => !v)}
+          >
+            <span className="bar"></span>
+            <span className="bar"></span>
+            <span className="bar"></span>
+          </button>
         </div>
       </div>
 
-      {/* Main header */}
-      <Header style={{
-        position: 'sticky',
-        top: 0,
-        height: S.headerHeight,
-        zIndex: 100,
-        width: '100%',
-        padding: '0',
-        background: '#fff',
-        borderBottom: '1px solid rgba(2,6,23,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          padding: `0 ${S.containerPadX}px`, 
-          maxWidth: 1400, 
-          margin: '0 auto',
-          width: '100%',
-          height: '100%'
-        }}>
-          {/* Left: Logo */}
-          <Link to="/" style={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            width: `${S.logo}px`,
-            height: `${S.logo}px`,
-            flexShrink: 0,
-            marginRight: screens.md ? 20 : 10
-          }}>
-            <img 
-              src={logo} 
-              alt="Hotel Logo" 
-              style={{ 
-                width: '100%', 
-                height: '100%',
-                objectFit: 'contain'
-              }} 
-            />
-          </Link>
-          
-          {/* Center: Menu (desktop/tablet) */}
-          {screens.md && (
-            <div style={{ 
-              flex: 1, 
-              display: 'flex', 
-              justifyContent: 'center',
-              paddingLeft: device === 'pc' ? 20 : 12,
-              paddingRight: device === 'pc' ? 20 : 12
-            }}>
-              {renderMenuItems(menuItems, false)}
+      {/* Mobile panel */}
+      <div style={{ display: isMenuOpen ? 'block' : 'none' }}>
+        {renderMenu(true)}
+        <div style={{ padding: '12px' }}>
+          {!isAuthenticated ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <Link to="/login" className="login-btn" style={{ textAlign: 'center' }} onClick={() => setIsMenuOpen(false)}>Đăng nhập</Link>
+              <Link to="/register" className="register-btn" style={{ textAlign: 'center' }} onClick={() => setIsMenuOpen(false)}>Đăng ký</Link>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <Link to="/user/profile" className="login-btn" onClick={() => setIsMenuOpen(false)}>Thông tin cá nhân</Link>
+              <Link to="/user/bookings" className="login-btn" onClick={() => setIsMenuOpen(false)}>Lịch sử đặt phòng</Link>
+              {user?.role === 'ADMIN' && (
+                <Link to="/admin" className="login-btn" onClick={() => setIsMenuOpen(false)}>Trang quản lý</Link>
+              )}
+              <button className="login-btn" onClick={() => { setIsMenuOpen(false); logout() }}>Đăng xuất</button>
             </div>
           )}
-
-          {/* Right: Actions */}
-          {screens.md ? (
-            <Space size={12} style={{ marginLeft: 'auto', flexShrink: 0 }}>
-              {notificationBell}
-              {userSection}
-              <Link to="/hotels">
-                <Button 
-                  type="primary" 
-                  size={S.bookBtnSize}
-                  icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} 
-                  style={{ background: '#c08a19', borderColor: '#c08a19' }}
-                >
-                  {device === 'pc' ? 'Đặt phòng' : ''}
-                </Button>
-              </Link>
-            </Space>
-          ) : (
-            <Space size={8} style={{ marginLeft: 'auto' }}>
-              <Link to="/hotels">
-                <Button 
-                  type="primary" 
-                  size={S.bookBtnSize} 
-                  icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} 
-                  style={{ background: '#c08a19', borderColor: '#c08a19' }}
-                >
-                  Đặt
-                </Button>
-              </Link>
-              <Button 
-                type="text" 
-                icon={<MenuOutlined style={{ color: '#1f2937', fontSize: S.iconSize + 2 }} />} 
-                onClick={() => setDrawerOpen(true)} 
-              />
-            </Space>
-          )}
         </div>
-      </Header>
-
-      {!screens.md && (
-        <Drawer
-          className="header-yellow"
-          title={
-            <Space>
-              <img src={logo} alt="Hotel Logo" style={{ width: S.drawerLogoSize, height: S.drawerLogoSize, objectFit: 'contain' }} />
-              <span style={{ fontSize: S.drawerTitleSize, fontWeight: 600 }}>Bean Hotel</span>
-            </Space>
-          }
-          placement="left"
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          bodyStyle={{ padding: 0 }}
-        >
-          <nav style={{ padding: 12 }}>
-            {renderMenuItems(menuItems, true)}
-          </nav>
-          <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            {notificationBell}
-            {userSection}
-          </div>
-          <div style={{ padding: 16 }}>
-            <Link to="/bookings" onClick={() => setDrawerOpen(false)}>
-              <Button block type="primary" size="large" icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
-            </Link>
-          </div>
-        </Drawer>
-      )}
+      </div>
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { ArrowUpOutlined } from '@ant-design/icons';
 function UserLayout() {
   return (
     <div className="App">
-      <Navigation />
+      <Navigation/>
       <main className="main-content">
         <Outlet />
       </main>

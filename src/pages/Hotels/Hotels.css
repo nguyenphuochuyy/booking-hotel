@@ -486,3 +486,271 @@
   }
 }
 
+
+/* --- Kiểu Room Card Mới --- */.room-card-new {
+
+  border-radius: 16px;
+
+  /* Shadow tinh tế hơn */
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  transition: all 0.3s ease;
+
+  border: 1px solid #e5e7eb;
+
+  overflow: hidden; /* Quan trọng: để bo góc hình ảnh */
+
+  margin-bottom: 24px; /* Giữ lại margin từ CSS cũ */
+
+}.room-card-new:hover {
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  transform: translateY(-4px);
+
+}/* Tắt padding mặc định của card body */.room-card-new .ant-card-body {
+
+  padding: 0 !important;
+
+}/* Cột hình ảnh */.room-image-new {
+
+  position: relative;
+
+  /*     Bắt buộc chiều cao 100% của cột 
+
+    (chỉ hoạt động vì Row có align="stretch") 
+
+  */
+
+  height: 100%; 
+
+  min-height: 300px; /* Đảm bảo có chiều cao tối thiểu */
+
+  overflow: hidden;
+
+}.room-image-new img {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+}.room-card-new:hover .room-image-new img {
+
+  transform: scale(1.05); /* Hiệu ứng zoom khi hover */
+
+}/* Placeholder khi không có ảnh */.room-image-placeholder {
+
+  width: 100%;
+
+  height: 100%;
+
+  min-height: 300px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: #f9fafb;
+
+  color: #9ca3af;
+
+}.room-image-placeholder .anticon {
+
+  font-size: 48px;
+
+  margin-bottom: 16px;
+
+}/* Cột thông tin */.room-info-new {
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100%;
+
+  padding: 24px;
+
+}.room-info-main {
+
+  flex-grow: 1; /* Quan trọng: Đẩy footer xuống dưới */
+
+}/* Tên phòng */.room-name-new {
+
+  color: #1f2937 !important;
+
+  margin: 0 0 12px 0 !important;
+
+  font-size: 22px !important; /* Tinh chỉnh font */
+
+  font-weight: 700 !important;
+
+  line-height: 1.3;
+
+}/* Chi tiết chính (Sức chứa, Diện tích) */.key-details .ant-space-item > span {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px; /* Tăng khoảng cách icon và text */
+
+}.key-details .ant-typography {
+
+  font-size: 14px;
+
+  color: #4a5568; /* Màu xám đậm hơn */
+
+}.key-details .anticon {
+
+  font-size: 16px;
+
+  color: #c08a19; /* Màu vàng gold cho icon */
+
+}/* Kiểu cho Tag tiện nghi */.amenities-list-tags .ant-tag {
+
+  background-color: #f9fafb;
+
+  border-color: #f3f4f6;
+
+  color: #4b5563;
+
+  font-size: 12px;
+
+  padding: 3px 10px;
+
+  border-radius: 6px;
+
+}/* Phần chân thông tin (Giá) */.room-info-footer {
+
+  margin-top: 24px; /* Tách biệt khỏi phần trên */
+
+  padding-top: 24px;
+
+  border-top: 1px solid #f0f0f0; /* Đường kẻ mờ */
+
+}.rate-info .ant-typography-strong {
+
+  font-size: 15px;
+
+  color: #111827;
+
+}.rate-policy-text {
+
+  color: #059669 !important; /* Giữ màu xanh */
+
+  font-size: 14px !important;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+}/* Phần Giá và Nút bấm */.room-price-action {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 16px;
+
+  margin-top: 16px;
+
+}.room-price-text .ant-typography-strong {
+
+  font-size: 26px; /* Làm giá nổi bật */
+
+  color: #c08a19;
+
+  line-height: 1.2;
+
+}.room-price-text .ant-typography-secondary {
+
+  font-size: 13px;
+
+  color: #718096;
+
+}/* Nút Chọn */.select-btn {
+
+  background: #c08a19 !important;
+
+  border-color: #c08a19 !important;
+
+  height: 48px;
+
+  padding: 0 32px;
+
+  font-weight: 600;
+
+  border-radius: 12px;
+
+  font-size: 16px;
+
+}/* --- Responsive cho Room Card --- */@media (max-width: 767px) {
+
+  .room-image-new,
+
+  .room-image-placeholder {
+
+    height: 220px; /* Giảm chiều cao ảnh trên mobile */
+
+    min-height: 220px;
+
+  }
+
+
+
+  .room-info-new {
+
+    padding: 20px;
+
+  }
+
+  
+
+  .room-name-new {
+
+    font-size: 20px !important;
+
+  }
+
+
+
+  .room-price-action {
+
+    flex-direction: column;
+
+    align-items: stretch; /* Nút và giá sẽ dãn 100% */
+
+  }
+
+
+
+  .room-price-text {
+
+    text-align: left; /* Căn trái giá khi xuống dòng */
+
+    margin-bottom: 8px;
+
+  }
+
+
+
+  .select-btn {
+
+    width: 100%; /* Nút full-width */
+
+  }
+
+}

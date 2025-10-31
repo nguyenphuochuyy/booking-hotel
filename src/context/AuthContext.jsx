@@ -48,7 +48,6 @@ export function AuthProvider({ children }) {
     if (token) {
       try { localStorage.setItem('accessToken', token) } catch (_err) {}
       setAccessToken(token)
-      
       // Fetch user profile ngay sau khi login
       try {
         const profileData = await getUserProfile()
@@ -67,7 +66,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
-    try { localStorage.removeItem('accessToken') } catch (_err) {}
+    try {
+       localStorage.removeItem('accessToken') 
+       localStorage.removeItem('user')
+    } catch (_err) {}
     setAccessToken(null)
     setUser(null)
   }, [])

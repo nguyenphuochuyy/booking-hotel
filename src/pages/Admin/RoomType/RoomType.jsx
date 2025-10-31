@@ -12,7 +12,8 @@ import {
   Upload,
   Tag,
   InputNumber,
-  Select
+  Select,
+  Empty
 } from 'antd'
 import {
   PlusOutlined,
@@ -60,6 +61,7 @@ function RoomTypes() {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingRoomType, setEditingRoomType] = useState(null)
   const [fileList, setFileList] = useState([])
+  const [knownImagesById, setKnownImagesById] = useState({}) // cache ảnh theo room_type_id ở FE
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -74,6 +76,34 @@ function RoomTypes() {
   const [newAmenity, setNewAmenity] = useState('')
   const [amenitiesList, setAmenitiesList] = useState(() => getAmenitiesFromLocal())
 
+  // Chuẩn hóa danh sách ảnh từ API về dạng mảng URL
+  const normalizeImages = (images) => {
+    if (Array.isArray(images)) return images.filter(Boolean)
+    if (!images) return []
+    // Nếu là JSON string của array
+    if (typeof images === 'string') {
+      const trimmed = images.trim()
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) return parsed.filter(Boolean)
+      } catch (_) {
+        // Không phải JSON, thử split theo dấu phẩy/chấm phẩy/xuống dòng
+        const parts = trimmed
+          .split(/[;,\n]/)
+          .map(s => s.trim())
+          .filter(Boolean)
+        if (parts.length) return parts
+      }
+    }
+    // Nếu là object kiểu map {0: url, 1: url}
+    if (typeof images === 'object') {
+      try {
+        return Object.values(images).map(String).filter(Boolean)
+      } catch (_) { return [] }
+    }
+    return []
+  }
+
   // Fetch danh sách room types từ API - chỉ gọi 1 lần hoặc khi có CRUD
   const fetchRoomTypes = async () => {
     try {
@@ -85,12 +115,21 @@ function RoomTypes() {
 
       const response = await getAllRoomTypes(params)
       const roomTypesData = response?.roomTypes || []
-
-      const roomTypesWithKey = roomTypesData.map(roomType => ({
-        ...roomType,
-        key: roomType.room_type_id
-      }))
-
+      console.log(roomTypesData);
+      
+      const roomTypesWithKey = roomTypesData.map(roomType => {
+        const id = roomType.room_type_id
+        const apiImages = normalizeImages(roomType.images)
+        const cachedImages = Array.isArray(knownImagesById[id]) ? knownImagesById[id] : []
+        // Hợp nhất ảnh từ API và cache FE, loại trùng lặp
+        const merged = Array.from(new Set([...(apiImages || []), ...(cachedImages || [])])).filter(Boolean)
+        return {
+          ...roomType,
+          images: merged,
+          key: id,
+        }
+      })
+     
       setAllRoomTypes(roomTypesWithKey)
       setFilteredRoomTypes(roomTypesWithKey)
       setPagination(prev => ({
@@ -171,7 +210,7 @@ function RoomTypes() {
       key: 'images',
       width: 120,
       render: (images, record) => {
-        const imageArray = Array.isArray(images) ? images : []
+        const imageArray = normalizeImages(images)
         const imageCount = imageArray.length
 
         if (imageCount === 0) {
@@ -210,6 +249,7 @@ function RoomTypes() {
       title: 'Tên loại phòng',
       dataIndex: 'room_type_name',
       key: 'room_type_name',
+      width: 200,
       render: (text) => (
         <Space>
           <span style={{ fontWeight: 500 }}>{text}</span>
@@ -350,8 +390,9 @@ function RoomTypes() {
     })
 
     // Set existing images to fileList for preview
-    if (record.images && Array.isArray(record.images) && record.images.length > 0) {
-      const existingFiles = record.images.map((url, index) => ({
+    const recordImages = normalizeImages(record.images)
+    if (recordImages.length > 0) {
+      const existingFiles = recordImages.map((url, index) => ({
         uid: `-existing-${index}`,
         name: `image-${index}.jpg`,
         status: 'done',
@@ -366,7 +407,7 @@ function RoomTypes() {
   }
 
   const handleDelete = (record) => {
-    const imageCount = Array.isArray(record.images) ? record.images.length : 0
+    const imageCount = normalizeImages(record.images).length
 
     Modal.confirm({
       title: 'Xác nhận xóa loại phòng',
@@ -475,8 +516,24 @@ function RoomTypes() {
       setLoading(true)
 
       if (editingRoomType) {
-        await updateRoomType(editingRoomType.room_type_id, formData)
+        const updatingId = editingRoomType.room_type_id
+        await updateRoomType(updatingId, formData)
         message.success('Cập nhật loại phòng thành công')
+
+        // Cập nhật ngay danh sách ảnh hiển thị ở FE: giữ ảnh cũ + thêm ảnh mới (object URLs)
+        const existingImages = fileList
+          .filter(file => !file.originFileObj && file.url)
+          .map(file => file.url)
+        const newFiles = fileList.filter(file => file.originFileObj)
+        const newPreviewUrls = newFiles.map(f => URL.createObjectURL(f.originFileObj))
+        const mergedImages = Array.from(new Set([...(existingImages || []), ...newPreviewUrls])).filter(Boolean)
+
+        // Lưu cache cho id hiện tại
+        setKnownImagesById(prev => ({ ...prev, [updatingId]: mergedImages }))
+
+        // Cập nhật ngay vào bảng để thấy đủ ảnh
+        setAllRoomTypes(prev => prev.map(rt => rt.room_type_id === updatingId ? { ...rt, images: mergedImages } : rt))
+        setFilteredRoomTypes(prev => prev.map(rt => rt.room_type_id === updatingId ? { ...rt, images: mergedImages } : rt))
       } else {
         await createRoomType(formData)
         message.success('Tạo loại phòng thành công')
@@ -486,6 +543,7 @@ function RoomTypes() {
       setEditingRoomType(null)
       setFileList([])
       form.resetFields()
+      // Refetch để đồng bộ với ảnh từ server; FE vẫn giữ cache để không mất các ảnh vừa thêm
       fetchRoomTypes()
     } catch (error) {
       if (error.errorFields) {

@@ -28,7 +28,6 @@ function Home() {
   return (
     <>
       <div className="banner-slider">
-     
         <div className="banner-image-container">
           <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">

@@ -30,6 +30,7 @@ import {
   ExpandOutlined,
   CloseOutlined,
   EyeOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import { useRoomTypes } from '../../hooks/roomtype'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -52,6 +53,7 @@ function Hotels() {
   // State cho search results from API
   const [searchResults, setSearchResults] = useState([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [roomTypeSummary, setRoomTypeSummary] = useState([]) // Lưu summary_by_room_type từ API
   
   // Lấy query params từ URL
   const searchParams = new URLSearchParams(location.search)
@@ -76,8 +78,13 @@ function Hotels() {
             limit: 50
           }
           const response = await searchAvailableRooms(params)
+          console.log(response);
+          
           const rooms = response?.rooms || []
+          const summary = response?.summary_by_room_type || []
+          
           setSearchResults(rooms)
+          setRoomTypeSummary(summary) // Lưu summary vào state
         } catch (error) {
           console.error('Error loading available rooms:', error)
         } finally {
@@ -87,7 +94,7 @@ function Hotels() {
       
       loadAvailableRooms()
     }
-  }, [])
+  }, [checkIn, checkOut, adults, children]) // Thêm dependencies để reload khi params thay đổi
 
   // State cho filters
   const [sortBy, setSortBy] = useState('default')
@@ -125,6 +132,9 @@ function Hotels() {
       const amenities = item?.room_type?.amenities ?? item?.amenities ?? []
       const price = item?.price_per_night ?? item?.room_type?.prices?.[0]?.price_per_night ?? item?.prices?.[0]?.price_per_night
 
+      // Tìm summary cho room type này
+      const summary = roomTypeSummary.find(s => s.room_type_id === typeId)
+
       if (!existing) {
         map.set(typeId, {
           room_type_id: typeId,
@@ -135,6 +145,11 @@ function Hotels() {
           amenities,
           price_per_night: price,
           rooms: [item],
+          // Thêm thông tin từ summary
+          available_rooms: summary?.available_rooms || 0,
+          total_rooms: summary?.total_rooms || 0,
+          booked_rooms: summary?.booked_rooms || 0,
+          sold_out: summary?.sold_out || false,
         })
       } else {
         existing.rooms.push(item)
@@ -147,13 +162,19 @@ function Hotels() {
     }
 
     return Array.from(map.values())
-  }, [searchResults, checkIn, checkOut])
+  }, [searchResults, checkIn, checkOut, roomTypeSummary])
 
   // Determine data source: grouped search results if any, else room types catalog
   const dataSource = (checkIn && checkOut)
     ? groupedAvailableRoomTypes
     : roomTypes.map(room => ({
-        ...room,
+        room_type_id: room.room_type_id,
+        room_type_name: room.room_type_name,
+        capacity: room.capacity,
+        images: room.images,
+        amenities: room.amenities,
+        area: room.area,
+        price_per_night: room.price_per_night,
         room_type: {
           room_type_id: room.room_type_id,
           room_type_name: room.room_type_name,
@@ -307,107 +328,238 @@ function Hotels() {
                 </div>
               ) : (
                 filteredRooms.map(room => (
-                  <Card key={room.room_type_id} className="room-card-new" hoverable>
-                    <Row gutter={24} align="stretch">
-                      <Col xs={24} sm={24} md={8}>
-                        <div className="room-image-new">
-                          {room.images && room.images.length > 0 ? (
-                            <img 
-                              alt={room.room_type_name} 
-                              src={room.images[0]} 
-                              style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '12px' }}
-                            />
-                          ) : (
-                            <div style={{ 
-                              width: '100%', 
-                              height: '300px', 
-                              background: '#f0f0f0', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              color: '#999',
-                              borderRadius: '12px'
-                            }}>
-                              Không có hình ảnh
-                            </div>
-                          )}
-                        </div>
-                      </Col>
-                      <Col xs={24} sm={24} md={16}>
-                        <div className="room-info-new">
-                          <Title level={3} className="room-name-new">{room.room_type_name}</Title>
+                  // <Card key={room.room_type_id} className="room-card-new" hoverable>
+                  //   <Row gutter={24} align="stretch">
+                  //     <Col xs={24} sm={24} md={8}>
+                  //       <div className="room-image-new">
+                  //         {room.images && room.images.length > 0 ? (
+                  //           <img 
+                  //             alt={room.room_type_name} 
+                  //             src={room.images[0]} 
+                  //             style={{ width: '100%', height: '300px', objectFit: 'cover', borderRadius: '12px' }}
+                  //           />
+                  //         ) : (
+                  //           <div style={{ 
+                  //             width: '100%', 
+                  //             height: '300px', 
+                  //             background: '#f0f0f0', 
+                  //             display: 'flex', 
+                  //             alignItems: 'center', 
+                  //             justifyContent: 'center',
+                  //             color: '#999',
+                  //             borderRadius: '12px'
+                  //           }}>
+                  //             Không có hình ảnh
+                  //           </div>
+                  //         )}
+                  //       </div>
+                  //     </Col>
+                  //     <Col xs={24} sm={24} md={16}>
+                  //       <div className="room-info-new">
+                  //         <Title level={3} className="room-name-new">{room.room_type_name}</Title>
                           
-                          {/* Key Details */}
-                          <div className="key-details" style={{ marginTop: '12px', marginBottom: '16px' }}>
-                            <Space size="middle" wrap>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <UserOutlined style={{ color: '#6b7280' }} />
-                                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.capacity || 2} người</Text>
-                              </span>
+                  //         {/* Key Details */}
+                  //         <div className="key-details" style={{ marginTop: '12px', marginBottom: '16px' }}>
+                  //           <Space size="middle" wrap>
+                  //             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  //               <UserOutlined style={{ color: '#6b7280' }} />
+                  //               <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.capacity || 2} người</Text>
+                  //             </span>
                               
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <ExpandOutlined style={{ color: '#6b7280' }} />
-                                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.area || 0} m²</Text>
-                              </span>
-                            </Space>
-                          </div>
+                  //             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  //               <ExpandOutlined style={{ color: '#6b7280' }} />
+                  //               <Text style={{ fontSize: '14px', color: '#6b7280' }}>{room.area || 0} m²</Text>
+                  //             </span>
+                  //           </Space>
+                  //         </div>
 
-                          {/* Amenities List */}
-                          {room.amenities && Array.isArray(room.amenities) && room.amenities.length > 0 && (
-                            <div className="amenities-list" style={{ marginBottom: '20px' }}>
-                              <ul style={{ margin: 0, padding: '0 0 0 20px', fontSize: '14px', color: '#6b7280', listStyleType: 'none' }}>
-                                {room.amenities.slice(0, 6).map((amenity, index) => (
-                                  <li key={index} style={{ marginBottom: '4px' }}>{amenity}</li>
-                                ))}
-                              </ul>
+                  //         {/* Amenities List */}
+                  //         {room.amenities && Array.isArray(room.amenities) && room.amenities.length > 0 && (
+                  //           <div className="amenities-list" style={{ marginBottom: '20px' }}>
+                  //             <ul style={{ margin: 0, padding: '0 0 0 20px', fontSize: '14px', color: '#6b7280', listStyleType: 'none' }}>
+                  //               {room.amenities.slice(0, 6).map((amenity, index) => (
+                  //                 <li key={index} style={{ marginBottom: '4px' }}>{amenity}</li>
+                  //               ))}
+                  //             </ul>
                           
-                                <Text 
-                                  style={{ fontSize: '14px', color: '#c08a19', cursor: 'pointer' }}
-                                  onClick={() => handleShowModal(room)}
-                                >
-                                  Xem thêm
-                                </Text>
+                  //               <Text 
+                  //                 style={{ fontSize: '14px', color: '#c08a19', cursor: 'pointer' }}
+                  //                 onClick={() => handleShowModal(room)}
+                  //               >
+                  //                 Xem thêm
+                  //               </Text>
                           
-                            </div>
-                          )}
+                  //           </div>
+                  //         )}
 
-                          {/* Rate Information */}
-                          <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
-                            <Text strong style={{ fontSize: '14px' }}>Giá tiêu chuẩn</Text>
-                            <div style={{ marginTop: '8px', marginBottom: '16px' }}>
-                              <Space size="small" style={{ color: '#059669', fontSize: '14px' }}>
-                                <Text style={{ color: '#059669' }}>✓ Hủy miễn phí!</Text>
-                                <Text style={{ color: '#059669' }}>✓ Đặt ngay, trả sau</Text>
-                              </Space>
-                              <div>
-                                <Text type="secondary" style={{ fontSize: '14px' }}>Xem thêm</Text>
-                              </div>
-                            </div>
+                  //         {/* Rate Information */}
+                  //         <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                  //           <Text strong style={{ fontSize: '14px' }}>Giá tiêu chuẩn</Text>
+                  //           <div style={{ marginTop: '8px', marginBottom: '16px' }}>
+                  //             <Space size="small" style={{ color: '#059669', fontSize: '14px' }}>
+                  //               <Text style={{ color: '#059669' }}>✓ Hủy miễn phí!</Text>
+                  //               <Text style={{ color: '#059669' }}>✓ Đặt ngay, trả sau</Text>
+                  //             </Space>
+                  //             <div>
+                  //               <Text type="secondary" style={{ fontSize: '14px' }}>Xem thêm</Text>
+                  //             </div>
+                  //           </div>
 
-                            {/* Price and Select Button */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div>
-                                <Text strong style={{ fontSize: '24px', color: '#c08a19' }}>
-                                  {room.price_per_night ? formatPrice(room.price_per_night) : 'Liên hệ'}
-                                </Text>
-                                <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
-                                  Chi phí cho 1 đêm, 2 khách
-                                </Text>
-                              </div>
-                              <Button 
-                                type="primary" 
-                                size="large" 
-                                className="select-btn"
-                                onClick={() => handleSelectRoom(room)}
-                              >
-                                Chọn
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </Col>
-                    </Row>
-                  </Card>
+                  //           {/* Số lượng phòng còn lại - chỉ hiển thị khi có search params */}
+                  //           {checkIn && checkOut && room.available_rooms !== undefined && (
+                  //             <div style={{ marginBottom: '12px', padding: '8px', background: room.sold_out ? '#fee' : '#f0f9ff', borderRadius: '4px' }}>
+                  //               {room.sold_out ? (
+                  //                 <Text type="danger" style={{ fontSize: '14px', fontWeight: 500 }}>
+                  //                   ⚠️ Hết phòng
+                  //                 </Text>
+                  //               ) : (
+                  //                 <Text style={{ fontSize: '14px', color: '#059669', fontWeight: 500 }}>
+                  //                   ✓ Còn {room.available_rooms} phòng trống
+                  //                 </Text>
+                  //               )}
+                  //               <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                  //                 Tổng {room.total_rooms} phòng • Đã đặt {room.booked_rooms} phòng
+                  //               </Text>
+                  //             </div>
+                  //           )}
+
+                  //           {/* Price and Select Button */}
+                  //           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  //             <div>
+                  //               <Text strong style={{ fontSize: '24px', color: '#c08a19' }}>
+                  //                 {room.price_per_night ? formatPrice(room.price_per_night) : 'Liên hệ'}
+                  //               </Text>
+                  //               <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+                  //                 Chi phí cho 1 đêm, 2 khách
+                  //               </Text>
+                  //             </div>
+                  //             <Button 
+                  //               type="primary" 
+                  //               size="large" 
+                  //               className="select-btn"
+                  //               onClick={() => handleSelectRoom(room)}
+                  //               disabled={checkIn && checkOut && room.sold_out}
+                  //             >
+                  //               {checkIn && checkOut && room.sold_out ? 'Hết phòng' : 'Chọn'}
+                  //             </Button>
+                  //           </div>
+                  //         </div>
+                  //       </div>
+                  //     </Col>
+                  //   </Row>
+                  // </Card>
+                  <Card 
+                    key={room.room_type_id} 
+                    className="room-card-new" 
+                    bodyStyle={{ padding: 0 }} // Bỏ padding mặc định của Card
+                  >
+                    <Row gutter={0} align="stretch">
+                      {/* Cột hình ảnh */}
+                      <Col xs={24} md={9}>
+                        <div className="room-image-new">
+                          {room.images && room.images.length > 0 ? (
+                            <img 
+                              alt={room.room_type_name} 
+                              src={room.images[0]} 
+                            />
+                          ) : (
+                            <div className="room-image-placeholder">
+                              <EnvironmentOutlined />
+                              <Text>Không có hình ảnh</Text>
+                            </div>
+                          )}
+                        </div>
+                      </Col>
+                      
+                      {/* Cột thông tin */}
+                      <Col xs={24} md={15}>
+                        <div className="room-info-new">
+                          
+                          {/* Phần thông tin chính (sẽ co giãn) */}
+                          <div className="room-info-main">
+                            <Title level={3} className="room-name-new">{room.room_type_name}</Title>
+                            
+                            {/* Chi tiết chính (Sức chứa, Diện tích) */}
+                            <div className="key-details" style={{ marginBottom: '16px' }}>
+                              <Space size="large" wrap>
+                                <span>
+                                  <UserOutlined />
+                                  <Text>{room.capacity || 2} người</Text>
+                            </span>
+                                <span>
+                                  <ExpandOutlined />
+                                  <Text>{room.area || 0} m²</Text>
+                                </span>
+                              </Space>
+                            </div>
+
+                            {/* Danh sách tiện nghi (dạng Tags) */}
+                            {room.amenities && Array.isArray(room.amenities) && room.amenities.length > 0 && (
+                              <div className="amenities-list-tags" style={{ marginBottom: '20px' }}>
+                                <Space size={[8, 8]} wrap>
+                                  {room.amenities.slice(0, 5).map((amenity, index) => (
+                                    <Tag key={index}>{amenity}</Tag>
+                                  ))}
+                                  {room.amenities.length > 5 && (
+                                    <Tag>+ {room.amenities.length - 5} thêm</Tag>
+                                  )}
+                                </Space>
+                              </div>
+                            )}
+
+                            <Button 
+                              type="link"
+                              icon={<EyeOutlined />}
+                              onClick={() => handleShowModal(room)}
+                              style={{ padding: 0, height: 'auto', fontSize: '14px', color: '#c08a19' }}
+                            >
+                              Xem chi tiết & tiện nghi
+                            </Button>
+
+                          </div>
+
+                          {/* Phần chân (Giá, Nút) - sẽ bị đẩy xuống dưới */}
+                          <div className="room-info-footer">
+                            {/* Thông tin giá */}
+                            <div className="rate-info" style={{ marginBottom: '16px' }}>
+                              <Text strong style={{ fontSize: '15px' }}>Giá tiêu chuẩn</Text>
+                              <div style={{ marginTop: '8px' }}>
+                                <Space direction="vertical" size={4}>
+                                  <Text className="rate-policy-text">
+                                    <CheckCircleOutlined /> Hủy miễn phí!
+                                  </Text>
+                                  <Text className="rate-policy-text">
+                                    <CheckCircleOutlined /> Đặt ngay, trả sau
+                                _</Text>
+                                </Space>
+                              </div>
+                            </div>
+
+                            {/* Giá và Nút Chọn */}
+                            <div className="room-price-action">
+                              <div className="room-price-text">
+                                <Text strong>
+                                  {room.price_per_night ? formatPrice(room.price_per_night) : 'Liên hệ'}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: '13px', display: 'block' }}>
+                                  / đêm (cho 2 khách)
+                                </Text>
+                              </div>
+                           <Button 
+                                type="primary" 
+                                size="large" 
+                                className="select-btn"
+                                onClick={() => handleSelectRoom(room)}
+                                disabled={checkIn && checkOut && room.sold_out}
+                            >
+                                Chọn phòng
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+               </Card>
                 ))
               )}
             </div>
@@ -428,7 +580,7 @@ function Hotels() {
                 <Text strong style={{ fontSize: '16px' }}>{checkIn} - {checkOut}</Text>
               </div>
               <div className="summary-guests" style={{ marginTop: '8px' }}>
-                <Text style={{ fontSize: '14px', color: '#6b7280' }}>1 phòng, 2 khách</Text>
+                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{selectedRoom?.room_type?.capacity || 2} người</Text>
               </div>
 
               <Divider />
@@ -463,9 +615,7 @@ function Hotels() {
                   <Empty description="Chưa chọn phòng" />
                 )}
               </div>
-
               <Divider />
-
               <div className="summary-total">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text strong style={{ fontSize: '16px' }}>Tổng cộng</Text>

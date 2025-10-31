@@ -76,27 +76,12 @@ const Authentication = () => {
         console.log(userProfile.user);
         
         const profileUser = userProfile?.user
-        if (profileUser) {
-          setUser(profileUser)
-          try {
-            localStorage.setItem('user', JSON.stringify(profileUser))
-          } catch (_) {}
+        if(profileUser?.role === 'admin'){
+          localStorage.setItem('user', JSON.stringify(profileUser))
+          navigate('/admin')
         }
-        // lưu access token nếu có trong response
-        if (response?.accessToken) {
-          try { localStorage.setItem('accessToken', response.accessToken) } catch(_) {}
-          if (setAccessToken) setAccessToken(response.accessToken)
-        }
-        setTimeout(() => {
-          const role = profileUser?.role
-          if (role === 'admin') {
-            navigate('/admin')
-          } else {
-            navigate('/')
-          }
-        }, 1000)
-      }
-      
+         setUser(profileUser)
+    }
     } catch (error) {
       message.error('Đăng nhập thất bại!')
     } finally {
