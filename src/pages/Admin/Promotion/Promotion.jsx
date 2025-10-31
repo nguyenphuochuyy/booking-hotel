@@ -663,7 +663,7 @@ const PromotionManagement = () => {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item
                 name="min_order_amount"
@@ -692,7 +692,7 @@ const PromotionManagement = () => {
                 />
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
 
           <Row gutter={16}>
             <Col xs={24} md={12}>

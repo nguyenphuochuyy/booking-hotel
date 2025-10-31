@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { 
   Card, Row, Col, Button, Typography, Space, Divider, 
   Alert, Result, Tag, Timeline, Steps
@@ -19,7 +19,8 @@ const BookingSuccess = () => {
   const location = useLocation()
   const navigate = useNavigate()
   
-  const { bookingCode, amount } = location.state || {}
+  const { bookingCode, amount, bookingInfo } = location.state || {}
+
 
   const handleGoHome = () => {
     navigate('/')
@@ -32,7 +33,9 @@ const BookingSuccess = () => {
   const handleBookAgain = () => {
     navigate('/hotels')
   }
-
+  useEffect(() => {
+    console.log(bookingInfo);
+  }, []);
   return (
     <div className="booking-success">
       <div className="container">

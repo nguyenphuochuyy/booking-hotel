@@ -54,6 +54,7 @@ export const API_ENDPOINTS = {
   },
   WALK_IN: {
     CREATE_USER: '/users/quick-create',
+    CREATE_BOOKING: '/bookings/walk-in-checkin',
   },
   // Services
   SERVICES: {
@@ -208,5 +209,6 @@ export const {
   POSTS,
   CATEGORIES,
   GENERAL,
-  ADMIN
+  ADMIN,
+  WALK_IN,
 } = API_ENDPOINTS

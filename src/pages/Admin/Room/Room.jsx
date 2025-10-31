@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { 
-  Table, Button, Space, Modal, Form, Input, Select, message, 
-  Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip, 
-  Typography, Badge, Divider, Empty, Spin
+import {
+  Table, Button, Space, Modal, Form, Input, Select, message,
+  Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip,
+  Typography, Badge, Divider, Empty, Spin, InputNumber, Collapse, Checkbox
 } from 'antd'
-import { 
+import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   HomeOutlined, ReloadOutlined, ExclamationCircleOutlined,
-  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined
+  CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
+  BookOutlined
 } from '@ant-design/icons'
-import { 
+import {
   getAllRooms, createRoom, updateRoom, deleteRoom,
   getAllHotels, getAllRoomTypes
 } from '../../../services/admin.service'
+import { createWalkInUser , createWalkInBooking, getAllServices } from '../../../services/admin.service'
 import './room.css'
 
 const { Title, Text } = Typography
@@ -24,7 +26,10 @@ const RoomManagement = () => {
   const [roomTypes, setRoomTypes] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
+  const [isBookingModalVisible, setIsBookingModalVisible] = useState(false)
+  const [bookingLoading, setBookingLoading] = useState(false)
   const [editingRoom, setEditingRoom] = useState(null)
+  const [selectedRoomForBooking, setSelectedRoomForBooking] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [selectedHotel, setSelectedHotel] = useState(null)
   const [pagination, setPagination] = useState({
@@ -33,6 +38,10 @@ const RoomManagement = () => {
     total: 0
   })
   const [form] = Form.useForm()
+  const [bookingForm] = Form.useForm()
+  const [servicesList, setServicesList] = useState([])
+  const [servicesLoading, setServicesLoading] = useState(false)
+  const [selectedServices, setSelectedServices] = useState({})
 
   // Fetch rooms data
   const fetchRooms = async (page = 1, pageSize = 10, hotelId = null) => {
@@ -57,6 +66,46 @@ const RoomManagement = () => {
       message.error('Không thể tải danh sách phòng')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Load services for selected room's hotel
+  const loadServices = async (room) => {
+    if (!room?.hotel_id) {
+      setServicesList([])
+      return
+    }
+    setServicesLoading(true)
+    try {
+      const res = await getAllServices({ hotel_id: room.hotel_id, limit: 100 })
+      setServicesList(res?.services || [])
+    } catch (e) {
+      setServicesList([])
+    } finally {
+      setServicesLoading(false)
+    }
+  }
+
+  // Toggle select service
+  const handleToggleService = (service, checked) => {
+    const newSelected = { ...selectedServices }
+    if (checked) {
+      newSelected[service.service_id] = { service_id: service.service_id, quantity: 1, payment_type: 'postpaid' }
+    } else {
+      delete newSelected[service.service_id]
+    }
+    setSelectedServices(newSelected)
+    bookingForm.setFieldsValue({ services: Object.values(newSelected) })
+  }
+
+  // Change quantity
+  const handleChangeServiceQty = (serviceId, qty) => {
+    if (qty <= 0) qty = 1
+    const newSelected = { ...selectedServices }
+    if (newSelected[serviceId]) {
+      newSelected[serviceId] = { ...newSelected[serviceId], quantity: qty }
+      setSelectedServices(newSelected)
+      bookingForm.setFieldsValue({ services: Object.values(newSelected) })
     }
   }
 
@@ -91,16 +140,16 @@ const RoomManagement = () => {
   // Filter rooms based on search
   const filteredRooms = useMemo(() => {
     if (!searchText) return rooms
-    
+
     const searchLower = searchText.toLowerCase()
     return rooms.filter(room => {
       const roomNum = room.room_num?.toString() || ''
       const hotelName = hotels.find(h => h.hotel_id === room.hotel_id)?.name || ''
       const roomTypeName = roomTypes.find(rt => rt.room_type_id === room.room_type_id)?.room_type_name || ''
-      
+
       return roomNum.includes(searchLower) ||
-             hotelName.toLowerCase().includes(searchLower) ||
-             roomTypeName.toLowerCase().includes(searchLower)
+        hotelName.toLowerCase().includes(searchLower) ||
+        roomTypeName.toLowerCase().includes(searchLower)
     })
   }, [rooms, searchText, hotels, roomTypes])
 
@@ -108,7 +157,7 @@ const RoomManagement = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
-      
+
       const roomData = {
         hotel_id: values.hotel_id,
         room_num: parseInt(values.room_num),
@@ -175,8 +224,91 @@ const RoomManagement = () => {
     fetchRooms(1, pagination.pageSize, hotelId)
   }
 
+  // Handle booking modal
+  const handleOpenBookingModal = (room) => {
+    setSelectedRoomForBooking(room)
+    setIsBookingModalVisible(true)
+    bookingForm.setFieldsValue({
+      full_name: '',
+      phone: '',
+      national_id: '',
+      num_person: 1,
+      num_nights: 1,
+      room_id: room.room_id,
+      services: []
+    })
+    loadServices(room)
+  }
+
+  // Handle booking cancel
+  const handleBookingModalCancel = () => {
+    setIsBookingModalVisible(false)
+    setSelectedRoomForBooking(null)
+    bookingForm.resetFields()
+    setSelectedServices({})
+  }
+
+  // Handle create booking
+  const handleCreateBooking = async () => {
+    try {
+      const values = await bookingForm.validateFields()
+      const room_id = selectedRoomForBooking?.room_id
+      setBookingLoading(true)
+      const today = new Date()
+      const pad = (n) => String(n).padStart(2, '0')
+      const check_in_date = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
+      const d2 = new Date(today)
+      const nights = Number(values.num_nights) > 0 ? Number(values.num_nights) : 1
+      d2.setDate(d2.getDate() + nights)
+      const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth() + 1)}-${pad(d2.getDate())}`
+      const payload = {
+        full_name: values.full_name,
+        phone: values.phone,
+        national_id: values.national_id,
+        room_id: room_id,
+        check_in_date,
+        check_out_date,
+        num_person: values.num_person || 1,
+        services: values.services || []
+      }
+      const createWalkInUserPayload = {
+        full_name: values.full_name,
+        cccd: values.national_id
+      }
+      const createWalkInUserResponse = await createWalkInUser(createWalkInUserPayload)
+      if (createWalkInUserResponse.statusCode === 201) {
+        // tiếp tục tạo booking
+        const createWalkInBookingPayload = {
+          user_id: createWalkInUserResponse.user.user_id,
+          room_id: room_id,
+          nights: nights,
+          num_person: values.num_person || 1,
+          note: values.note || '',
+          services: values.services || []
+        }
+        const createWalkInBookingResponse = await createWalkInBooking(createWalkInBookingPayload)
+        if (createWalkInBookingResponse) {
+          message.success('Đặt phòng thành công!')
+          setIsBookingModalVisible(false)
+          bookingForm.resetFields()
+          fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
+        } else {
+          message.error('Tạo đặt phòng thất bại, vui lòng thử lại!')
+        }
+      } else {
+        message.error('Tạo người dùng thất bại, vui lòng thử lại!')
+      }
+    } catch (error) {
+      if (error?.errorFields) return
+      const errMsg = error?.message || 'Không thể tạo đặt phòng!'
+      message.error(errMsg)
+    } finally {
+      setBookingLoading(false)
+    }
+  }
+
   // Get status tag
-  const getStatusTag = (status) => { 
+  const getStatusTag = (status) => {
     // lấy status từ database và hiển thị tương ứng với status từ danh sách các phòng
     const statusConfig = {
 
@@ -223,10 +355,10 @@ const RoomManagement = () => {
       render: (hotelId) => {
         const hotel = hotels.find(h => h.hotel_id === hotelId)
         return hotel ? (
-        <div className="hotel-name">
-          <HomeOutlined style={{ color: '#1890ff' }} />
-          <Text strong>{hotel.name}</Text>
-        </div>
+          <div className="hotel-name">
+            <HomeOutlined style={{ color: '#1890ff' }} />
+            <Text strong>{hotel.name}</Text>
+          </div>
         ) : (
           <Text type="secondary">N/A</Text>
         )
@@ -292,11 +424,21 @@ const RoomManagement = () => {
     {
       title: 'Hành động',
       key: 'actions',
-      width: 120,
+      width: 150,
       fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
+          <Tooltip title={record.status === 'available' ? 'Đặt phòng' : 'Phòng không sẵn sàng'}>
+            <Button
+              type="text"
+              icon={<BookOutlined />}
+              onClick={() => handleOpenBookingModal(record)}
+              className="action-button book-button"
+              style={{ color: record.status === 'available' ? '#52c41a' : '#999' }}
+              disabled={record.status !== 'available'}
+            />
+          </Tooltip>
           <Tooltip title="Chỉnh sửa">
             <Button
               type="text"
@@ -454,7 +596,7 @@ const RoomManagement = () => {
         }}
       />
 
-      {/* Create/Edit Modal */}
+      {/* Tạo mới/ chỉnh sửa phòng Modal */}
       <Modal
         title={
           <Space>
@@ -550,9 +692,9 @@ const RoomManagement = () => {
                   <Option value="booked">
                     <CloseCircleOutlined style={{ color: '#ff4d4f' }} /> Đã đặt
                   </Option>
-                    <Option value="cleaning">
-                      <ClockCircleOutlined style={{ color: '#faad14' }} /> Đang dọn
-                    </Option>
+                  <Option value="cleaning">
+                    <ClockCircleOutlined style={{ color: '#faad14' }} /> Đang dọn
+                  </Option>
                   <Option value="in_use">
                     <CheckCircleOutlined style={{ color: '#27669e' }} /> Đang sử dụng
                   </Option>
@@ -570,6 +712,144 @@ const RoomManagement = () => {
             <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
             <Text type="secondary">
               Lưu ý: Số phòng phải là duy nhất trong mỗi khách sạn
+            </Text>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Modal Đặt phòng*/}
+      <Modal
+        title={
+          <Space>
+            <BookOutlined />
+            <span>Đặt phòng - Số phòng: {selectedRoomForBooking?.room_num}</span>
+          </Space>
+        }
+        open={isBookingModalVisible}
+        onOk={handleCreateBooking}
+        onCancel={handleBookingModalCancel}
+        width={600}
+        okText="Xác nhận đặt phòng"
+        cancelText="Hủy"
+        confirmLoading={bookingLoading}
+        destroyOnClose
+        centered
+      >
+        <Form
+          form={bookingForm}
+          layout="vertical"
+          autoComplete="off"
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="full_name"
+                label="Họ và tên khách hàng"
+                rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
+              >
+                <Input placeholder="Nhập họ và tên" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="national_id"
+                label="CCCD/CMND"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập CCCD/CMND!' },
+                  { pattern: /^[0-9]{9,12}$/, message: 'CCCD/CMND không hợp lệ!' }
+                ]}
+              >
+                <Input placeholder="Nhập CCCD/CMND" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="num_person"
+                label="Số lượng người"
+                rules={[{ required: true, message: 'Vui lòng nhập số lượng người!' }]}
+                initialValue={1}
+              >
+                <InputNumber
+                  min={1}
+                  max={10}
+                  placeholder="Số lượng người"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="num_nights"
+                label="Số đêm"
+                rules={[{ required: true, message: 'Vui lòng nhập số đêm!' }]}
+                initialValue={1}
+              >
+                <InputNumber
+                  min={1}
+                  max={30}
+                  placeholder="Số đêm"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+
+          </Row>
+
+          <Collapse ghost style={{ marginTop: 8 }}
+            items={[{
+              key: 'services',
+              label: <span style={{ fontWeight: 500 }}>Dịch vụ bổ sung (tùy chọn)</span>,
+              children: (
+                <Spin spinning={servicesLoading}>
+                  <Row gutter={[12,12]}>
+                    {servicesList.map(svc => {
+                      const checked = !!selectedServices[svc.service_id]
+                      const qty = selectedServices[svc.service_id]?.quantity || 1
+                      return (
+                        <Col xs={24} key={svc.service_id}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid #f0f0f0', borderRadius: 8 }}>
+                            <Space>
+                              <Checkbox
+                                checked={checked}
+                                onChange={(e) => handleToggleService(svc, e.target.checked)}
+                              />
+                              <div>
+                                <div style={{ fontWeight: 500 }}>{svc.name}</div>
+                                <div style={{ fontSize: 12, color: '#888' }}>{svc.description}</div>
+                              </div>
+                            </Space>
+                            <Space>
+                              <span style={{ color: '#1890ff', fontWeight: 600 }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(svc.price)}</span>
+                              <InputNumber min={1} max={99} size="small" value={qty} disabled={!checked}
+                                onChange={(v) => handleChangeServiceQty(svc.service_id, Number(v))}
+                              />
+                            </Space>
+                          </div>
+                        </Col>
+                      )
+                    })}
+                    {servicesList.length === 0 && (
+                      <Col span={24}><Text type="secondary">Không có dịch vụ khả dụng</Text></Col>
+                    )}
+                  </Row>
+                </Spin>
+              )
+            }]} />
+
+          <Divider />
+
+          <div className="form-note">
+            <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
+            <Text type="secondary">
+              Lưu ý: Đặt phòng này sẽ được thanh toán khi check-out
             </Text>
           </div>
         </Form>

@@ -1,5 +1,5 @@
 import http from './httpClient'
-import { ADMIN, buildUrl } from '../constants/apiEndpoints'
+import { ADMIN, WALK_IN, buildUrl } from '../constants/apiEndpoints'
 
 // ==================== USER MANAGEMENT ====================
 
@@ -501,14 +501,7 @@ export async function checkOutGuest(bookingCode) {
   return http.post(`/bookings/${bookingCode}/check-out`)
 }
 
-/**
- * Tạo đặt phòng trực tiếp (Walk-in)
- * @param {Object} data - { full_name, phone, national_id, room_type_id, room_id, check_in_date, check_out_date, num_person }
- * @returns {Promise}
- */
-export async function createWalkInBooking(data) {
-  return http.post('/bookings/walk-in', data)
-}
+
 
 /**
  * Tìm đặt phòng theo mã
@@ -552,7 +545,16 @@ export async function viewInvoice(id) {
  * @returns {Promise}
  */
 export async function createWalkInUser(data) {
-  return http.post(ADMIN.WALK_IN.CREATE_USER, data)
+  return http.post(WALK_IN.CREATE_USER, data)
+}
+
+/**
+ * Tạo đặt phòng trực tiếp (Walk-in)
+ * @param {Object} data - { full_name, phone, national_id, room_type_id, room_id, check_in_date, check_out_date, num_person }
+ * @returns {Promise}
+ */
+export async function createWalkInBooking(data) {
+  return http.post('/bookings/walk-in-checkin', data)
 }
 export default {
   // Users
@@ -620,5 +622,6 @@ export default {
   generateInvoicePDF,
   viewInvoice,
   createWalkInUser,
+  createWalkInBooking
 }
 

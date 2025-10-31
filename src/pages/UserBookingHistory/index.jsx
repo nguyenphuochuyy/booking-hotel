@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -24,90 +24,28 @@ import {
   FilterOutlined
 } from '@ant-design/icons'
 import './userBookingHistory.css'
-
+import { getUserBookings, cancelBooking } from '../../services/booking.service'
+import { useAuth } from '../../context/AuthContext'
+import { cancelBookingOnline } from '../../services/booking.service'
+import { getBookingStatusText, getBookingStatusColor, getPaymentStatusText, getPaymentStatusColor } from '../../services/booking.service'
+import { Tooltip } from 'antd'
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
 
-// Mock data cho booking history
-const mockBookings = [
-  {
-    id: 'BK001',
-    hotelName: 'Bean Hotel',
-    roomType: 'Deluxe Room',
-    checkInDate: '2025-10-10',
-    checkOutDate: '2025-10-12',
-    guests: 2,
-    status: 'confirmed',
-    totalAmount: 1500000,
-    bookingDate: '2025-10-01',
-    customerName: 'Nguyễn Văn An',
-    phone: '0858369609',
-    email: 'nguyenvanan@example.com'
-  },
-  {
-    id: 'BK002',
-    hotelName: 'Bean Hotel',
-    roomType: 'Standard Room',
-    checkInDate: '2025-09-15',
-    checkOutDate: '2025-09-17',
-    guests: 1,
-    status: 'completed',
-    totalAmount: 800000,
-    bookingDate: '2025-09-01',
-    customerName: 'Nguyễn Văn An',
-    phone: '0858369609',
-    email: 'nguyenvanan@example.com'
-  },
-  {
-    id: 'BK003',
-    hotelName: 'Bean Hotel',
-    roomType: 'VIP Suite',
-    checkInDate: '2025-11-20',
-    checkOutDate: '2025-11-22',
-    guests: 3,
-    status: 'pending',
-    totalAmount: 2500000,
-    bookingDate: '2025-10-05',
-    customerName: 'Nguyễn Văn An',
-    phone: '0858369609',
-    email: 'nguyenvanan@example.com'
-  },
-  {
-    id: 'BK004',
-    hotelName: 'Bean Hotel',
-    roomType: 'Family Room',
-    checkInDate: '2025-08-10',
-    checkOutDate: '2025-08-12',
-    guests: 4,
-    status: 'cancelled',
-    totalAmount: 1200000,
-    bookingDate: '2025-07-20',
-    customerName: 'Nguyễn Văn An',
-    phone: '0858369609',
-    email: 'nguyenvanan@example.com'
-  },
-  {
-    id: 'BK005',
-    hotelName: 'Bean Hotel',
-    roomType: 'Premium Room',
-    checkInDate: '2025-12-24',
-    checkOutDate: '2025-12-26',
-    guests: 2,
-    status: 'confirmed',
-    totalAmount: 1800000,
-    bookingDate: '2025-10-08',
-    customerName: 'Nguyễn Văn An',
-    phone: '0858369609',
-    email: 'nguyenvanan@example.com'
+// Helper map backend status -> UI keys
+const mapStatus = (backend) => {
+  switch (backend) {
+    case 'pending': return 'pending'
+    case 'confirmed': return 'confirmed'
+    case 'checked_in': return 'confirmed'
+    case 'completed': return 'completed'
+    case 'checked_out': return 'completed'
+    case 'cancelled': return 'cancelled'
+    default: return 'pending'
   }
-]
-
-const statusConfig = {
-  pending: { color: 'warning', text: 'Đang xử lý' },
-  confirmed: { color: 'success', text: 'Đã xác nhận' },
-  completed: { color: 'default', text: 'Hoàn thành' },
-  cancelled: { color: 'error', text: 'Đã hủy' }
 }
+
+// Trạng thái hiển thị dạng text thuần
 
 const filterOptions = [
   { key: 'all', label: 'Tất cả', count: 0 },
@@ -122,7 +60,58 @@ function UserBookingHistory() {
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [detailModal, setDetailModal] = useState({ visible: false, data: null })
   const [cancellingBookings, setCancellingBookings] = useState(new Set()) // Track cancelling bookings by ID
-  const [bookings, setBookings] = useState(mockBookings) // Use state for bookings to enable updates
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [cancelModal, setCancelModal] = useState({ visible: false, bookingId: null, bookingCode: null, reason: '' })
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const {user} = useAuth()
+  // Load bookings from backend
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await getUserBookings({ limit: 100 })
+        console.log(user);
+        
+        if(res.statusCode === 200) {
+          const list = Array.isArray(res.bookings) ? res.bookings : []
+          const mapped = list.map(b => ({
+            id: b.booking_code || `BK-${b.booking_id}`,
+            bookingId: b.booking_id,
+            bookingCode: b.booking_code || null,
+            hotelName: b.hotel?.name || (b.room_num ? `Phòng ${b.room_num}` : 'N/A'),
+            roomType: b.room_type_name || 'N/A',
+            checkInDate: b.check_in_date,
+            checkOutDate: b.check_out_date,
+            guests: b.num_person || 1,
+            status: b.booking_status || 'pending',
+            totalAmount: b.final_price ?? b.total_price ?? 0,
+            bookingDate: b.created_at,
+            customerName: b.customer_name || b.guest_name || b.user?.full_name || 'N/A',
+            phone: b.customer_phone || b.guest_phone || b.user?.phone || 'N/A',
+            email: b.customer_email || b.user?.email || 'N/A',
+            customerAddress: b.customer_address || b.address || null,
+            citizenId: b.identity_number || b.citizen_id || null,
+            note: b.note || b.customer_note || null,
+            reviewLink: b.review_link || null,
+            paymentStatus: b.payment_status || 'pending',
+            bookingType: b.booking_type || 'online',
+            roomNum: b.room_num || null,
+            services: Array.isArray(b.services) ? b.services : []
+          }))
+          setBookings(mapped)
+        } else {
+          message.error(res.message)
+          setBookings([])
+        }
+      } catch (e) {
+        message.error('Không thể tải lịch sử đặt phòng')
+        setBookings([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -130,6 +119,54 @@ function UserBookingHistory() {
       style: 'currency',
       currency: 'VND'
     }).format(amount)
+  }
+
+  // Format date with fixed time (e.g., check-in 14:00, check-out 12:00)
+  const formatDateWithTime = (date, hour, minute = 0) => {
+    try {
+      const d = new Date(date)
+      if (isNaN(d.getTime())) return 'N/A'
+      const dateStr = d.toLocaleDateString('vi-VN')
+      const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+      return `${dateStr} ${timeStr}`
+    } catch {
+      return 'N/A'
+    }
+  }
+
+  // Chuẩn hóa thời điểm check-in lúc 14:00 của ngày check-in
+  const getCheckInDateTime = (date) => {
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return null
+    d.setHours(14, 0, 0, 0)
+    return d
+  }
+
+  // Tính chính sách hoàn tiền dựa trên mốc 48h trước check-in
+  const computeRefundInfo = (checkInDate, totalAmount) => {
+    if (!checkInDate || typeof totalAmount !== 'number') return null
+    const checkIn = getCheckInDateTime(checkInDate)
+    if (!checkIn) return null
+    const now = new Date()
+    const diffMs = checkIn.getTime() - now.getTime()
+    const fortyEightHoursMs = 48 * 60 * 60 * 1000
+    const eligible = diffMs >= fortyEightHoursMs
+    if (eligible) {
+      const refundable = Math.round(totalAmount * 0.7)
+      const nonRefundable = totalAmount - refundable
+      return {
+        eligible,
+        refundable,
+        nonRefundable,
+        message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (70%). Khách sạn giữ ${formatCurrency(nonRefundable)} (30%).`
+      }
+    }
+    return {
+      eligible,
+      refundable: 0,
+      nonRefundable: totalAmount,
+      message: `Không thể hoàn tiền do hủy trong vòng 48 giờ trước giờ check-in. Tổng tiền không hoàn: ${formatCurrency(totalAmount)}.`
+    }
   }
 
   // Filter bookings by status
@@ -148,33 +185,46 @@ function UserBookingHistory() {
     }))
   }, [bookings])
 
-  // Handle cancel booking
-  const handleCancelBooking = async (bookingId) => {
-    // Add bookingId to cancelling set
-    setCancellingBookings(prev => new Set([...prev, bookingId]))
-    
+  // Mở modal nhập lý do hủy
+  const handleOpenCancelModal = (record) => {
+    setCancelModal({
+      visible: true,
+      bookingId: record.bookingId,
+      bookingCode: record.id,
+      reason: '',
+      checkInDate: record.checkInDate,
+      totalAmount: record.totalAmount
+    })
+  }
+
+  // Gửi hủy booking với lý do
+  const handleSubmitCancelReason = async () => {
+    if (!cancelModal.bookingId) {
+      message.error('Không xác định được booking cần hủy')
+      return
+    }
+    if (!cancelModal.reason || cancelModal.reason.trim().length < 3) {
+      message.warning('Vui lòng nhập lý do hủy (tối thiểu 3 ký tự)')
+      return
+    }
+    setCancelSubmitting(true)
+    setCancellingBookings(prev => new Set([...prev, cancelModal.bookingCode]))
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Update booking status to cancelled
-      setBookings(prevBookings => 
-        prevBookings.map(booking => 
-          booking.id === bookingId 
-            ? { ...booking, status: 'cancelled' }
-            : booking
-        )
-      )
-      
-      message.success('Hủy booking thành công!')
-    } catch (error) {
-      message.error('Có lỗi xảy ra, vui lòng thử lại!')
+      const res = await cancelBookingOnline(cancelModal.bookingId, cancelModal.reason.trim())
+      // cập nhật trạng thái trong bảng
+      setBookings(prev => prev.map(b => (
+        b.bookingId === cancelModal.bookingId ? { ...b, status: 'cancelled', cancelReason: cancelModal.reason.trim() } : b
+      )))
+      message.success('Hủy booking thành công')
+      setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '' })
+    } catch (e) {
+      message.error('Hủy booking thất bại, vui lòng thử lại')
     } finally {
-      // Remove bookingId from cancelling set
+      setCancelSubmitting(false)
       setCancellingBookings(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(bookingId)
-        return newSet
+        const next = new Set(prev)
+        if (cancelModal.bookingCode) next.delete(cancelModal.bookingCode)
+        return next
       })
     }
   }
@@ -182,6 +232,8 @@ function UserBookingHistory() {
   // Handle view details
   const handleViewDetails = (booking) => {
     setDetailModal({ visible: true, data: booking })
+    console.log(booking);
+    
   }
 
   // Table columns
@@ -195,7 +247,7 @@ function UserBookingHistory() {
       render: (text) => <Text strong className="booking-id">{text}</Text>
     },
     {
-      title: 'Khách sạn',
+      title: 'Số phòng',
       dataIndex: 'hotelName',
       key: 'hotelName',
       width: screens.xs ? 120 : 150,
@@ -216,7 +268,7 @@ function UserBookingHistory() {
       render: (date) => (
         <div className="date-cell">
           <CalendarOutlined />
-          <Text>{new Date(date).toLocaleDateString('vi-VN')}</Text>
+          <Text>{formatDateWithTime(date, 14, 0)}</Text>
         </div>
       )
     },
@@ -228,7 +280,7 @@ function UserBookingHistory() {
       render: (date) => (
         <div className="date-cell">
           <CalendarOutlined />
-          <Text>{new Date(date).toLocaleDateString('vi-VN')}</Text>
+          <Text>{formatDateWithTime(date, 12, 0)}</Text>
         </div>
       )
     },
@@ -249,22 +301,20 @@ function UserBookingHistory() {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: screens.xs ? 100 : 120,
-      align: 'center',
-      render: (status) => {
-        const config = statusConfig[status]
-        return <Tag color={config.color} className="status-tag">{config.text}</Tag>
-      }
+      width: screens.xs ? 50 : 70,
+      align: 'left',
+      render: (status) => (
+        <Tag color={getBookingStatusColor(status)}>{getBookingStatusText(status)}</Tag>
+      )
     },
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       width: screens.xs ? 120 : 150,
-      align: 'right',
+      align: 'left',
       render: (amount) => (
         <div className="amount-cell">
-          <DollarOutlined />
           <Text strong className="amount-text">{formatCurrency(amount)}</Text>
         </div>
       )
@@ -279,9 +329,8 @@ function UserBookingHistory() {
         const { status, id } = record
         const isCancelling = cancellingBookings.has(id)
         
-        // Determine which buttons to show based on status
-        const showViewButton = ['confirmed', 'completed'].includes(status)
-        const showCancelButton = ['pending', 'confirmed'].includes(status)
+        // Chỉ hiển thị nút Chi tiết ở ngoài bảng
+        const showViewButton = ['pending','confirmed', 'completed', 'cancelled', 'checked_out'].includes(status)
         
         return (
           <Space 
@@ -290,49 +339,31 @@ function UserBookingHistory() {
             wrap
           >
             {showViewButton && (
-              <Button
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => handleViewDetails(record)}
-                className="view-btn"
-                type="primary"
-              >
-                {screens.xs ? '' : 'Chi tiết'}
-              </Button>
-            )}
-            
-            {showCancelButton && (
-              <Popconfirm
-                title="Xác nhận hủy booking"
-                description={`Bạn có chắc muốn hủy booking ${id}? Hành động này không thể hoàn tác.`}
-                onConfirm={() => handleCancelBooking(id)}
-                okText="Xác nhận hủy"
-                cancelText="Không hủy"
-                okButtonProps={{ 
-                  danger: true,
-                  loading: isCancelling 
-                }}
-                disabled={isCancelling}
-                placement={screens.xs ? 'topRight' : 'top'}
-              >
+              screens.xs ? (
+                <Tooltip title="Chi tiết">
+                  <Button
+                    icon={<EyeOutlined />}
+                    size="small"
+                    onClick={() => handleViewDetails(record)}
+                    className="view-btn"
+                    type="primary"
+                    shape="round"
+                  />
+                </Tooltip>
+              ) : (
                 <Button
-                  icon={<StopOutlined />}
-                  size="small"
-                  danger
-                  loading={isCancelling}
-                  disabled={isCancelling}
-                  className="cancel-btn"
+                  icon={<EyeOutlined />}
+                  size="middle"
+                  onClick={() => handleViewDetails(record)}
+                  className="view-btn"
+                  type="primary"
+                  shape="round"
                 >
-                  {isCancelling ? (screens.xs ? '' : 'Đang hủy...') : (screens.xs ? '' : 'Hủy')}
+                  Chi tiết
                 </Button>
-              </Popconfirm>
+              )
             )}
-            
-            {status === 'cancelled' && (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Đã hủy
-              </Text>
-            )}
+        
           </Space>
         )
       }
@@ -388,80 +419,225 @@ function UserBookingHistory() {
             size={screens.xs ? 'small' : 'middle'}
           />
         </Card>
-
-        {/* Detail Modal */}
+        
+        {/* Modal chi tiết đặt phòng */}
         <Modal
-          title="Chi tiết Booking"
           open={detailModal.visible}
+          title={
+            detailModal.data ? (
+              <Space direction="vertical" size={0}>
+                <Text strong>Chi tiết booking</Text>
+                <Text type="secondary">Mã: {detailModal.data.id}</Text>
+              </Space>
+            ) : 'Chi tiết booking'
+          }
           onCancel={() => setDetailModal({ visible: false, data: null })}
           footer={[
-            <Button 
-              key="close" 
-              type="primary"
-              onClick={() => setDetailModal({ visible: false, data: null })}
-            >
+            detailModal.data && detailModal.data.status === 'confirmed' && (
+              <Button
+                key="cancel-booking"
+                danger
+                className="cancel-btn"
+                icon={<StopOutlined />}
+                onClick={() => {
+                  setDetailModal({ visible: false, data: null })
+                  handleOpenCancelModal(detailModal.data)
+                }}
+              >
+                Hủy phòng
+              </Button>
+            ),
+            <Button key="close" onClick={() => setDetailModal({ visible: false, data: null })}>Đóng</Button>
+          ]}
+          width={screens.xs ? 360 : 720}
+        >
+          {detailModal.data && (
+            <div>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Card size="small" bordered>
+                    <Space align="center" size="small">
+                      <Text strong>Trạng thái:</Text>
+                      <Tag color={getBookingStatusColor(detailModal.data.status)}>
+                        {getBookingStatusText(detailModal.data.status)}
+                      </Tag>
+                    </Space>
+                    <Divider style={{ margin: '12px 0' }} />
+                    <Descriptions size="small" column={1} colon>
+                      <Descriptions.Item label="Khách sạn">
+                        {detailModal.data.hotelName}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Loại phòng">
+                        {detailModal.data.roomType}
+                      </Descriptions.Item>
+                      {detailModal.data.roomNum && (
+                        <Descriptions.Item label="Số phòng">
+                          {detailModal.data.roomNum}
+                        </Descriptions.Item>
+                      )}
+                    </Descriptions>
+                  </Card>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Card size="small" bordered>
+                    <Descriptions size="small" column={1} colon>
+                      <Descriptions.Item label="Tổng tiền">
+                        <Text strong>{formatCurrency(detailModal.data.totalAmount)}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Thanh toán">
+                        <Tag color={getPaymentStatusColor(detailModal.data.paymentStatus)}>
+                          {getPaymentStatusText(detailModal.data.paymentStatus)}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Ngày đặt">
+                        {new Date(detailModal.data.bookingDate).toLocaleString('vi-VN')}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+              </Row>
+
+              <Divider />
+
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Card size="small" title="Thông tin khách hàng" bordered>
+                    <Descriptions size="small" column={1} colon>
+                      <Descriptions.Item label="Họ tên">
+                        {user?.full_name}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Số điện thoại">
+                        {user?.phone || 'Chưa cập nhật'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Email">
+                        {user?.email}
+                      </Descriptions.Item>
+                      {/* {detailModal.data.citizenId && (
+                        <Descriptions.Item label="CCCD/CMND">
+                          {detailModal.data.citizenId}
+                        </Descriptions.Item>
+                      )} */}
+                      {detailModal.data.note && (
+                        <Descriptions.Item label="Ghi chú">
+                          {detailModal.data.note}
+                        </Descriptions.Item>
+                      )}
+                      <Descriptions.Item label="Số khách">
+                        {detailModal.data.guests}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Card size="small" title="Thời gian lưu trú" bordered>
+                    <Descriptions size="small" column={1} colon>
+                      <Descriptions.Item label="Check-in">
+                        {formatDateWithTime(detailModal.data.checkInDate, 14, 0)}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Check-out">
+                        {formatDateWithTime(detailModal.data.checkOutDate, 12, 0)}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Hình thức đặt">
+                        {detailModal.data.bookingType}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+              </Row>
+
+              {Array.isArray(detailModal.data.services) && detailModal.data.services.length > 0 && (
+                <>
+                  <Divider />
+                  <Card size="small" title="Dịch vụ kèm theo" bordered>
+                    <Space wrap>
+                      {detailModal.data.services.map((sv, idx) => {
+                        const isObject = sv && typeof sv === 'object'
+                        const name = isObject ? (sv.service_name || sv.name || 'Dịch vụ') : String(sv)
+                        const quantity = isObject && sv.quantity ? ` x${sv.quantity}` : ''
+                        const priceValue = isObject ? (sv.total_price ?? sv.unit_price) : undefined
+                        const price = typeof priceValue === 'number' ? ` - ${formatCurrency(priceValue)}` : ''
+                        const label = `${name}${quantity}${price}`
+                        return (
+                          <Tag key={idx} color="processing">{label}</Tag>
+                        )
+                      })}
+                    </Space>
+                  </Card>
+                </>
+              )}
+
+              {detailModal.data.reviewLink && (
+                <>
+                  <Divider />
+                  <Space>
+                    <Button type="primary" onClick={() => window.open(detailModal.data.reviewLink, '_blank')}>Viết đánh giá</Button>
+                  </Space>
+                </>
+              )}
+            </div>
+          )}
+        </Modal>
+
+        {/* Modal lý do hủy */}
+        <Modal
+          open={cancelModal.visible}
+          title={
+            <Space direction="vertical" size={0}>
+              <Text strong>Nhập lý do hủy booking</Text>
+              {cancelModal.bookingCode && (
+                <Text type="secondary">Mã: {cancelModal.bookingCode}</Text>
+              )}
+            </Space>
+          }
+          onCancel={() => setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '' })}
+          footer={[
+            <Button key="cancel" onClick={() => setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '' })}>
               Đóng
+            </Button>,
+            <Button key="ok" type="primary" danger loading={cancelSubmitting} onClick={handleSubmitCancelReason}>
+              Xác nhận hủy
             </Button>
           ]}
-          width={screens.xs ? '95%' : 600}
-          className="detail-modal"
+          width={screens.xs ? 360 : 560}
         >
-          {detailModal.data && (() => {
-            // Get fresh data from bookings state
-            const currentBooking = bookings.find(b => b.id === detailModal.data.id) || detailModal.data
-            return (
-            <div className="booking-detail">
-              <Descriptions column={screens.xs ? 1 : 2} bordered size="small">
-                <Descriptions.Item label="Booking ID" span={screens.xs ? 1 : 2}>
-                  <Text strong>{currentBooking.id}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item label="Khách sạn">
-                  {currentBooking.hotelName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Loại phòng">
-                  {currentBooking.roomType}
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày đặt">
-                  {new Date(currentBooking.bookingDate).toLocaleDateString('vi-VN')}
-                </Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
-                  <Tag color={statusConfig[currentBooking.status].color}>
-                    {statusConfig[currentBooking.status].text}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Check-in">
-                  {new Date(currentBooking.checkInDate).toLocaleDateString('vi-VN')}
-                </Descriptions.Item>
-                <Descriptions.Item label="Check-out">
-                  {new Date(currentBooking.checkOutDate).toLocaleDateString('vi-VN')}
-                </Descriptions.Item>
-                <Descriptions.Item label="Số khách">
-                  {currentBooking.guests} người
-                </Descriptions.Item>
-                <Descriptions.Item label="Tổng tiền" span={screens.xs ? 1 : 2}>
-                  <Text strong style={{ color: '#c08a19', fontSize: '16px' }}>
-                    {formatCurrency(currentBooking.totalAmount)}
-                  </Text>
-                </Descriptions.Item>
-              </Descriptions>
-
-              <Divider>Thông tin khách hàng</Divider>
-              
-              <Descriptions column={1} bordered size="small">
-                <Descriptions.Item label="Họ tên">
-                  {currentBooking.customerName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại">
-                  {currentBooking.phone}
-                </Descriptions.Item>
-                <Descriptions.Item label="Email">
-                  {currentBooking.email}
+          <div>
+            <Text type="secondary">Vui lòng cho chúng tôi biết lý do hủy để cải thiện dịch vụ.</Text>
+            {cancelModal.checkInDate !== undefined && cancelModal.totalAmount !== undefined && (
+              <div style={{ marginTop: 12 }}>
+                {(() => {
+                  const info = computeRefundInfo(cancelModal.checkInDate, cancelModal.totalAmount)
+                  if (!info) return null
+                  const checkInStr = formatDateWithTime(cancelModal.checkInDate, 14, 0)
+                  return (
+                    <Card size="small" bordered>
+                      <Space direction="vertical" size={4}>
+                        <Text><strong>Giờ check-in:</strong> {checkInStr}</Text>
+                        <Text type={info.eligible ? 'success' : 'danger'}>{info.message}</Text>
+                      </Space>
+                    </Card>
+                  )
+                })()}
+              </div>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <Descriptions size="small" column={1} bordered>
+                <Descriptions.Item label="Lý do hủy">
+                  <textarea
+                    value={cancelModal.reason}
+                    onChange={(e) => setCancelModal(prev => ({ ...prev, reason: e.target.value }))}
+                    rows={4}
+                    style={{ width: '100%', resize: 'vertical', padding: 8 }}
+                    placeholder="Nhập lý do hủy..."
+                  />
                 </Descriptions.Item>
               </Descriptions>
             </div>
-            )
-          })()}
+          </div>
         </Modal>
+
+        
       </div>
     </div>
   )

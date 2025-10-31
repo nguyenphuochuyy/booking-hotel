@@ -32,9 +32,9 @@ function Home() {
         <div className="banner-image-container">
           <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">
-            <Typography.Title className="banner-title">
+            {/* <Typography.Title className="banner-title">
               BEAN HOTEL
-            </Typography.Title>
+            </Typography.Title> */}
           </div>
         </div>
         

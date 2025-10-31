@@ -37,15 +37,28 @@ const Payment = () => {
   } = bookingData
   
   const nights = calculateNights(bookingInfo.checkIn, bookingInfo.checkOut)
-  const totalPrice = bookingInfo?.roomType?.price_per_night * nights || 0
+  const roomSubtotal = bookingInfo?.roomType?.price_per_night * nights || 0
+  const selectedServices = Array.isArray(bookingData?.selectedServices) ? bookingData.selectedServices : []
+  const servicesTotal = selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1), 0)
+  const totalWithServices = roomSubtotal + servicesTotal
 
   // Xử lý thanh toán thành công
   const handlePaymentSuccess = async () => {
     try {
-      const res = await checkPaymentStatus({ orderCode })
+      const res = await checkPaymentStatus(
+        {
+          orderCode : orderCode,
+          status : "PAID",
+          buyerName : bookingInfo.customerInfo.fullName,
+          buyerEmail : bookingInfo.customerInfo.email,
+        }
+      )
       const data = res?.data || res
       if (data?.status === 'success' || data?.statusCode === 200) {
-        navigate('/booking-success', { state: { bookingCode, amount } })
+        message.success('Thanh toán thành công!')
+        setTimeout(() => {
+          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo } })
+        }, 1000)
       } else {
         message.error('Thanh toán chưa được xác nhận. Vui lòng thử lại.')
       }
@@ -56,10 +69,11 @@ const Payment = () => {
 
   // Polling để kiểm tra trạng thái thanh toán
   useEffect(() => {
-    
     return () => {
       // Cleanup if needed
     }
+
+    
   }, [])
 
 
@@ -209,6 +223,26 @@ const Payment = () => {
                 </>
               )}
 
+              {/* Services Details */}
+              {selectedServices && selectedServices.length > 0 && (
+                <>
+                  <div className="invoice-section">
+                    <Title level={5}>Dịch vụ bổ sung</Title>
+                    {selectedServices.map((svc, idx) => (
+                      <div className="invoice-item" key={`${svc.service_id || svc.name}-${idx}`}>
+                        <Text type="secondary">{svc.name} x {svc.quantity || 1}</Text>
+                        <Text>{formatPrice((svc.price || 0) * (svc.quantity || 1))}</Text>
+                      </div>
+                    ))}
+                    <div className="invoice-item">
+                      <Text strong>Tổng dịch vụ</Text>
+                      <Text strong>{formatPrice(servicesTotal)}</Text>
+                    </div>
+                  </div>
+                  <Divider />
+                </>
+              )}
+
               {/* Price Breakdown */}
               <div className="invoice-section">
                 <Title level={5}>Chi tiết giá</Title>
@@ -230,7 +264,7 @@ const Payment = () => {
                 <div className="invoice-item total">
                   <Text strong style={{ fontSize: '18px' }}>Tổng cộng</Text>
                   <Text strong style={{ fontSize: '20px', color: '#1890ff' }}>
-                    {formatPrice(totalPrice|| 0)}
+                    {formatPrice(totalWithServices || 0)}
                   </Text>
                 </div>
               </div>

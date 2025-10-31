@@ -330,12 +330,12 @@ const BookingManagement = () => {
   // Get status tag
   const getStatusTag = (status) => {
     const statusConfig = {
-      pending: { color: 'orange', icon: <ClockCircleOutlined />, text: 'Chờ xác nhận' },
+  
       confirmed: { color: 'blue', icon: <CheckCircleOutlined />, text: 'Đã xác nhận' },
       checked_in: { color: 'green', icon: <CheckCircleOutlined />, text: 'Đã nhận phòng' },
       checked_out: { color: 'purple', icon: <CheckCircleOutlined />, text: 'Đã trả phòng' },
       cancelled: { color: 'red', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
-      completed: { color: 'green', icon: <CheckCircleOutlined />, text: 'Hoàn thành' }
+
     }
     const config = statusConfig[status] || statusConfig.pending
     return (
@@ -481,12 +481,10 @@ const BookingManagement = () => {
       align: 'center',
       render: (status) => getStatusTag(status),
       filters: [
-        { text: 'Chờ xác nhận', value: 'pending' },
         { text: 'Đã xác nhận', value: 'confirmed' },
         { text: 'Đã nhận phòng', value: 'checked_in' },
         { text: 'Đã trả phòng', value: 'checked_out' },
         { text: 'Đã hủy', value: 'cancelled' },
-        { text: 'Hoàn thành', value: 'completed' }
       ],
       onFilter: (value, record) => record.booking_status === value
     },
@@ -630,14 +628,14 @@ const BookingManagement = () => {
             >
               Check-out
             </Button>
-            <Button
+            {/* <Button
               type="default"
               size="large"
               icon={<PlusOutlined />}
               onClick={() => setIsModalVisible(true)}
             >
               Thêm đặt phòng
-            </Button>
+            </Button> */}
 
             {/* Nút làm mới */}
             <Button

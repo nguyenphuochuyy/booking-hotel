@@ -184,14 +184,12 @@ function Navigation() {
           gap: 12,
           maxWidth: 1280,
           margin: '0 auto',
+          
         }}>
-          <Text style={{ color: '#fff', fontSize: S.topTextSize }} ellipsis>
+          <Text style={{ color: '#fff', fontSize: S.topTextSize}} ellipsis>
             {device === 'phone' ? '' : 'Chào mừng bạn đến với Bean Hotel!'}
           </Text>
-          <Space size={12}>
-            <Divider type="vertical" style={{ background: 'rgba(255,255,255,0.35)', margin: '0 4px' }} />
-            <Button type="link" icon={<SearchOutlined style={{ fontSize: S.iconSize }} />} style={{ color: '#fff', padding: 0 }}>{device !== 'phone' ? 'Tìm kiếm' : ''}</Button>
-          </Space>
+      
         </div>
       </div>
 
@@ -256,7 +254,7 @@ function Navigation() {
             <Space size={12} style={{ marginLeft: 'auto', flexShrink: 0 }}>
               {notificationBell}
               {userSection}
-              <Link to="/booking">
+              <Link to="/hotels">
                 <Button 
                   type="primary" 
                   size={S.bookBtnSize}
@@ -269,7 +267,7 @@ function Navigation() {
             </Space>
           ) : (
             <Space size={8} style={{ marginLeft: 'auto' }}>
-              <Link to="/booking">
+              <Link to="/hotels">
                 <Button 
                   type="primary" 
                   size={S.bookBtnSize} 
@@ -311,7 +309,7 @@ function Navigation() {
             {userSection}
           </div>
           <div style={{ padding: 16 }}>
-            <Link to="/booking" onClick={() => setDrawerOpen(false)}>
+            <Link to="/bookings" onClick={() => setDrawerOpen(false)}>
               <Button block type="primary" size="large" icon={<CalendarOutlined style={{ fontSize: S.iconSize }} />} style={{ background: '#c08a19', borderColor: '#c08a19' }}>Đặt phòng</Button>
             </Link>
           </div>

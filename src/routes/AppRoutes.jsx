@@ -37,6 +37,7 @@ import BookingConfirmation from '../pages/BookingConfirmation'
 import Payment from '../pages/Payment'
 import BookingSuccess from '../pages/BookingSuccess'
 import BookingManagement from '../pages/Admin/Booking'
+import GalleryPage from '../pages/Gallery'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -71,6 +72,7 @@ function AppRoutes() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:slug" element={<ServiceDetail />} />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/login" element={
           <AuthGuard><Authentication /></AuthGuard>
         } />

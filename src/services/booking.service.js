@@ -61,18 +61,37 @@ export const applyPromotionCode = async (promotionData) => {
 export const getServices = async (params = {}) => {
   try {
     const response = await httpClient.get('/services', { params })
-    return response.data
+    return response
   } catch (error) {
     console.error('Error getting services:', error)
     throw error
   }
 }
-
+// Add multiple services to temp booking (loop backend endpoint add one by one)
+export const addServicesToTempBooking = async (tempBookingKey, services = []) => {
+  try {
+    if (!tempBookingKey || !Array.isArray(services) || services.length === 0) return null
+    let lastResponse = null
+    for (const svc of services) {
+      const payload = {
+        temp_booking_key: tempBookingKey,
+        service_id: svc.service_id,
+        quantity: svc.quantity || 1,
+        payment_type: svc.payment_type || 'prepaid'
+      }
+      lastResponse = await httpClient.post('/bookings/temp-booking/add-service', payload)
+    }
+    return lastResponse
+  } catch (error) {
+    console.error('Có lỗi xảy ra khi thêm dịch vụ vào booking tạm thời:', error)
+    throw error
+  }
+}
 // Get user bookings
 export const getUserBookings = async (params = {}) => {
   try {
-    const response = await httpClient.get('/bookings', { params })
-    return response.data
+    const response = await httpClient.get('/bookings/my-bookings', { params })
+    return response
   } catch (error) {
     console.error('Error getting user bookings:', error)
     throw error
@@ -94,7 +113,7 @@ export const getBookingById = async (bookingId) => {
 export const cancelBooking = async (bookingId, reason = '') => {
   try {
     const response = await httpClient.post(`/bookings/${bookingId}/cancel`, { reason })
-    return response.data
+    return response
   } catch (error) {
     console.error('Error cancelling booking:', error)
     throw error
@@ -291,6 +310,28 @@ export const checkPaymentStatus = async (paymentData) => {
     throw error
   }
 }
+
+// Create walk-in booking
+export const createWalkInBooking = async (bookingData) => {
+  try {
+    const response = await httpClient.post('/bookings/walk-in', bookingData)
+    return response
+  } catch (error) {
+    console.error('Error creating walk-in booking:', error)
+    throw error
+  }
+}
+
+// cancle booking online
+export const cancelBookingOnline = async (bookingId, reason = '') => {
+  try {
+    const response = await httpClient.post(`/bookings/${bookingId}/cancel`, { reason })
+    return response
+  } catch (error) {
+    console.error('Error cancelling booking online:', error)
+    throw error
+  }
+}
 // tạo user cho walk-in
 export default {
   createTempBooking,
@@ -315,5 +356,7 @@ export default {
   generateBookingSummary,
   checkPaymentStatus,
   searchAvailableRooms,
-  getAllBookings
+  getAllBookings,
+  addServicesToTempBooking,
+  cancelBookingOnline
 }
