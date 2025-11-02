@@ -103,6 +103,7 @@
   transition: all 0.3s ease;
   border: 1px solid #e5e7eb;
   margin-bottom: 24px;
+  position: relative; /* Cần để badge absolute hoạt động */
 }
 
 .room-card-new:hover {
@@ -189,6 +190,52 @@
 
 .modal-header {
   margin-bottom: 16px;
+}
+
+/* Carousel cho hình ảnh phòng */
+.room-image-carousel {
+  position: relative;
+}
+
+.room-image-carousel .slick-list {
+  cursor: grab;
+}
+
+.room-image-carousel .slick-list:active {
+  cursor: grabbing;
+}
+
+.room-image-carousel .slick-slide {
+  touch-action: pan-y;
+}
+
+.room-image-carousel .ant-carousel .slick-slide {
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Image Preview */
+.modal-image-section .ant-image {
+  width: 100%;
+  display: block;
+}
+
+.modal-image-section .ant-image-img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.modal-image-section .ant-image-img:hover {
+  opacity: 0.9;
+}
+
+.image-preview-mask {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
 }
 
 .modal-footer-fixed {
@@ -513,7 +560,20 @@
 
   padding: 0 !important;
 
-}/* Cột hình ảnh */.room-image-new {
+}/* Badge hiển thị số phòng còn available - góc phải trên */.room-availability-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.room-availability-badge .ant-tag {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Cột hình ảnh */.room-image-new {
 
   position: relative;
 

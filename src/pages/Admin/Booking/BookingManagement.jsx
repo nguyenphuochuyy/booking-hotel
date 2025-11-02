@@ -16,7 +16,8 @@ import {
   checkOutGuest,
   checkInGuest,
   createWalkInBooking,
-  getAvailableRoomsForType
+  getAvailableRoomsForType,
+  generateInvoicePDF
 } from '../../../services/admin.service'
 import CheckInOut from '../../../components/CheckInOut/CheckInOut'
 import formatPrice from '../../../utils/formatPrice'
@@ -142,6 +143,8 @@ const BookingManagement = () => {
       }
       
       const response = await getAllBookings(params)
+      console.log(response);
+      
       setBookings(response.bookings || [])
       setPagination({
         current: page,
@@ -203,7 +206,10 @@ const BookingManagement = () => {
         const bookingCode = booking.booking_code?.toLowerCase() || ''
         const userName = booking.user?.full_name?.toLowerCase() || ''
         const userEmail = booking.user?.email?.toLowerCase() || ''
-        const roomTypeName = booking.room?.room_type?.room_type_name?.toLowerCase() || ''
+        // Lấy room_type từ booking trực tiếp hoặc từ booking_rooms
+        const roomTypeName = (booking.room_type?.room_type_name || 
+                             booking.booking_rooms?.[0]?.room?.room_type?.room_type_name || 
+                             '').toLowerCase()
         
         return bookingCode.includes(searchLower) ||
                userName.includes(searchLower) ||
@@ -260,21 +266,88 @@ const BookingManagement = () => {
       message.error('Không thể tải chi tiết đặt phòng')
     }
   }
+
+  // Kiểm tra thời gian check-in cho booking online
+  // Booking online chỉ có thể check-in sau 12:00 (12h chiều) của ngày check-in
+  const canCheckInBooking = (booking) => {
+    if (!booking) return { can: true }
+    
+    // Walk-in không cần kiểm tra thời gian
+    if (booking.booking_type !== 'online') {
+      return { can: true }
+    }
+    
+    const now = new Date()
+    const checkInDate = new Date(booking.check_in_date)
+    
+    // So sánh ngày (bỏ qua giờ, chỉ lấy ngày/tháng/năm)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const checkInDay = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate())
+    
+    // Nếu ngày hiện tại < ngày check-in: chưa tới ngày
+    if (today < checkInDay) {
+      return {
+        can: false,
+        message: `Chưa tới ngày check-in. Ngày check-in là ${formatDate(booking.check_in_date)}. Vui lòng quay lại sau 12:00 trưa ngày đó.`
+      }
+    }
+    
+    // Nếu ngày hiện tại > ngày check-in: đã quá ngày, cho phép check-in
+    if (today > checkInDay) {
+      return { can: true }
+    }
+    
+    // Nếu cùng ngày: kiểm tra giờ >= 12:00 (12h chiều)
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    const currentTime = currentHour * 60 + currentMinute // Tổng số phút từ đầu ngày
+    const checkInTime = 12 * 60 // 12:00 = 720 phút
+    
+    if (currentTime < checkInTime) {
+      const checkInDateTime = new Date(checkInDate)
+      checkInDateTime.setHours(12, 0, 0, 0)
+      return {
+        can: false,
+        message: `Chưa tới giờ check-in. Booking online chỉ có thể check-in từ 12:00 trưa trở đi. Thời gian sớm nhất: ${checkInDateTime.toLocaleString('vi-VN', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })}`
+      }
+    }
+    
+    return { can: true }
+  }
   // hanlde check in 
   const handleCheckIn = async (bookingCode) => {
     setLoading(true)
     try {
+      // Kiểm tra thời gian check-in cho booking online trước khi gọi API
+      const booking = bookings.find(b => b.booking_code === bookingCode) || selectedBooking
+      if (booking) {
+        const checkResult = canCheckInBooking(booking)
+        if (!checkResult.can) {
+          message.error(checkResult.message)
+          setLoading(false)
+          return
+        }
+      }
+
       const response = await checkInGuest(bookingCode)
       if(response.statusCode === 200) {
         message.success('Check-in thành công!')
         fetchBookings(pagination.current, pagination.pageSize)
       }
       else{
-        message.error('Không thể check-in đặt phòng!')
+        const errorMessage = response?.message || 'Không thể check-in đặt phòng!'
+        message.error(errorMessage)
       }
     } catch (error) {
       console.error('Error checking in:', error)
-      message.error('Không thể check-in đặt phòng!')
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể check-in đặt phòng!'
+      message.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -294,6 +367,47 @@ const BookingManagement = () => {
     } catch (error) {
       console.error('Error checking out:', error)
       message.error('Không thể check-out đặt phòng!')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle print invoice
+  const handlePrintInvoice = async (bookingId) => {
+    if (!bookingId) {
+      message.error('Không tìm thấy thông tin đặt phòng!')
+      return
+    }
+
+    try {
+      setLoading(true)
+      // Gọi API để tạo PDF
+      const blob = await generateInvoicePDF(bookingId)
+      
+      // Tạo URL từ blob
+      const url = window.URL.createObjectURL(blob)
+      
+      // Tạo link tải xuống
+      const link = document.createElement('a')
+      link.href = url
+      
+      // Lấy tên file từ response header hoặc đặt tên mặc định
+      const bookingCode = selectedBooking?.booking_code || 'booking'
+      link.download = `invoice-${bookingCode}.pdf`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      message.success('Đã tải hóa đơn thành công!')
+    } catch (error) {
+      console.error('Error generating invoice:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tạo hóa đơn!'
+      message.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -416,21 +530,36 @@ const BookingManagement = () => {
     },
     {
       title: 'Loại phòng',
-      dataIndex: 'room',
-      key: 'room',
-      width: 140,
-      render: (room) => (
-        <div>
-          <Text strong>{room?.room_type?.room_type_name}</Text>
-          {room?.room_num && (
-            <div>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Phòng {room.room_num}
-              </Text>
-            </div>
-          )}
-        </div>
-      )
+      key: 'room_type',
+      width: 180,
+      render: (_, record) => {
+        // Lấy room_type từ booking trực tiếp hoặc từ booking_rooms
+        const roomTypeName = record.room_type?.room_type_name || 
+                            record.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+                            'Chưa xác định'
+        
+        // Lấy danh sách phòng từ booking_rooms
+        const rooms = record.booking_rooms?.map(br => br.room?.room_num).filter(Boolean) || []
+        const numRooms = rooms.length || record.num_rooms || 0
+        
+        return (
+          <div>
+            <Text strong>{roomTypeName}</Text>
+            {numRooms > 0 && (
+              <div>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {numRooms === 1 && rooms.length > 0 
+                    ? `Phòng ${rooms[0]}`
+                    : numRooms > 1
+                      ? `${numRooms} phòng ${rooms.length > 0 ? `(${rooms.slice(0, 2).join(', ')}${rooms.length > 2 ? '...' : ''})` : ''}`
+                      : `${numRooms} phòng`
+                  }
+                </Text>
+              </div>
+            )}
+          </div>
+        )
+      }
     },
     {
       title: 'Ngày nhận/trả',
@@ -694,21 +823,30 @@ const BookingManagement = () => {
           <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
             Đóng
           </Button>,
-          selectedBooking?.booking_status === 'confirmed' && (
-            <Button 
-              key="checkin" 
-              type="primary" 
-              icon={<CheckCircleOutlined />}
-              onClick={() => {
-                setIsDetailModalVisible(false)
-                handleCheckIn(selectedBooking?.booking_code)
-              }}
-              
-              style={{ background: '#52c41a', borderColor: '#52c41a' }}
-            >
-              Check-in
-            </Button>
-          ),
+          selectedBooking?.booking_status === 'confirmed' && (() => {
+            const checkResult = canCheckInBooking(selectedBooking)
+            return (
+              <Tooltip title={!checkResult.can ? checkResult.message : ''}>
+                <Button 
+                  key="checkin" 
+                  type="primary" 
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => {
+                    setIsDetailModalVisible(false)
+                    handleCheckIn(selectedBooking?.booking_code)
+                  }}
+                  disabled={!checkResult.can}
+                  style={{ 
+                    background: !checkResult.can ? '#d9d9d9' : '#52c41a', 
+                    borderColor: !checkResult.can ? '#d9d9d9' : '#52c41a',
+                    cursor: !checkResult.can ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Check-in
+                </Button>
+              </Tooltip>
+            )
+          })(),
           selectedBooking?.booking_status === 'checked_in' && (
             <Button 
               key="checkout" 
@@ -724,7 +862,13 @@ const BookingManagement = () => {
               Check-out
             </Button>
           ),
-          <Button key="print" type="primary" icon={<PrinterOutlined />}>
+          <Button 
+            key="print" 
+            type="primary" 
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintInvoice(selectedBooking?.booking_id)}
+            loading={loading}
+          >
             In hóa đơn
           </Button>
         ]}
@@ -779,16 +923,35 @@ const BookingManagement = () => {
                 <Card title="Thông tin phòng" size="small" >
                   <div className="detail-item">
                     <Text strong>Loại phòng:</Text>
-                    <Text>{selectedBooking.room?.room_type?.room_type_name}</Text>
+                    <Text>
+                      {selectedBooking.room_type?.room_type_name || 
+                       selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+                       'Chưa xác định'}
+                    </Text>
                   </div>
                   <div className="detail-item">
                     <Text strong>Số phòng:</Text>
-                    <Text>{selectedBooking.room?.room_num || 'Chưa gán'}</Text>
+                    <Text>
+                      {selectedBooking.booking_rooms && selectedBooking.booking_rooms.length > 0
+                        ? selectedBooking.booking_rooms
+                            .map(br => br.room?.room_num)
+                            .filter(Boolean)
+                            .join(', ') || 'Chưa gán'
+                        : selectedBooking.num_rooms 
+                          ? `${selectedBooking.num_rooms} phòng`
+                          : 'Chưa gán'}
+                    </Text>
                   </div>
                   <div className="detail-item">
                     <Text strong>Số khách:</Text>
                     <Text>{selectedBooking.num_person} người</Text>
                   </div>
+                  {selectedBooking.num_rooms > 1 && (
+                    <div className="detail-item">
+                      <Text strong>Số lượng phòng:</Text>
+                      <Text>{selectedBooking.num_rooms} phòng</Text>
+                    </div>
+                  )}
                 </Card>
               </Col>
               <Col span={12}>

@@ -20,7 +20,8 @@ import {
   HomeOutlined,
   UploadOutlined,
   ExclamationCircleOutlined,
-  WarningOutlined
+  WarningOutlined,
+  EyeOutlined
 } from '@ant-design/icons'
 import { 
   getAllHotels, 
@@ -42,6 +43,8 @@ function Hotels() {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingHotel, setEditingHotel] = useState(null)
   const [fileList, setFileList] = useState([])
+  const [previewImages, setPreviewImages] = useState([]) // Danh sách ảnh để preview
+  const [previewVisible, setPreviewVisible] = useState(false) // Modal preview ảnh
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -127,21 +130,61 @@ function Hotels() {
       dataIndex: 'images',
       key: 'images',
       width: 120,
-      render: (images) => {
+      render: (images, record) => {
         const imageArray = Array.isArray(images) ? images : []
-        return imageArray.length > 0 ? (
-          <Image
-            width={80}
-            height={60}
-            src={imageArray[0]}
-            alt="hotel"
-            style={{ objectFit: 'cover', borderRadius: 4 }}
-          />
-        ) : (
-          <div style={{ width: 80, height: 60, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-            <HomeOutlined style={{ fontSize: 24, color: '#999' }} />
-          </div>
-        )
+        const imageCount = imageArray.length
+        
+        if (imageArray.length > 0) {
+          return (
+            <div 
+              style={{ 
+                position: 'relative', 
+                width: 80, 
+                height: 60, 
+                cursor: 'pointer',
+                borderRadius: 4,
+                overflow: 'hidden'
+              }}
+              onClick={() => handleViewImages(imageArray, record.name)}
+            >
+              <Image
+                width={80}
+                height={60}
+                src={imageArray[0]}
+                alt="hotel"
+                style={{ objectFit: 'cover', borderRadius: 4 }}
+                preview={false}
+              />
+              {imageCount > 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    color: '#fff',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    borderTopLeftRadius: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}
+                >
+                  <EyeOutlined style={{ fontSize: 10 }} />
+                  <span>+{imageCount - 1}</span>
+                </div>
+              )}
+            </div>
+          )
+        } else {
+          return (
+            <div style={{ width: 80, height: 60, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+              <HomeOutlined style={{ fontSize: 24, color: '#999' }} />
+            </div>
+          )
+        }
       },
     },
     {
@@ -229,10 +272,11 @@ function Hotels() {
     // Set existing images to fileList for preview
     if (record.images && Array.isArray(record.images) && record.images.length > 0) {
       const existingFiles = record.images.map((url, index) => ({
-        uid: `-existing-${index}`,
-        name: `image-${index}.jpg`,
+        uid: `-existing-${index}-${Date.now()}`, // Tạo uid duy nhất
+        name: `image-${index + 1}.jpg`,
         status: 'done',
         url: url,
+        // Không có originFileObj = đây là ảnh từ server
       }))
       setFileList(existingFiles)
     } else {
@@ -318,6 +362,12 @@ function Hotels() {
     try {
       const values = await form.validateFields()
       
+      // Validate ít nhất phải có 1 ảnh (cho trường hợp tạo mới)
+      if (!editingHotel && fileList.length === 0) {
+        message.warning('Vui lòng tải lên ít nhất 1 ảnh cho khách sạn!')
+        return
+      }
+      
       // Tạo FormData để upload images
       const formData = new FormData()
       formData.append('name', values.name)
@@ -326,30 +376,49 @@ function Hotels() {
       formData.append('phone', values.phone || '')
       formData.append('email', values.email || '')
       
-      // Thêm các file mới vào FormData
-      const newFiles = fileList.filter(file => file.originFileObj)
-      newFiles.forEach(file => {
-        formData.append('images', file.originFileObj)
+      // Lấy các file mới (có originFileObj)
+      const newFiles = fileList.filter(file => {
+        return file.originFileObj && file.originFileObj instanceof File
       })
-      // Nếu đang edit, giữ lại các ảnh cũ
+      
+      // Thêm các file mới vào FormData - backend sẽ nhận nhiều file với key 'images'
+      newFiles.forEach((file, index) => {
+        if (file.originFileObj) {
+          formData.append('images', file.originFileObj)
+        }
+      })
+      
+      // Nếu đang edit, gửi danh sách ảnh cũ cần giữ lại
       if (editingHotel) {
         const existingImages = fileList
-          .filter(file => !file.originFileObj && file.url)
+          .filter(file => {
+            // Ảnh cũ là ảnh có url từ server và KHÔNG có originFileObj (chưa được thay thế)
+            return file.url && !file.originFileObj
+          })
           .map(file => file.url)
         
+        // Nếu có ảnh cũ, gửi lên backend để giữ lại
         if (existingImages.length > 0) {
+          // Backend có thể nhận dưới dạng JSON string hoặc array
           formData.append('existingImages', JSON.stringify(existingImages))
         }
       }
+      
+      // Log để debug (có thể xóa trong production)
+      console.log('Uploading files:', {
+        newFiles: newFiles.length,
+        existingImages: editingHotel ? fileList.filter(f => f.url && !f.originFileObj).length : 0,
+        totalInList: fileList.length
+      })
       
       setLoading(true)
       
       if (editingHotel) {
         await updateHotel(editingHotel.hotel_id, formData)
-        message.success('Cập nhật khách sạn thành công')
+        message.success(`Cập nhật khách sạn thành công${newFiles.length > 0 ? ` (${newFiles.length} ảnh mới)` : ''}`)
       } else {
         await createHotel(formData)
-        message.success('Tạo khách sạn thành công')
+        message.success(`Tạo khách sạn thành công (${newFiles.length} ảnh)`)
       }
       
       setIsModalVisible(false)
@@ -362,7 +431,7 @@ function Hotels() {
         return
       }
       console.error('Error saving hotel:', error)
-      message.error(error.message || 'Có lỗi xảy ra')
+      message.error(error.message || 'Có lỗi xảy ra khi lưu khách sạn')
     } finally {
       setLoading(false)
     }
@@ -387,18 +456,60 @@ function Hotels() {
     setSearchText(value)
   }
 
+  // Handle view all images
+  const handleViewImages = (images, hotelName) => {
+    if (!images || images.length === 0) return
+    
+    setPreviewImages(images)
+    setPreviewVisible(true)
+  }
+
   // Upload handlers
   const handleUploadChange = ({ fileList: newFileList }) => {
-    console.log('Upload change:', newFileList)
+    // Cập nhật fileList trực tiếp từ Ant Design
+    // Tạo preview cho các file mới chưa có preview
+    const filesToUpdate = newFileList.filter(file => 
+      file.originFileObj && !file.preview && !file.url
+    )
+    
+    // Tạo preview cho các file mới
+    filesToUpdate.forEach(file => {
+      getBase64(file.originFileObj).then(preview => {
+        setFileList(prev => 
+          prev.map(f => f.uid === file.uid ? { ...f, preview } : f)
+        )
+      })
+    })
+    
+    // Cập nhật fileList ngay lập tức
     setFileList(newFileList)
   }
 
+  const handleRemove = (file) => {
+    const newFileList = fileList.filter(item => item.uid !== file.uid)
+    setFileList(newFileList)
+    return true // Return true để xác nhận xóa
+  }
+
   const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
+    // Nếu file chưa có preview, tạo preview
+    if (!file.url && !file.preview && file.originFileObj) {
       file.preview = await getBase64(file.originFileObj)
     }
-    // Mở ảnh trong tab mới hoặc dùng Modal
-    window.open(file.url || file.preview, '_blank')
+    
+    // Sử dụng Image preview của Ant Design thay vì mở tab mới
+    const imageUrl = file.url || file.preview
+    if (imageUrl) {
+      // Tạo temporary image element để preview
+      const img = document.createElement('img')
+      img.src = imageUrl
+      img.style.display = 'none'
+      document.body.appendChild(img)
+      
+      // Mở trong tab mới hoặc preview modal
+      window.open(imageUrl, '_blank')
+      document.body.removeChild(img)
+    }
   }
 
   const getBase64 = (file) => {
@@ -410,6 +521,25 @@ function Hotels() {
     })
   }
 
+  // Validate file trước khi thêm vào list
+  const validateFile = (file) => {
+    // Check file type
+    const isImage = file.type.startsWith('image/')
+    if (!isImage) {
+      message.error(`${file.name} không phải là file ảnh!`)
+      return false
+    }
+    
+    // Check file size (< 5MB)
+    const isLt5M = file.size / 1024 / 1024 < 5
+    if (!isLt5M) {
+      message.error(`${file.name} có kích thước lớn hơn 5MB!`)
+      return false
+    }
+    
+    return true
+  }
+
   const uploadProps = {
     listType: 'picture-card',
     multiple: true,
@@ -417,34 +547,37 @@ function Hotels() {
     fileList: fileList,
     onChange: handleUploadChange,
     onPreview: handlePreview,
-    beforeUpload: (file) => {
-      console.log('Before upload:', file)
-      
-      // Check file type
-      const isImage = file.type.startsWith('image/')
-      if (!isImage) {
-        message.error('Chỉ được upload file ảnh!')
+    onRemove: handleRemove,
+    beforeUpload: (file, fileList) => {
+      // Validate file
+      if (!validateFile(file)) {
         return Upload.LIST_IGNORE
       }
       
-      // Check file size (< 5MB)
-      const isLt5M = file.size / 1024 / 1024 < 5
-      if (!isLt5M) {
-        message.error('Kích thước ảnh phải nhỏ hơn 5MB!')
-        return Upload.LIST_IGNORE
-      }
+      // Check max files - đếm cả file đang upload
+      // Ant Design sẽ thêm file này vào list nếu return false
+      const totalFiles = fileList.length + 1 // +1 cho file đang upload
       
-      // Check max files
-      if (fileList.length >= 10) {
+      if (totalFiles > 10) {
         message.warning('Chỉ được upload tối đa 10 ảnh!')
         return Upload.LIST_IGNORE
       }
       
-      return false // Prevent auto upload, let Upload component handle fileList
+      // Prevent auto upload - chúng ta sẽ upload khi submit form
+      // Ant Design sẽ tự động thêm file vào fileList thông qua onChange
+      return false
     },
     showUploadList: {
       showPreviewIcon: true,
       showRemoveIcon: true,
+      showDownloadIcon: false,
+    },
+    customRequest: ({ onSuccess }) => {
+      // Custom request handler - không upload ngay, chờ submit form
+      // Ant Design sẽ gọi onSuccess ngay để file hiển thị trong list
+      setTimeout(() => {
+        onSuccess('ok')
+      }, 0)
     },
   }
 
@@ -569,6 +702,78 @@ function Hotels() {
             </Upload>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Modal preview tất cả ảnh */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <EyeOutlined />
+            <span>Xem tất cả hình ảnh</span>
+          </div>
+        }
+        open={previewVisible}
+        onCancel={() => {
+          setPreviewVisible(false)
+          setPreviewImages([])
+        }}
+        footer={null}
+        width={900}
+        centered
+      >
+        <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <Image.PreviewGroup>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: 16,
+              padding: '16px 0'
+            }}>
+              {previewImages.map((imageUrl, index) => (
+                <div key={index} style={{ position: 'relative' }}>
+                  <Image
+                    src={imageUrl}
+                    alt={`Image ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      cursor: 'pointer'
+                    }}
+                    preview={{
+                      mask: (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          gap: 8,
+                          color: '#fff'
+                        }}>
+                          <EyeOutlined />
+                          <span>Xem</span>
+                        </div>
+                      )
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    color: '#fff',
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}>
+                    {index + 1}/{previewImages.length}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Image.PreviewGroup>
+        </div>
       </Modal>
     </div>
   )

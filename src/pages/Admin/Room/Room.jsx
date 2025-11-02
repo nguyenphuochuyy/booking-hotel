@@ -351,12 +351,12 @@ const RoomManagement = () => {
       title: 'Khách sạn',
       dataIndex: 'hotel_id',
       key: 'hotel_id',
-      width: 200,
+      width: 100,
       render: (hotelId) => {
         const hotel = hotels.find(h => h.hotel_id === hotelId)
         return hotel ? (
           <div className="hotel-name">
-            <HomeOutlined style={{ color: '#1890ff' }} />
+
             <Text strong>{hotel.name}</Text>
           </div>
         ) : (
@@ -401,8 +401,8 @@ const RoomManagement = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
-      align: 'center',
+      width: 100,
+      align: 'left',
       render: (status) => getStatusTag(status),
       filters: [
         { text: 'Có sẵn', value: 'available' },

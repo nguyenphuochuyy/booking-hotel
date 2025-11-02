@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   DatePicker, Button, Popover, 
   Form, message, Space
@@ -9,17 +9,60 @@ import {
 } from '@ant-design/icons'
 import './BookingWidget.css'
 import dayjs from 'dayjs'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { searchAvailableRooms } from '../../services/booking.service'
 
-const BookingWidget = () => {
+const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: propAdults, children: propChildren, rooms: propRooms }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [guestVisible, setGuestVisible] = useState(false)
-  const [adults, setAdults] = useState(1)
-  const [children, setChildren] = useState(0)
-  const [rooms, setRooms] = useState(1)
+  
+  // Lấy params từ URL nếu có
+  const searchParams = new URLSearchParams(location.search)
+  const urlCheckIn = searchParams.get('checkIn')
+  const urlCheckOut = searchParams.get('checkOut')
+  const urlAdults = searchParams.get('adults')
+  const urlChildren = searchParams.get('children')
+  const urlRooms = searchParams.get('rooms')
+  
+  // Ưu tiên props, sau đó URL params, cuối cùng là default
+  const [adults, setAdults] = useState(
+    propAdults || (urlAdults ? parseInt(urlAdults, 10) : 1)
+  )
+  const [children, setChildren] = useState(
+    propChildren || (urlChildren ? parseInt(urlChildren, 10) : 0)
+  )
+  const [rooms, setRooms] = useState(
+    propRooms || (urlRooms ? parseInt(urlRooms, 10) : 1)
+  )
+  
+  // Đồng bộ state với URL params khi URL thay đổi
+  useEffect(() => {
+    if (urlAdults && !propAdults) {
+      setAdults(parseInt(urlAdults, 10))
+    }
+    if (urlChildren && !propChildren) {
+      setChildren(parseInt(urlChildren, 10))
+    }
+    if (urlRooms && !propRooms) {
+      setRooms(parseInt(urlRooms, 10))
+    }
+  }, [urlAdults, urlChildren, urlRooms, propAdults, propChildren, propRooms])
+  
+  // Set initial values cho form từ URL params hoặc props
+  useEffect(() => {
+    const initialCheckIn = propCheckIn || urlCheckIn
+    const initialCheckOut = propCheckOut || urlCheckOut
+    
+    if (initialCheckIn || initialCheckOut) {
+      form.setFieldsValue({
+        checkIn: initialCheckIn ? dayjs(initialCheckIn) : undefined,
+        checkOut: initialCheckOut ? dayjs(initialCheckOut) : undefined
+      })
+    }
+  }, [propCheckIn, propCheckOut, urlCheckIn, urlCheckOut, form])
 
   const handleSearch = async (values) => {
     try {
@@ -43,12 +86,18 @@ const BookingWidget = () => {
       const params = new URLSearchParams({
         checkIn,
         checkOut,
-        adults: adults || 1,
-        children: children || 0,
-        rooms: rooms || 1
+        adults: (adults || 1).toString(),
+        children: (children || 0).toString(),
+        rooms: (rooms || 1).toString()
       })
       
-      navigate(`/hotels?${params.toString()}`)
+      // Nếu đang ở trang hotels, chỉ cập nhật URL params
+      if (location.pathname === '/hotels') {
+        navigate(`/hotels?${params.toString()}`, { replace: true })
+      } else {
+        // Nếu đang ở trang khác (trang chủ), navigate sang hotels
+        navigate(`/hotels?${params.toString()}`)
+      }
     } catch (error) {
       console.error('Error searching:', error)
       message.error('Có lỗi xảy ra khi tìm kiếm!')

@@ -142,7 +142,8 @@ const BookingConfirmation = () => {
 
   return (
     <div className="booking-confirmation-page">
-      <div className="container" style={{ padding: '40px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="container" style={{ padding: '0px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+        <Title level={2} style={{ textAlign: 'center' }}>Xác Nhận Đặt Phòng</Title>
         <Row gutter={24}>
           {/* Cột trái - Chi tiết phòng đã chọn */}
           <Col xs={24} md={6} order={{ xs: 1, md: 1 }}>

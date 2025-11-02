@@ -316,6 +316,17 @@ export async function getAllPromotions(params = {}) {
   return http.get('/promotions', { params })
 }
 
+// ==================== REVIEW MANAGEMENT ====================
+
+/**
+ * Lấy tất cả đánh giá (Admin only)
+ * @param {Object} params - { page, limit, user_id, booking_id, rating }
+ * @returns {Promise}
+ */
+export async function getAllReviews(params = {}) {
+  return http.get('/reviews/admin/all', { params })
+}
+
 /**
  * Lấy thông tin khuyến mãi theo ID
  * @param {number|string} id - Promotion ID
@@ -524,10 +535,33 @@ export async function getAvailableRoomsForType(params) {
 /**
  * Tạo hóa đơn PDF
  * @param {number|string} id - Booking ID
- * @returns {Promise}
+ * @returns {Promise<Blob>}
  */
 export async function generateInvoicePDF(id) {
-  return http.get(`/bookings/${id}/invoice/pdf`, { responseType: 'blob' })
+  const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  const token = localStorage.getItem('accessToken')
+  
+  const response = await fetch(`${apiBaseUrl}/bookings/${id}/invoice/pdf`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+  
+  if (!response.ok) {
+    const errorText = await response.text()
+    let errorData
+    try {
+      errorData = JSON.parse(errorText)
+    } catch {
+      errorData = { message: errorText || 'Không thể tạo hóa đơn!' }
+    }
+    const error = new Error(errorData.message || 'Không thể tạo hóa đơn!')
+    error.response = { data: errorData, status: response.status }
+    throw error
+  }
+  
+  return await response.blob()
 }
 
 /**
@@ -599,6 +633,8 @@ export default {
   createPromotion,
   updatePromotion,
   deletePromotion,
+  // Reviews
+  getAllReviews,
   // Posts
   getAllPosts,
   getPostById,

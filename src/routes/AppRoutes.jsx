@@ -6,6 +6,7 @@ import Hotels from '../pages/Hotels'
 import About from '../pages/About'
 import Booking from '../pages/Booking'
 import News from '../pages/News'
+import NewsDetail from '../pages/NewsDetail'
 import Contact from '../pages/Contact'
 import Services from '../pages/Services'
 import ServiceDetail from '../pages/ServiceDetail'
@@ -33,6 +34,7 @@ import RoomDetail from '../pages/RoomDetail'
 import AuthGuard from '../components/AuthGuard'
 import PromotionManagement from '../pages/Admin/Promotion'
 import ServiceManagement from '../pages/Admin/Service'
+import ReviewManagement from '../pages/Admin/Review'
 import BookingConfirmation from '../pages/BookingConfirmation'
 import Payment from '../pages/Payment'
 import BookingSuccess from '../pages/BookingSuccess'
@@ -69,6 +71,7 @@ function AppRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/news" element={<News />} />
+        <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:slug" element={<ServiceDetail />} />
@@ -143,7 +146,7 @@ function AppRoutes() {
         } />
         <Route path="/admin/reviews" element={
           <AdminRoute>
-            <div>Quản lý đánh giá</div>
+            <ReviewManagement />
           </AdminRoute>
         } />
         <Route path="/admin/profile" element={

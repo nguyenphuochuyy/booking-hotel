@@ -41,15 +41,21 @@ export const usePosts = (initialParams = {}) => {
       }
 
       const response = await postService.getPosts(params)
-      setPosts(response.posts || [])
+      // Safe access to response data
+      const postsData = response?.posts || response?.data?.posts || []
+      const paginationData = response?.pagination || response?.data?.pagination || {}
+      
+      setPosts(Array.isArray(postsData) ? postsData : [])
       setPagination(prev => ({
         ...prev,
         current: params.page || prev.current,
-        total: response.pagination?.totalItems || 0
+        total: paginationData?.totalItems || paginationData?.total || 0
       }))
     } catch (err) {
       if (err?.name !== 'AbortError') {
         setError(err?.message || 'Có lỗi xảy ra khi tải danh sách bài viết')
+        // Ensure posts is always an array even on error
+        setPosts([])
       }
     } finally {
       setLoading(false)
@@ -216,38 +222,56 @@ export const useCategories = () => {
   }
 }
 
-// Hook để quản lý single post
-export const usePostDetail = (id) => {
+// Hook để quản lý single post - hỗ trợ cả ID và slug
+export const usePostDetail = (identifier) => {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const fetchPost = useCallback(async (postId) => {
-    if (!postId) return
+  const fetchPost = useCallback(async (idOrSlug) => {
+    if (!idOrSlug) return
     
     setLoading(true)
     setError(null)
     
     try {
-      const response = await postService.getPostById(postId)
-      setPost(response.post)
+      // Kiểm tra nếu là số thì dùng getPostById, ngược lại dùng getPostBySlug
+      const isNumeric = /^\d+$/.test(String(idOrSlug))
+      let response
+      
+      if (isNumeric) {
+        response = await postService.getPostById(parseInt(idOrSlug))
+      } else {
+        response = await postService.getPostBySlug(idOrSlug)
+      }
+      
+      // Safe access to response data
+      const postData = response?.post || response?.data?.post || null
+      
+      if (!postData) {
+        setError('Không tìm thấy bài viết')
+        setPost(null)
+      } else {
+        setPost(postData)
+      }
     } catch (err) {
       setError(err?.message || 'Có lỗi xảy ra khi tải bài viết')
+      setPost(null)
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (id) {
-      fetchPost(id)
+    if (identifier) {
+      fetchPost(identifier)
     }
-  }, [id, fetchPost])
+  }, [identifier, fetchPost])
 
   return {
     post,
     loading,
     error,
-    refresh: () => fetchPost(id)
+    refresh: () => fetchPost(identifier)
   }
 }

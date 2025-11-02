@@ -13,7 +13,10 @@ import {
   message,
   Modal,
   Descriptions,
-  Divider
+  Divider,
+  Rate,
+  Input,
+  Upload
 } from 'antd'
 import {
   EyeOutlined,
@@ -21,15 +24,21 @@ import {
   CalendarOutlined,
   UserOutlined,
   DollarOutlined,
-  FilterOutlined
+  FilterOutlined,
+  UploadOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  PrinterOutlined
 } from '@ant-design/icons'
 import './userBookingHistory.css'
-import { getUserBookings, cancelBooking } from '../../services/booking.service'
+import { getUserBookings, cancelBooking, downloadInvoicePDF } from '../../services/booking.service'
 import { useAuth } from '../../context/AuthContext'
 import { cancelBookingOnline } from '../../services/booking.service'
 import { getBookingStatusText, getBookingStatusColor, getPaymentStatusText, getPaymentStatusColor } from '../../services/booking.service'
+import { createReview } from '../../services/review.service'
 import { Tooltip } from 'antd'
 const { Title, Text } = Typography
+const { TextArea } = Input
 const { useBreakpoint } = Grid
 
 // Helper map backend status -> UI keys
@@ -64,6 +73,14 @@ function UserBookingHistory() {
   const [loading, setLoading] = useState(false)
   const [cancelModal, setCancelModal] = useState({ visible: false, bookingId: null, bookingCode: null, reason: '' })
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [reviewModal, setReviewModal] = useState({ visible: false, bookingId: null, bookingCode: null })
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: '',
+    images: []
+  })
+  const [invoiceLoading, setInvoiceLoading] = useState(false)
   const {user} = useAuth()
   // Load bookings from backend
   useEffect(() => {
@@ -235,6 +252,127 @@ function UserBookingHistory() {
     console.log(booking);
     
   }
+  
+  // Handle download invoice
+  const handleDownloadInvoice = async (bookingId, bookingCode) => {
+    if (!bookingId) {
+      message.error('Không tìm thấy thông tin đặt phòng!')
+      return
+    }
+
+    try {
+      setInvoiceLoading(true)
+      // Gọi API để tạo PDF
+      const blob = await downloadInvoicePDF(bookingId)
+      
+      // Tạo URL từ blob
+      const url = window.URL.createObjectURL(blob)
+      
+      // Tạo link tải xuống
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${bookingCode || bookingId}.pdf`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      message.success('Đã tải hóa đơn thành công!')
+    } catch (error) {
+      console.error('Error downloading invoice:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tải hóa đơn!'
+      
+      // Xử lý lỗi cụ thể
+      if (error?.response?.status === 403) {
+        message.error('Bạn không có quyền xem hóa đơn này hoặc booking chưa được check-out!')
+      } else if (error?.response?.status === 404) {
+        message.error('Không tìm thấy thông tin đặt phòng!')
+      } else {
+        message.error(errorMessage)
+      }
+    } finally {
+      setInvoiceLoading(false)
+    }
+  }
+
+  // Handle submit review
+  const handleSubmitReview = async () => {
+    if (!reviewModal.bookingId) {
+      message.error('Không xác định được booking cần đánh giá')
+      return
+    }
+    
+    if (!reviewForm.rating || reviewForm.rating < 1) {
+      message.warning('Vui lòng chọn số sao đánh giá')
+      return
+    }
+    
+    setReviewSubmitting(true)
+    try {
+      // Lấy các file từ fileList
+      const imageFiles = reviewForm.images
+        .filter(file => file.originFileObj)
+        .map(file => file.originFileObj)
+      
+      const reviewData = {
+        booking_id: reviewModal.bookingId,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment.trim() || '',
+        images: imageFiles
+      }
+      
+      const response = await createReview(reviewData)
+      
+      if (response) {
+        message.success('Đánh giá thành công! Cảm ơn bạn đã chia sẻ trải nghiệm.')
+        
+        // Reset form và đóng modal
+        setReviewModal({ visible: false, bookingId: null, bookingCode: null })
+        setReviewForm({ rating: 5, comment: '', images: [] })
+        
+        // Reload bookings để cập nhật (có thể cập nhật reviewLink nếu có)
+        const res = await getUserBookings({ limit: 100 })
+        if (res.statusCode === 200) {
+          const list = Array.isArray(res.bookings) ? res.bookings : []
+          const mapped = list.map(b => ({
+            id: b.booking_code || `BK-${b.booking_id}`,
+            bookingId: b.booking_id,
+            bookingCode: b.booking_code || null,
+            hotelName: b.hotel?.name || (b.room_num ? `Phòng ${b.room_num}` : 'N/A'),
+            roomType: b.room_type_name || 'N/A',
+            checkInDate: b.check_in_date,
+            checkOutDate: b.check_out_date,
+            guests: b.num_person || 1,
+            status: b.booking_status || 'pending',
+            totalAmount: b.final_price ?? b.total_price ?? 0,
+            bookingDate: b.created_at,
+            customerName: b.customer_name || b.guest_name || b.user?.full_name || 'N/A',
+            phone: b.customer_phone || b.guest_phone || b.user?.phone || 'N/A',
+            email: b.customer_email || b.user?.email || 'N/A',
+            customerAddress: b.customer_address || b.address || null,
+            citizenId: b.identity_number || b.citizen_id || null,
+            note: b.note || b.customer_note || null,
+            reviewLink: b.review_link || null,
+            paymentStatus: b.payment_status || 'pending',
+            bookingType: b.booking_type || 'online',
+            roomNum: b.room_num || null,
+            services: Array.isArray(b.services) ? b.services : []
+          }))
+          setBookings(mapped)
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể gửi đánh giá, vui lòng thử lại'
+      message.error(errorMessage)
+    } finally {
+      setReviewSubmitting(false)
+    }
+  }
 
   // Table columns
   const columns = [
@@ -245,13 +383,6 @@ function UserBookingHistory() {
       width: screens.xs ? 100 : 120,
       fixed: screens.xs ? 'left' : false,
       render: (text) => <Text strong className="booking-id">{text}</Text>
-    },
-    {
-      title: 'Số phòng',
-      dataIndex: 'hotelName',
-      key: 'hotelName',
-      width: screens.xs ? 120 : 150,
-      render: (text) => <Text className="hotel-name">{text}</Text>
     },
     {
       title: 'Loại phòng',
@@ -447,6 +578,17 @@ function UserBookingHistory() {
                 Hủy phòng
               </Button>
             ),
+            detailModal.data && (detailModal.data.status === 'checked_out' || detailModal.data.status === 'completed') && (
+              <Button
+                key="download-invoice"
+                type="primary"
+                icon={<PrinterOutlined />}
+                onClick={() => handleDownloadInvoice(detailModal.data.bookingId, detailModal.data.id)}
+                loading={invoiceLoading}
+              >
+                Xuất hóa đơn
+              </Button>
+            ),
             <Button key="close" onClick={() => setDetailModal({ visible: false, data: null })}>Đóng</Button>
           ]}
           width={screens.xs ? 360 : 720}
@@ -568,11 +710,28 @@ function UserBookingHistory() {
                 </>
               )}
 
-              {detailModal.data.reviewLink && (
+              {detailModal.data && detailModal.data.status === 'checked_out' && (
                 <>
                   <Divider />
                   <Space>
-                    <Button type="primary" onClick={() => window.open(detailModal.data.reviewLink, '_blank')}>Viết đánh giá</Button>
+                    <Button 
+                      type="primary" 
+                      onClick={() => {
+                        setDetailModal({ visible: false, data: null })
+                        setReviewModal({
+                          visible: true,
+                          bookingId: detailModal.data.bookingId,
+                          bookingCode: detailModal.data.id
+                        })
+                        setReviewForm({
+                          rating: 5,
+                          comment: '',
+                          images: []
+                        })
+                      }}
+                    >
+                      Viết đánh giá
+                    </Button>
                   </Space>
                 </>
               )}
@@ -637,6 +796,131 @@ function UserBookingHistory() {
           </div>
         </Modal>
 
+        {/* Modal viết đánh giá */}
+        <Modal
+          open={reviewModal.visible}
+          title={
+            <Space direction="vertical" size={0}>
+              <Text strong>Viết đánh giá</Text>
+              {reviewModal.bookingCode && (
+                <Text type="secondary">Mã booking: {reviewModal.bookingCode}</Text>
+              )}
+            </Space>
+          }
+          onCancel={() => {
+            setReviewModal({ visible: false, bookingId: null, bookingCode: null })
+            setReviewForm({ rating: 5, comment: '', images: [] })
+          }}
+          footer={[
+            <Button 
+              key="cancel" 
+              onClick={() => {
+                setReviewModal({ visible: false, bookingId: null, bookingCode: null })
+                setReviewForm({ rating: 5, comment: '', images: [] })
+              }}
+            >
+              Hủy
+            </Button>,
+            <Button 
+              key="submit" 
+              type="primary" 
+              loading={reviewSubmitting}
+              onClick={handleSubmitReview}
+              disabled={!reviewForm.rating || reviewForm.rating < 1}
+            >
+              Gửi đánh giá
+            </Button>
+          ]}
+          width={screens.xs ? 360 : 600}
+          className="review-modal"
+        >
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                Đánh giá của bạn <Text type="danger">*</Text>
+              </Text>
+              <Rate
+                value={reviewForm.rating}
+                onChange={(value) => setReviewForm(prev => ({ ...prev, rating: value }))}
+                style={{ fontSize: '24px' }}
+              />
+              <Text type="secondary" style={{ display: 'block', marginTop: '4px', fontSize: '12px' }}>
+                {reviewForm.rating === 1 && 'Rất không hài lòng'}
+                {reviewForm.rating === 2 && 'Không hài lòng'}
+                {reviewForm.rating === 3 && 'Bình thường'}
+                {reviewForm.rating === 4 && 'Hài lòng'}
+                {reviewForm.rating === 5 && 'Rất hài lòng'}
+              </Text>
+            </div>
+
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                Nội dung đánh giá
+              </Text>
+              <TextArea
+                value={reviewForm.comment}
+                onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ và phòng ở..."
+                rows={6}
+                maxLength={1000}
+                showCount
+              />
+            </div>
+
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                Hình ảnh đính kèm (tối đa 5 ảnh)
+              </Text>
+              <Upload
+                listType="picture-card"
+                fileList={reviewForm.images}
+                onChange={({ fileList }) => {
+                  const validFiles = fileList.filter(file => {
+                    // Chỉ lấy file mới upload (có originFileObj)
+                    if (file.originFileObj) {
+                      return true
+                    }
+                    // Giữ lại file đã có (từ URL)
+                    return file.url || file.thumbUrl
+                  })
+                  setReviewForm(prev => ({ 
+                    ...prev, 
+                    images: validFiles.slice(0, 5) // Giới hạn 5 ảnh
+                  }))
+                }}
+                beforeUpload={(file) => {
+                  // Validate file type
+                  const isImage = file.type.startsWith('image/')
+                  if (!isImage) {
+                    message.error('Chỉ có thể upload file ảnh!')
+                    return false
+                  }
+                  // Validate file size (max 5MB)
+                  const isLt5M = file.size / 1024 / 1024 < 5
+                  if (!isLt5M) {
+                    message.error('Ảnh phải nhỏ hơn 5MB!')
+                    return false
+                  }
+                  return false // Prevent auto upload
+                }}
+                onRemove={(file) => {
+                  setReviewForm(prev => ({
+                    ...prev,
+                    images: prev.images.filter(img => img.uid !== file.uid)
+                  }))
+                }}
+                accept="image/*"
+              >
+                {reviewForm.images.length < 5 && (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Upload</div>
+                  </div>
+                )}
+              </Upload>
+            </div>
+          </Space>
+        </Modal>
         
       </div>
     </div>

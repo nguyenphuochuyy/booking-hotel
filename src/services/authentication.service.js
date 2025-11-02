@@ -45,10 +45,13 @@ export async function resetPassword(payload) {
 
 /**
  * Đăng nhập với Google OAuth
- * @param {{ credential: string }} payload - Google credential token
+ * Lưu ý: Function này không được sử dụng vì Google OAuth cần redirect trực tiếp đến backend
+ * Sử dụng window.location.href để redirect đến AUTH.GOOGLE_LOGIN endpoint
  */
-export async function googleLogin(payload) {
-  return http.post(AUTH.GOOGLE_LOGIN, payload)
+export async function googleLogin() {
+  // Không sử dụng function này, thay vào đó redirect trực tiếp
+  const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  window.location.href = `${apiBaseUrl}${AUTH.GOOGLE_LOGIN}`
 }
 
 const authenticationService = { login, register, verifyEmail, forgotPassword, resetPassword, googleLogin }

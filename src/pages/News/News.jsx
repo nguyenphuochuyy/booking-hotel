@@ -1,77 +1,105 @@
-import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Typography, Button, Input, Select, Tag, Spin, Empty, Pagination, Space, Divider } from 'antd'
-import { SearchOutlined, CalendarOutlined, UserOutlined, EyeOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
-import { postService } from '../../services/post.service'
+import React, { useState, useEffect, useMemo } from 'react'
+import { 
+  Row, 
+  Col, 
+  Card, 
+  Input, 
+  Select, 
+  Typography, 
+  Pagination, 
+  Empty, 
+  Spin,
+  Tag,
+  Button,
+  Breadcrumb,
+  Grid,
+  Space
+} from 'antd'
+import { 
+  SearchOutlined, 
+  CalendarOutlined, 
+  UserOutlined,
+  TagOutlined,
+  HomeOutlined
+} from '@ant-design/icons'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { usePosts, useCategories } from '../../hooks/posts'
+import { mockNewsData, mockNewsCategories } from '../../data/mockNews'
 import './News.css'
 
-const { Title, Paragraph, Text } = Typography
+const { Title, Text, Paragraph } = Typography
 const { Search } = Input
 const { Option } = Select
+const { useBreakpoint } = Grid
 
 function News() {
+  const screens = useBreakpoint()
   const navigate = useNavigate()
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 6,
-    total: 0
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Get initial params from URL
+  const initialSearch = searchParams.get('search') || ''
+  const initialCategory = searchParams.get('category') || 'all'
+  
+  const { posts: apiPosts, loading, error, pagination: apiPagination, search, category, searchPosts, filterByCategory, goToPage } = usePosts({
+    search: initialSearch,
+    category: initialCategory,
+    status: 'published'
   })
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
-
-  // Fetch posts
-  const fetchPosts = async (page = 1, search = '', category = '') => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const params = {
-        page,
-        limit: pagination.pageSize,
-        status: 'published'
+  
+  const { categories: apiCategories } = useCategories()
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
+  
+  // Use mock data if API fails or returns empty - with safe access
+  const posts = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) ? apiPosts : mockNewsData
+  const categories = (apiCategories && Array.isArray(apiCategories) && apiCategories.length > 0) ? apiCategories : mockNewsCategories
+  
+  // Adjust pagination for mock data - with safe access
+  const pagination = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0 && apiPagination)
+    ? {
+        current: apiPagination.current || 1,
+        pageSize: apiPagination.pageSize || 10,
+        total: apiPagination.total || 0
       }
-      
-      if (search) params.search = search
-      if (category) params.category_id = category
-      
-      const response = await postService.getPosts(params)
-      setPosts(response.posts || [])
-      setPagination(prev => ({
-        ...prev,
-        current: page,
-        total: response.pagination?.totalItems || 0
-      }))
-    } catch (err) {
-      setError(err.message || 'Có lỗi xảy ra khi tải tin tức')
-      console.error('Error fetching posts:', err)
-    } finally {
-      setLoading(false)
+    : {
+        current: 1,
+        pageSize: 10,
+        total: mockNewsData.length
+      }
+  
+  // For mock data, filter locally
+  const filteredMockPosts = useMemo(() => {
+    if (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) return posts
+    
+    let filtered = [...mockNewsData]
+    
+    // Filter by search
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filtered = filtered.filter(post => 
+        post.title.toLowerCase().includes(searchLower) ||
+        (post.content && post.content.toLowerCase().includes(searchLower))
+      )
     }
-  }
+    
+    // Filter by category
+    if (category !== 'all') {
+      const categoryId = typeof category === 'string' ? parseInt(category) : category
+      filtered = filtered.filter(post => post.category_id === categoryId)
+    }
+    
+    return filtered
+  }, [apiPosts, posts, search, category])
+  
+  const displayPosts = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) ? posts : filteredMockPosts
 
+  // Update URL when filters change
   useEffect(() => {
-    fetchPosts()
-  }, [])
-
-  // Handle search
-  const handleSearch = (value) => {
-    setSearchKeyword(value)
-    fetchPosts(1, value, selectedCategory)
-  }
-
-  // Handle category filter
-  const handleCategoryChange = (value) => {
-    setSelectedCategory(value)
-    fetchPosts(1, searchKeyword, value)
-  }
-
-  // Handle pagination
-  const handlePageChange = (page) => {
-    fetchPosts(page, searchKeyword, selectedCategory)
-  }
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    if (category !== 'all') params.set('category', category)
+    setSearchParams(params)
+  }, [search, category, setSearchParams])
 
   // Format date
   const formatDate = (dateString) => {
@@ -84,169 +112,253 @@ function News() {
     })
   }
 
-  // Truncate text
-  const truncateText = (text, maxLength = 150) => {
-    if (!text) return ''
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
+  // Get excerpt from content
+  const getExcerpt = (content, maxLength = 150) => {
+    if (!content) return ''
+    // Remove HTML tags
+    const plainText = content.replace(/<[^>]*>/g, '')
+    if (plainText.length <= maxLength) return plainText
+    return plainText.substring(0, maxLength) + '...'
+  }
+
+  // Handle search
+  const handleSearch = (value) => {
+    searchPosts(value)
+    setSelectedCategory('all')
+  }
+
+  // Handle category filter
+  const handleCategoryChange = (value) => {
+    setSelectedCategory(value)
+    filterByCategory(value)
+  }
+
+  // Handle pagination
+  const handlePageChange = (page) => {
+    goToPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Navigate to post detail
+  const handleCardClick = (post) => {
+    if (post.slug) {
+      navigate(`/news/${post.slug}`)
+    } else if (post.post_id) {
+      navigate(`/news/${post.post_id}`)
+    }
   }
 
   return (
     <div className="news-page">
       <div className="news-container">
+        {/* Breadcrumb */}
+        <Breadcrumb 
+          className="news-breadcrumb"
+          items={[
+            {
+              href: '/',
+              title: (
+                <>
+                  <HomeOutlined />
+                  <span>Trang chủ</span>
+                </>
+              ),
+            },
+            {
+              title: 'Tin tức',
+            },
+          ]}
+        />
+
         {/* Header */}
         <div className="news-header">
-          <Title level={1} className="news-title">
-            Tin tức & Sự kiện
+          <Title level={1} className="news-main-title">
+            TIN TỨC & SỰ KIỆN
           </Title>
-          <Paragraph className="news-subtitle">
-            Cập nhật những tin tức mới nhất về khách sạn và các sự kiện đặc biệt
-          </Paragraph>
+          <Text className="news-subtitle">
+            Cập nhật những thông tin mới nhất về khách sạn, du lịch và các sự kiện đặc biệt
+          </Text>
         </div>
 
-        {/* Search and Filter */}
+        {/* Filters */}
         <div className="news-filters">
-          <Row gutter={[16, 16]} align="middle">
-            <Col xs={24} sm={12} md={8}>
+          <Row 
+            gutter={screens.xs ? [16, 16] : screens.md ? [20, 20] : [24, 24]}
+            align="middle"
+          >
+            <Col 
+              xs={24} 
+              sm={24} 
+              md={14} 
+              lg={16}
+            >
               <Search
                 placeholder="Tìm kiếm tin tức..."
                 allowClear
                 enterButton={<SearchOutlined />}
-                size="large"
+                size={screens.xs ? "middle" : "large"}
                 onSearch={handleSearch}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                defaultValue={search}
+                className="news-search-input"
               />
             </Col>
-            <Col xs={24} sm={12} md={8}>
+            <Col 
+              xs={24} 
+              sm={24} 
+              md={10} 
+              lg={8}
+            >
               <Select
-                placeholder="Chọn danh mục"
-                allowClear
-                size="large"
-                style={{ width: '100%' }}
+                placeholder="Tất cả danh mục"
+                value={selectedCategory}
                 onChange={handleCategoryChange}
+                size={screens.xs ? "middle" : "large"}
+                className="news-category-select"
+                style={{ width: '100%' }}
               >
-                <Option value="">Tất cả danh mục</Option>
-                <Option value="1">Tin tức</Option>
-                <Option value="2">Sự kiện</Option>
-                <Option value="3">Khuyến mãi</Option>
-                <Option value="4">Du lịch</Option>
+                <Option value="all">Tất cả danh mục</Option>
+                {categories.map((cat) => (
+                  <Option key={cat.category_id} value={cat.category_id}>
+                    {cat.name}
+                  </Option>
+                ))}
               </Select>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Space>
-                <Text type="secondary">
-                  Hiển thị {posts.length} / {pagination.total} bài viết
-                </Text>
-              </Space>
             </Col>
           </Row>
         </div>
 
-        <Divider />
-
-        {/* Posts Grid */}
-        {loading ? (
+        {/* Loading State */}
+        {loading && (
           <div className="news-loading">
             <Spin size="large" />
-            <Text>Đang tải tin tức...</Text>
+            <Text className="news-loading-text">Đang tải tin tức...</Text>
           </div>
-        ) : error ? (
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
           <div className="news-error">
-            <Empty
-              description={error}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            <Text type="danger">{error}</Text>
+            <Button 
+              type="primary" 
+              onClick={() => window.location.reload()}
+              style={{ marginTop: 16 }}
             >
-              <Button type="primary" onClick={() => fetchPosts()}>
-                Thử lại
-              </Button>
-            </Empty>
+              Thử lại
+            </Button>
           </div>
-        ) : posts.length === 0 ? (
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && displayPosts.length === 0 && (
           <div className="news-empty">
-            <Empty
-              description="Không có tin tức nào"
+            <Empty 
+              description="Không tìm thấy tin tức nào"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
+            {(search || category !== 'all') && (
+              <Button 
+                type="primary"
+                onClick={() => {
+                  handleSearch('')
+                  handleCategoryChange('all')
+                }}
+                style={{ marginTop: 16 }}
+              >
+                Xóa bộ lọc
+              </Button>
+            )}
           </div>
-        ) : (
-          <>
-            <Row gutter={[24, 24]}>
-              {posts.map((post) => (
-                <Col xs={24} sm={12} lg={8} key={post.post_id}>
-                  <Card
-                    hoverable
-                    className="news-card"
-                    cover={
-                      post.cover_image_url ? (
-                        <div className="news-card-image">
-                          <img
-                            alt={post.title}
-                            src={post.cover_image_url}
-                            style={{
-                              width: '100%',
-                              height: '200px',
-                              objectFit: 'cover'
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="news-card-placeholder">
-                          <Text type="secondary">Không có hình ảnh</Text>
-                        </div>
-                      )
-                    }
-                    actions={[
-                      <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => navigate(`/news/${post.slug}`)}
-                      >
-                        Đọc thêm
-                      </Button>
-                    ]}
-                  >
-                    <Card.Meta
-                      title={
-                        <Title level={4} className="news-card-title">
-                          {post.title}
-                        </Title>
-                      }
-                      description={
-                        <div className="news-card-content">
-                          <Paragraph className="news-card-excerpt">
-                            {truncateText(post.content)}
-                          </Paragraph>
-                          
-                          <div className="news-card-meta">
-                            <Space size="small" wrap>
-                              <Space size={4}>
-                                <UserOutlined />
-                                <Text type="secondary" size="small">
-                                  {post.author?.full_name || 'Admin'}
-                                </Text>
-                              </Space>
-                              <Space size={4}>
-                                <CalendarOutlined />
-                                <Text type="secondary" size="small">
-                                  {formatDate(post.published_at || post.created_at)}
-                                </Text>
-                              </Space>
-                            </Space>
-                          </div>
+        )}
 
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="news-card-tags">
-                              <Space size={4} wrap>
-                                {post.tags.slice(0, 3).map((tag, index) => (
-                                  <Tag key={index} color="blue" size="small">
-                                    {tag}
-                                  </Tag>
-                                ))}
-                              </Space>
-                            </div>
+        {/* News Grid */}
+        {!loading && !error && displayPosts.length > 0 && (
+          <>
+            <Row 
+              gutter={screens.xs ? [16, 24] : screens.md ? [24, 32] : [32, 40]}
+              className="news-grid"
+            >
+              {displayPosts.map((post) => (
+                <Col 
+                  key={post.post_id}
+                  xs={24} 
+                  sm={24} 
+                  md={12} 
+                  lg={8}
+                  xl={8}
+                >
+                  <Card
+                    className="news-card"
+                    hoverable
+                    cover={
+                      <div className="news-card-image">
+                        {post.cover_image_url || post.image ? (
+                          <img 
+                            src={post.cover_image_url || post.image} 
+                            alt={post.title}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="news-card-placeholder">
+                            <Text type="secondary">Không có ảnh</Text>
+                          </div>
+                        )}
+                        {post.category && (
+                          <div className="news-card-category">
+                            <Tag color="gold">{post.category.name}</Tag>
+                          </div>
+                        )}
+                      </div>
+                    }
+                    onClick={() => handleCardClick(post)}
+                  >
+                    <div className="news-card-content">
+                      <Title level={4} className="news-card-title">
+                        {post.title}
+                      </Title>
+                      
+                      <Paragraph className="news-card-excerpt">
+                        {getExcerpt(post.content)}
+                      </Paragraph>
+
+                      <div className="news-card-meta">
+                        <Space size="small" wrap>
+                          {post.author && (
+                            <Text className="news-card-author">
+                              <UserOutlined /> {post.author.full_name || 'Admin'}
+                            </Text>
                           )}
+                          {post.created_at && (
+                            <Text className="news-card-date">
+                              <CalendarOutlined /> {formatDate(post.created_at)}
+                            </Text>
+                          )}
+                        </Space>
+                      </div>
+
+                      {post.tags && Array.isArray(post.tags) && post.tags.length > 0 && (
+                        <div className="news-card-tags">
+                          <Space size={[0, 8]} wrap>
+                            <TagOutlined style={{ color: '#9ca3af' }} />
+                            {post.tags.slice(0, 3).map((tag, index) => (
+                              <Tag key={index} color="default">{tag}</Tag>
+                            ))}
+                            {post.tags.length > 3 && (
+                              <Tag color="default">+{post.tags.length - 3}</Tag>
+                            )}
+                          </Space>
                         </div>
-                      }
-                    />
+                      )}
+
+                      <div className="news-card-footer">
+                        <Button 
+                          type="primary" 
+                          className="news-card-button"
+                        >
+                          Đọc thêm
+                        </Button>
+                      </div>
+                    </div>
                   </Card>
                 </Col>
               ))}
@@ -261,10 +373,10 @@ function News() {
                   pageSize={pagination.pageSize}
                   onChange={handlePageChange}
                   showSizeChanger={false}
-                  showQuickJumper
-                  showTotal={(total, range) =>
-                    `${range[0]}-${range[1]} của ${total} bài viết`
+                  showTotal={(total, range) => 
+                    `${range[0]}-${range[1]} của ${total} tin tức`
                   }
+                  responsive
                 />
               </div>
             )}

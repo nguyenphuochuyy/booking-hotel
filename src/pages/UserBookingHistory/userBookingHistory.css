@@ -5,6 +5,27 @@
   padding: 40px 16px;
 }
 
+/* Review Modal Styles */
+.review-modal .ant-upload-select-picture-card {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+}
+
+.review-modal .ant-upload-list-picture-card .ant-upload-list-item {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+}
+
+.review-modal .ant-rate {
+  color: #faad14;
+}
+
+.review-modal .ant-rate-star:not(:last-child) {
+  margin-right: 4px;
+}
+
 .booking-history-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -121,10 +142,6 @@
 .guests-cell .anticon {
   color: #64748b;
   font-size: 12px;
-}
-
-.amount-cell {
-
 }
 
 .amount-cell .anticon {

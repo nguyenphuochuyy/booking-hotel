@@ -24,12 +24,10 @@ import {
   FacebookOutlined
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
-// import { GoogleLogin } from '@react-oauth/google'
 import './Authentication.css'
 import { useAuth } from '../../context/AuthContext'
 import { getUserProfile } from '../../services/user.service'
 import authenticationService from '../../services/authentication.service'
-import { GoogleLogin } from '@react-oauth/google'
 
 const { Title, Text, Link } = Typography
 const { useBreakpoint } = Grid
@@ -56,8 +54,60 @@ const Authentication = () => {
       setActiveTab('login')
     }
   }, [location.pathname])
+
+  // Xử lý Google OAuth callback - khi redirect về từ Google
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const token = searchParams.get('token')
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+
+    if (error) {
+      let errorMessage = 'Đăng nhập với Google thất bại!'
+      if (error === 'google_auth_failed') {
+        errorMessage = 'Không thể xác thực với Google. Vui lòng thử lại!'
+      } else if (error === 'server_error') {
+        errorMessage = 'Lỗi server. Vui lòng thử lại sau!'
+      }
+      message.error(errorMessage)
+      // Clean up URL
+      navigate(location.pathname, { replace: true })
+      return
+    }
+
+    if (token && success === 'google_auth_success') {
+      // Lưu token
+      localStorage.setItem('accessToken', token)
+      setAccessToken(token)
+
+      // Lấy thông tin user
+      getUserProfile()
+        .then(userProfile => {
+          const profileUser = userProfile?.user
+          if (profileUser) {
+            setUser(profileUser)
+            messageApi.success('Đăng nhập với Google thành công!')
+            
+            // Redirect based on role
+            if (profileUser.role === 'admin') {
+              localStorage.setItem('user', JSON.stringify(profileUser))
+              navigate('/admin', { replace: true })
+            } else {
+              navigate('/', { replace: true })
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching user profile:', error)
+          message.error('Không thể lấy thông tin người dùng!')
+          // Clean up URL
+          navigate(location.pathname, { replace: true })
+        })
+    }
+  }, [location.search, navigate, setUser, setAccessToken, messageApi])
+  
   // message khi đăng nhập
-  const success = () => {
+  const showSuccessMessage = () => {
     messageApi.open({
       type: 'success',
       content: 'Đăng nhập thành công!',
@@ -70,7 +120,7 @@ const Authentication = () => {
     try {
       const response = await login(values)
       if(response){
-        success()
+        showSuccessMessage()
         // lấy thông tin của user sau khi đăng nhập thành công bằng accessToken
         const userProfile = await getUserProfile()
         console.log(userProfile.user);
@@ -89,7 +139,13 @@ const Authentication = () => {
     }
   }
 
-
+  // xử lý đăng nhập với Google - redirect đến backend OAuth endpoint
+  const handleGoogleLogin = () => {
+    // Lấy base URL từ httpClient hoặc từ env
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+    // Redirect đến backend Google OAuth endpoint
+    window.location.href = `${apiBaseUrl}/auth/google`
+  }
   // Xử lý quên mật khẩu
   const handleForgotPassword = async (values) => {
     setForgotPasswordLoading(true)
@@ -196,9 +252,17 @@ const Authentication = () => {
       </Divider>
 
       <Space direction="vertical" style={{ width: '100%'  }} size={8}>
-          <GoogleLogin>
-            Đăng nhập với Google
-          </GoogleLogin>
+        {/* Đăng nhập với Google không dùng Google Button*/}
+        <Button
+          icon={<GoogleOutlined />}
+          block
+          className="social-button google-button"
+          size="middle"
+          onClick={handleGoogleLogin}
+       
+        >
+          Đăng nhập với Google
+        </Button>
         <Button
           icon={<FacebookOutlined />}
           block

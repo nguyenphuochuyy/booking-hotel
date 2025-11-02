@@ -61,16 +61,14 @@ function RoomTypes() {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingRoomType, setEditingRoomType] = useState(null)
   const [fileList, setFileList] = useState([])
-  const [knownImagesById, setKnownImagesById] = useState({}) // cache ảnh theo room_type_id ở FE
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   })
   const [form] = Form.useForm()
-  const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImages, setPreviewImages] = useState([])
-  const [previewIndex, setPreviewIndex] = useState(0)
+  const [previewVisible, setPreviewVisible] = useState(false)
   const [isAmenityModalVisible, setIsAmenityModalVisible] = useState(false)
   const [isManageAmenitiesModalVisible, setIsManageAmenitiesModalVisible] = useState(false)
   const [newAmenity, setNewAmenity] = useState('')
@@ -115,17 +113,14 @@ function RoomTypes() {
 
       const response = await getAllRoomTypes(params)
       const roomTypesData = response?.roomTypes || []
-      console.log(roomTypesData);
       
+      // Map data để thêm key và chuẩn hóa images
       const roomTypesWithKey = roomTypesData.map(roomType => {
         const id = roomType.room_type_id
         const apiImages = normalizeImages(roomType.images)
-        const cachedImages = Array.isArray(knownImagesById[id]) ? knownImagesById[id] : []
-        // Hợp nhất ảnh từ API và cache FE, loại trùng lặp
-        const merged = Array.from(new Set([...(apiImages || []), ...(cachedImages || [])])).filter(Boolean)
         return {
           ...roomType,
-          images: merged,
+          images: apiImages, // Mảng JSON các URL ảnh từ backend
           key: id,
         }
       })
@@ -222,23 +217,44 @@ function RoomTypes() {
         }
 
         return (
-          <div className="image-preview-overlay" style={{ position: 'relative', width: 80, height: 60 }}>
+          <div 
+            style={{ 
+              position: 'relative', 
+              width: 80, 
+              height: 60, 
+              cursor: 'pointer',
+              borderRadius: 4,
+              overflow: 'hidden'
+            }}
+            onClick={() => handleViewImages(imageArray, record.room_type_name)}
+          >
             <Image
               width={80}
               height={60}
               src={imageArray[0]}
               alt="room type"
-              style={{ objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
-              onClick={() => handleImagePreview(imageArray, 0)}
+              style={{ objectFit: 'cover', borderRadius: 4 }}
               preview={false}
             />
             {imageCount > 1 && (
               <div
-                className="image-count-badge"
-                onClick={() => handleImagePreview(imageArray, 0)}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: 'rgba(0, 0, 0, 0.75)',
+                  color: '#fff',
+                  padding: '2px 6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  borderTopLeftRadius: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
               >
-                <EyeOutlined style={{ fontSize: 8 }} />
-                +{imageCount - 1}
+                <EyeOutlined style={{ fontSize: 10 }} />
+                <span>+{imageCount - 1}</span>
               </div>
             )}
           </div>
@@ -393,10 +409,11 @@ function RoomTypes() {
     const recordImages = normalizeImages(record.images)
     if (recordImages.length > 0) {
       const existingFiles = recordImages.map((url, index) => ({
-        uid: `-existing-${index}`,
-        name: `image-${index}.jpg`,
+        uid: `-existing-${index}-${Date.now()}`, // Tạo uid duy nhất
+        name: `image-${index + 1}.jpg`,
         status: 'done',
         url: url,
+        // Không có originFileObj = đây là ảnh từ server
       }))
       setFileList(existingFiles)
     } else {
@@ -478,9 +495,65 @@ function RoomTypes() {
     setIsModalVisible(true)
   }
 
+  // Helper function: Download ảnh từ URL về File object
+  const urlToFile = async (url, filename) => {
+    try {
+      // Thử fetch với mode 'cors' trước
+      let response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+      })
+
+      // Nếu lỗi CORS, thử với mode 'no-cors' (nhưng không thể đọc response)
+      // Nên bỏ qua và throw error
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+      
+      // Kiểm tra blob có dữ liệu không
+      if (blob.size === 0) {
+        throw new Error('Ảnh tải về rỗng')
+      }
+
+      // Xác định MIME type từ blob hoặc dựa vào extension
+      let mimeType = blob.type || 'image/jpeg'
+      if (!mimeType.startsWith('image/')) {
+        // Thử đoán từ filename
+        const ext = filename.toLowerCase().split('.').pop()
+        const mimeTypes = {
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'gif': 'image/gif',
+          'webp': 'image/webp',
+        }
+        mimeType = mimeTypes[ext] || 'image/jpeg'
+      }
+
+      const file = new File([blob], filename, { type: mimeType })
+      return file
+    } catch (error) {
+      console.error(`Error downloading image ${url}:`, error)
+      // Throw error với message rõ ràng hơn
+      if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+        throw new Error('CORS: Không thể tải ảnh từ domain này')
+      }
+      throw error
+    }
+  }
+
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
+      
+      // Validate ít nhất phải có 1 ảnh (cho trường hợp tạo mới)
+      if (!editingRoomType && fileList.length === 0) {
+        message.warning('Vui lòng tải lên ít nhất 1 ảnh cho loại phòng!')
+        return
+      }
 
       // Tạo FormData để upload images
       const formData = new FormData()
@@ -496,63 +569,131 @@ function RoomTypes() {
         formData.append('amenities', JSON.stringify(values.amenities))
       }
 
-      // Thêm các file mới vào FormData
-      const newFiles = fileList.filter(file => file.originFileObj)
-      newFiles.forEach(file => {
-        formData.append('images', file.originFileObj)
-      })
-
-      // Nếu đang edit, giữ lại các ảnh cũ
-      if (editingRoomType) {
-        const existingImages = fileList
-          .filter(file => !file.originFileObj && file.url)
-          .map(file => file.url)
-
-        if (existingImages.length > 0) {
-          formData.append('existingImages', JSON.stringify(existingImages))
-        }
-      }
-
       setLoading(true)
 
+      // Xử lý ảnh: Gộp ảnh cũ và ảnh mới
+      let allFilesToUpload = []
+
       if (editingRoomType) {
-        const updatingId = editingRoomType.room_type_id
-        await updateRoomType(updatingId, formData)
-        message.success('Cập nhật loại phòng thành công')
+        // Khi edit: Lấy ảnh cũ (có url nhưng không có originFileObj) và ảnh mới
+        // Chỉ lấy những ảnh còn lại trong fileList (chưa bị xóa)
+        const existingImages = fileList.filter(file => file.url && !file.originFileObj)
+        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
 
-        // Cập nhật ngay danh sách ảnh hiển thị ở FE: giữ ảnh cũ + thêm ảnh mới (object URLs)
-        const existingImages = fileList
-          .filter(file => !file.originFileObj && file.url)
-          .map(file => file.url)
-        const newFiles = fileList.filter(file => file.originFileObj)
-        const newPreviewUrls = newFiles.map(f => URL.createObjectURL(f.originFileObj))
-        const mergedImages = Array.from(new Set([...(existingImages || []), ...newPreviewUrls])).filter(Boolean)
+        // Download ảnh cũ về File objects (chỉ những ảnh còn lại trong fileList)
+        if (existingImages.length > 0) {
+          message.loading({ 
+            content: `Đang tải ${existingImages.length} ảnh cũ...`, 
+            key: 'downloadingImages', 
+            duration: 0 
+          })
 
-        // Lưu cache cho id hiện tại
-        setKnownImagesById(prev => ({ ...prev, [updatingId]: mergedImages }))
+          const existingFiles = await Promise.all(
+            existingImages.map(async (file, index) => {
+              try {
+                const fileName = file.name || `existing-image-${index + 1}.jpg`
+                return await urlToFile(file.url, fileName)
+              } catch (error) {
+                console.error(`Error downloading image ${file.url}:`, error)
+                // Trả về null nếu không tải được
+                return null
+              }
+            })
+          )
 
-        // Cập nhật ngay vào bảng để thấy đủ ảnh
-        setAllRoomTypes(prev => prev.map(rt => rt.room_type_id === updatingId ? { ...rt, images: mergedImages } : rt))
-        setFilteredRoomTypes(prev => prev.map(rt => rt.room_type_id === updatingId ? { ...rt, images: mergedImages } : rt))
+          // Lọc bỏ các file null (lỗi khi download)
+          const validExistingFileObjects = existingFiles.filter(file => file !== null)
+          
+          message.destroy('downloadingImages')
+
+          // Gộp ảnh cũ và ảnh mới
+          allFilesToUpload = [...validExistingFileObjects, ...newFiles.map(f => f.originFileObj)]
+          
+          // Chỉ cảnh báo nếu có ảnh cũ bị lỗi và vẫn còn ảnh mới hoặc ảnh cũ khác
+          if (validExistingFileObjects.length < existingImages.length && allFilesToUpload.length > 0) {
+            const failedCount = existingImages.length - validExistingFileObjects.length
+            message.warning({
+              content: `${failedCount} ảnh cũ không thể tải (có thể do CORS). ${allFilesToUpload.length} ảnh sẽ được lưu.`,
+              duration: 4
+            })
+          }
+        } else {
+          // Không có ảnh cũ trong fileList (đã bị xóa hết hoặc không có từ đầu)
+          // Chỉ upload ảnh mới
+          allFilesToUpload = newFiles.map(f => f.originFileObj)
+          
+          // Validate: nếu không có ảnh nào (cả cũ và mới) thì báo lỗi
+          if (allFilesToUpload.length === 0) {
+            message.warning('Vui lòng giữ lại ít nhất 1 ảnh hoặc thêm ảnh mới!')
+            setLoading(false)
+            return
+          }
+        }
+      } else {
+        // Khi tạo mới: Chỉ có ảnh mới
+        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
+        allFilesToUpload = newFiles.map(f => f.originFileObj)
+      }
+
+      // Validate cuối cùng: phải có ít nhất 1 ảnh để upload
+      if (allFilesToUpload.length === 0) {
+        message.warning('Vui lòng tải lên ít nhất 1 ảnh!')
+        setLoading(false)
+        return
+      }
+
+      // Thêm tất cả ảnh vào FormData
+      allFilesToUpload.forEach((file) => {
+        if (file instanceof File) {
+          formData.append('images', file)
+        }
+      })
+
+      // Log để debug
+      console.log('Uploading room type:', {
+        totalFiles: allFilesToUpload.length,
+        existingImages: editingRoomType ? fileList.filter(f => f.url && !f.originFileObj).length : 0,
+        newImages: fileList.filter(f => f.originFileObj).length,
+        editing: !!editingRoomType
+      })
+
+      if (editingRoomType) {
+        await updateRoomType(editingRoomType.room_type_id, formData)
+        const newImagesCount = fileList.filter(f => f.originFileObj).length
+        const existingImagesCount = fileList.filter(f => f.url && !f.originFileObj).length
+        const totalImages = allFilesToUpload.length
+        
+        let successMsg = `Cập nhật loại phòng thành công! (${totalImages} ảnh`
+        if (existingImagesCount > 0 && newImagesCount > 0) {
+          successMsg += `: ${existingImagesCount} ảnh cũ, ${newImagesCount} ảnh mới`
+        } else if (existingImagesCount > 0) {
+          successMsg += `: ${existingImagesCount} ảnh cũ`
+        } else if (newImagesCount > 0) {
+          successMsg += `: ${newImagesCount} ảnh mới`
+        }
+        successMsg += ')'
+        
+        message.success(successMsg)
       } else {
         await createRoomType(formData)
-        message.success('Tạo loại phòng thành công')
+        message.success(`Tạo loại phòng thành công (${allFilesToUpload.length} ảnh)`)
       }
 
       setIsModalVisible(false)
       setEditingRoomType(null)
       setFileList([])
       form.resetFields()
-      // Refetch để đồng bộ với ảnh từ server; FE vẫn giữ cache để không mất các ảnh vừa thêm
-      fetchRoomTypes()
+      fetchRoomTypes() // Reload danh sách
     } catch (error) {
       if (error.errorFields) {
         return
       }
       console.error('Error saving room type:', error)
-      message.error(error.message || 'Có lỗi xảy ra')
+      message.error(error.message || 'Có lỗi xảy ra khi lưu loại phòng')
+      message.destroy('downloadingImages')
     } finally {
       setLoading(false)
+      message.destroy('downloadingImages')
     }
   }
 
@@ -575,16 +716,12 @@ function RoomTypes() {
     setSearchText(value)
   }
 
-  const handleImagePreview = (images, startIndex = 0) => {
+  // Handle view all images
+  const handleViewImages = (images, roomTypeName) => {
+    if (!images || images.length === 0) return
+    
     setPreviewImages(images)
-    setPreviewIndex(startIndex)
     setPreviewVisible(true)
-  }
-
-  const handlePreviewClose = () => {
-    setPreviewVisible(false)
-    setPreviewImages([])
-    setPreviewIndex(0)
   }
 
   const handleAddAmenity = () => {
@@ -681,14 +818,40 @@ function RoomTypes() {
 
   // Upload handlers
   const handleUploadChange = ({ fileList: newFileList }) => {
+    // Tạo preview cho các file mới chưa có preview
+    const filesToUpdate = newFileList.filter(file => 
+      file.originFileObj && !file.preview && !file.url
+    )
+    
+    // Tạo preview cho các file mới
+    filesToUpdate.forEach(file => {
+      getBase64(file.originFileObj).then(preview => {
+        setFileList(prev => 
+          prev.map(f => f.uid === file.uid ? { ...f, preview } : f)
+        )
+      })
+    })
+    
+    // Cập nhật fileList ngay lập tức
     setFileList(newFileList)
   }
 
+  const handleRemove = (file) => {
+    const newFileList = fileList.filter(item => item.uid !== file.uid)
+    setFileList(newFileList)
+    return true // Return true để xác nhận xóa
+  }
+
   const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
+    // Nếu file chưa có preview, tạo preview
+    if (!file.url && !file.preview && file.originFileObj) {
       file.preview = await getBase64(file.originFileObj)
     }
-    window.open(file.url || file.preview, '_blank')
+    
+    const imageUrl = file.url || file.preview
+    if (imageUrl) {
+      window.open(imageUrl, '_blank')
+    }
   }
 
   const getBase64 = (file) => {
@@ -700,6 +863,25 @@ function RoomTypes() {
     })
   }
 
+  // Validate file trước khi thêm vào list
+  const validateFile = (file) => {
+    // Check file type
+    const isImage = file.type.startsWith('image/')
+    if (!isImage) {
+      message.error(`${file.name} không phải là file ảnh!`)
+      return false
+    }
+    
+    // Check file size (< 5MB)
+    const isLt5M = file.size / 1024 / 1024 < 5
+    if (!isLt5M) {
+      message.error(`${file.name} có kích thước lớn hơn 5MB!`)
+      return false
+    }
+    
+    return true
+  }
+
   const uploadProps = {
     listType: 'picture-card',
     multiple: true,
@@ -707,29 +889,34 @@ function RoomTypes() {
     fileList: fileList,
     onChange: handleUploadChange,
     onPreview: handlePreview,
-    beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/')
-      if (!isImage) {
-        message.error('Chỉ được upload file ảnh!')
+    onRemove: handleRemove,
+    beforeUpload: (file, fileList) => {
+      // Validate file
+      if (!validateFile(file)) {
         return Upload.LIST_IGNORE
       }
-
-      const isLt5M = file.size / 1024 / 1024 < 5
-      if (!isLt5M) {
-        message.error('Kích thước ảnh phải nhỏ hơn 5MB!')
-        return Upload.LIST_IGNORE
-      }
-
-      if (fileList.length >= 10) {
+      
+      // Check max files - đếm cả file đang upload
+      const totalFiles = fileList.length + 1
+      
+      if (totalFiles > 10) {
         message.warning('Chỉ được upload tối đa 10 ảnh!')
         return Upload.LIST_IGNORE
       }
-
+      
+      // Prevent auto upload - chúng ta sẽ upload khi submit form
       return false
     },
     showUploadList: {
       showPreviewIcon: true,
       showRemoveIcon: true,
+      showDownloadIcon: false,
+    },
+    customRequest: ({ onSuccess }) => {
+      // Custom request handler - không upload ngay, chờ submit form
+      setTimeout(() => {
+        onSuccess('ok')
+      }, 0)
     },
   }
 
@@ -932,39 +1119,72 @@ function RoomTypes() {
         </Form>
       </Modal>
 
-      {/* Image Preview Modal */}
+      {/* Modal preview tất cả ảnh */}
       <Modal
-        title={`Hình ảnh loại phòng (${previewImages.length} ảnh)`}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <EyeOutlined />
+            <span>Xem tất cả hình ảnh</span>
+          </div>
+        }
         open={previewVisible}
-        onCancel={handlePreviewClose}
+        onCancel={() => {
+          setPreviewVisible(false)
+          setPreviewImages([])
+        }}
         footer={null}
-        width="50%"
-        style={{ top: 20 }}
+        width={900}
         centered
-        destroyOnHidden
       >
-        <div style={{ textAlign: 'center' }}>
-          <Image.PreviewGroup
-            items={previewImages.map((url, index) => ({
-              src: url,
-              alt: `Ảnh ${index + 1}`
-            }))}
-            current={previewIndex}
-          >
-            <div className="preview-grid">
-              {previewImages.map((url, index) => (
-                <Image
-                  key={index}
-                  src={url}
-                  alt={`Ảnh ${index + 1}`}
-                  style={{
-                    width: '100%',
-                    height: 150,
-                    objectFit: 'cover',
-                    borderRadius: 8,
-                    cursor: 'pointer'
-                  }}
-                />
+        <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          <Image.PreviewGroup>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: 16,
+              padding: '16px 0'
+            }}>
+              {previewImages.map((imageUrl, index) => (
+                <div key={index} style={{ position: 'relative' }}>
+                  <Image
+                    src={imageUrl}
+                    alt={`Image ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      cursor: 'pointer'
+                    }}
+                    preview={{
+                      mask: (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          gap: 8,
+                          color: '#fff'
+                        }}>
+                          <EyeOutlined />
+                          <span>Xem</span>
+                        </div>
+                      )
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    color: '#fff',
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 'bold'
+                  }}>
+                    {index + 1}/{previewImages.length}
+                  </div>
+                </div>
               ))}
             </div>
           </Image.PreviewGroup>

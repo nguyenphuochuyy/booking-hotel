@@ -332,6 +332,39 @@ export const cancelBookingOnline = async (bookingId, reason = '') => {
     throw error
   }
 }
+
+// Download invoice PDF for user
+export const downloadInvoicePDF = async (bookingId) => {
+  try {
+    const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+    const token = localStorage.getItem('accessToken')
+    
+    const response = await fetch(`${apiBaseUrl}/bookings/${bookingId}/invoice/pdf`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorData
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        errorData = { message: errorText || 'Không thể tải hóa đơn!' }
+      }
+      const error = new Error(errorData.message || 'Không thể tải hóa đơn!')
+      error.response = { data: errorData, status: response.status }
+      throw error
+    }
+    
+    return await response.blob()
+  } catch (error) {
+    console.error('Error downloading invoice PDF:', error)
+    throw error
+  }
+}
 // tạo user cho walk-in
 export default {
   createTempBooking,
@@ -358,5 +391,6 @@ export default {
   searchAvailableRooms,
   getAllBookings,
   addServicesToTempBooking,
-  cancelBookingOnline
+  cancelBookingOnline,
+  downloadInvoicePDF
 }

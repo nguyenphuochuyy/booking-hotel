@@ -5,9 +5,11 @@
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
   position: sticky;
   top: 0;
-  z-index: 1000; /* cao hơn để không bị che, click được */
-  border-bottom: 1px solid rgba(2,6,23,0.06);
-  overflow: visible; /* đảm bảo dropdown không bị cắt */
+  z-index: 1000;
+  /* cao hơn để không bị che, click được */
+  border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+  overflow: visible;
+  /* đảm bảo dropdown không bị cắt */
 }
 
 .nav-container {
@@ -22,7 +24,10 @@
 }
 
 /* Left: Logo */
-.nav-left { display: flex; align-items: center; }
+.nav-left {
+  display: flex;
+  align-items: center;
+}
 
 .nav-logo {
   display: inline-flex;
@@ -31,7 +36,10 @@
   text-decoration: none;
 }
 
-.hotel-logo { width: 36px; height: 36px; }
+.hotel-logo {
+  width: 36px;
+  height: 36px;
+}
 
 .hotel-name {
   color: #1f2937;
@@ -50,7 +58,9 @@
   padding: 0;
 }
 
-.nav-item { position: relative; }
+.nav-item {
+  position: relative;
+}
 
 .nav-link {
   color: #0f172a;
@@ -65,107 +75,281 @@
 }
 
 .nav-item.active .nav-link,
-.nav-link:hover { color: #c08a19; border-color: #c08a19; }
+.nav-link:hover {
+  color: #c08a19;
+  border-color: #c08a19;
+}
 
 /* Right: Actions */
 .nav-actions {
-   display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; 
-  }
-
-.action-link { 
-  color: #1f2937; text-decoration: none; font-weight: 600; padding: 0.5rem 0.75rem; border-radius: 6px; 
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
 }
-.action-link:hover { background: #f3f4f6; }
+
+.action-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.action-link:hover {
+  background: #f3f4f6;
+}
 
 .login-btn,
 .register-btn {
-  padding: 0.5rem 0.9rem;
+  padding: 0.35rem 0.75rem;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   color: #1f2937;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.875rem;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.login-btn:hover { background: #f9fafb; }
 
-.register-btn { background: #c08a19; color: #fff; border-color: #c08a19; box-shadow: 0 6px 14px rgba(192, 138, 25, 0.22); }
-.register-btn:hover { background: #a77314; border-color: #a77314; }
+.login-btn:hover {
+  background: #f9fafb;
+  color : #c08a19;
+  border-color: #c08a19;
+}
+
+.register-btn {
+  background: #c08a19;
+  color: #fff;
+  border-color: #c08a19;
+  box-shadow: 0 4px 10px rgba(192, 138, 25, 0.18);
+}
+
+.register-btn:hover {
+  background: #fff;
+  border-color: #c08a19;
+  color:  #c08a19;
+}
 
 /* User dropdown */
-.user-menu { position: relative; padding-bottom: 14px; /* mở rộng vùng hover để không bị tụt */ }
+.user-menu {
+  position: relative;
+  padding-bottom: 14px;
+  /* mở rộng vùng hover để không bị tụt */
+}
+
 .user-avatar {
-  width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
-  background: #c08a19; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: #c08a19;
+  color: #fff;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .user-dropdown {
-  position: absolute; right: 0; top: 100%; /* áp sát avatar, không tạo khoảng hở */
-  background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
-  min-width: 220px; padding: 6px; z-index: 2000; pointer-events: auto;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  /* áp sát avatar, không tạo khoảng hở */
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  min-width: 220px;
+  padding: 6px;
+  z-index: 2000;
+  pointer-events: auto;
 }
+
 .user-item {
-  display: block; width: 100%; text-align: left; padding: 10px 12px; color: #111827;
-  background: transparent; border: none; border-radius: 8px; text-decoration: none; cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  color: #111827;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
 }
-.user-item:hover { background: #f3f4f6; }
-.user-item.logout { color: #b91c1c; }
+
+.user-item:hover {
+  background: #f3f4f6;
+}
+
+.user-item.logout {
+  color: #b91c1c;
+}
 
 /* Hamburger for mobile */
 .menu-toggle {
-  display: none; width: 40px; height: 36px; border: none; background: transparent; cursor: pointer; position: relative;
+  display: none;
+  width: 40px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
 }
-.menu-toggle .bar { display: block; width: 24px; height: 2px; background: #1f2937; margin: 5px auto; transition: all 0.3s ease; }
-.menu-toggle.open .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.menu-toggle.open .bar:nth-child(2) { opacity: 0; }
-.menu-toggle.open .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.menu-toggle .bar {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #1f2937;
+  margin: 5px auto;
+  transition: all 0.3s ease;
+}
+
+.menu-toggle.open .bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.menu-toggle.open .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.open .bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
 
 /* Responsive breakpoints */
 /* PC (>=992px) */
 @media (min-width: 992px) {
-  .nav-container { grid-template-columns: 1fr auto 1fr; }
-  .nav-menu:not(.mobile) .nav-link { font-size: 16px; padding: 10px 12px; }
-  .nav-menu:not(.mobile) { gap: 1.2rem; flex-wrap: wrap; row-gap: 6px; }
-  .nav-right { display: none; }
+  .nav-container {
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .nav-menu:not(.mobile) .nav-link {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
+  .nav-menu:not(.mobile) {
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .nav-right {
+    display: none;
+  }
 }
 
 /* Tablet (768px - 991.98px) */
 @media (min-width: 768px) and (max-width: 991.98px) {
-  .nav-container { grid-template-columns: auto 1fr auto; }
-  .nav-menu:not(.mobile) .nav-link { font-size: 14px; padding: 8px 10px; }
-  .nav-menu:not(.mobile) { gap: 0.8rem; flex-wrap: wrap; row-gap: 6px; }
+  .nav-container {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .nav-menu:not(.mobile) .nav-link {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .nav-menu:not(.mobile) {
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
   /* Ẩn menu desktop và actions, chỉ hiện burger bên phải */
-  .nav-center, .nav-actions { display: none; }
-  .nav-right { display: block; justify-self: end; }
+  .nav-center,
+  .nav-actions {
+    display: none;
+  }
+
+  .nav-right {
+    display: block;
+    justify-self: end;
+  }
 }
 
 /* Ưu tiên không xuống hàng ở dải 768px–982px để tránh nhảy chữ */
 @media (min-width: 768px) and (max-width: 982px) {
-  .nav-menu:not(.mobile) { flex-wrap: nowrap; gap: 0.5rem; }
-  .nav-menu:not(.mobile) .nav-link { font-size: 13px; padding: 6px 8px; }
+  .nav-menu:not(.mobile) {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .nav-menu:not(.mobile) .nav-link {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
 }
 
 /* Desktop rộng (>1200px) tinh chỉnh spacing */
 @media (min-width: 1200px) {
-  .nav-menu:not(.mobile) .nav-link { font-size: 16px; padding: 9px 12px; }
-  .nav-menu:not(.mobile) { gap: 1rem; flex-wrap: nowrap; }
+  .nav-menu:not(.mobile) .nav-link {
+    font-size: 16px;
+    padding: 9px 12px;
+  }
+
+  .nav-menu:not(.mobile) {
+    gap: 1rem;
+    flex-wrap: nowrap;
+  }
 }
 
 /* 992px - 1199.98px: siết spacing để tránh tràn */
 @media (min-width: 992px) and (max-width: 1199.98px) {
-  .nav-menu:not(.mobile) .nav-link { font-size: 15px; padding: 8px 10px; }
-  .nav-menu:not(.mobile) { gap: 0.75rem; flex-wrap: wrap; row-gap: 6px; }
+  .nav-menu:not(.mobile) .nav-link {
+    font-size: 15px;
+    padding: 8px 10px;
+  }
+
+  .nav-menu:not(.mobile) {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
 }
 
 /* Phone (<768px) */
 @media (max-width: 767.98px) {
-  .nav-container { grid-template-columns: auto 1fr auto; }
+  .nav-container {
+    grid-template-columns: auto 1fr auto;
+  }
+
   /* Mobile panel menu (rendered with class "mobile") */
-  .nav-menu.mobile { display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; margin: 0; }
-  .nav-menu.mobile .nav-link { font-size: 14px; padding: 6px 8px; display: block; }
-  .menu-toggle { display: inline-block; justify-self: end; }
-  .hotel-name { display: none; }
-  .nav-center, .nav-actions { display: none; }
-  .nav-right { display: block; }
+  .nav-menu.mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0;
+  }
+
+  .nav-menu.mobile .nav-link {
+    font-size: 14px;
+    padding: 6px 8px;
+    display: block;
+  }
+
+  .menu-toggle {
+    display: inline-block;
+    justify-self: end;
+  }
+
+  .hotel-name {
+    display: none;
+  }
+
+  .nav-center,
+  .nav-actions {
+    display: none;
+  }
+
+  .nav-right {
+    display: block;
+  }
 }
