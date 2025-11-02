@@ -15,7 +15,7 @@ import {
   getAllHotels, getAllRoomTypes
 } from '../../../services/admin.service'
 import { createWalkInUser , createWalkInBooking, getAllServices } from '../../../services/admin.service'
-import './room.css'
+import './Room.css'
 
 const { Title, Text } = Typography
 const { Option } = Select
