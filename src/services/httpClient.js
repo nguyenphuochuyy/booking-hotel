@@ -10,7 +10,7 @@ function getBaseUrl() {
   const envBase = import.meta?.env?.VITE_API_BASE_URL;
   return typeof envBase === 'string' && envBase.length > 0
     ? envBase
-    : 'http://103.211.206.168:5000/api';
+    : 'https://api.beanhotelvn.id.vn';
 }
 
 function safeJoinPaths(baseUrl, path) {
