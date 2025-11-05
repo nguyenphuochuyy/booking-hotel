@@ -10,8 +10,8 @@ function getBaseUrl() {
   const envBase = import.meta?.env?.VITE_API_BASE_URL;
   return typeof envBase === 'string' && envBase.length > 0
     ? envBase
-    // : 'https://api.beanhotelvn.id.vn/api';
-    : 'http://localhost:5000/api';
+    : 'https://api.beanhotelvn.id.vn/api';
+    // : 'http://localhost:5000/api';
 }
 
 function safeJoinPaths(baseUrl, path) {
