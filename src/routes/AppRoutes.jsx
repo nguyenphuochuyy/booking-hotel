@@ -40,6 +40,7 @@ import Payment from '../pages/Payment'
 import BookingSuccess from '../pages/BookingSuccess'
 import BookingManagement from '../pages/Admin/Booking'
 import GalleryPage from '../pages/Gallery'
+import Reports from '../pages/Admin/Reports/Reports'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -69,7 +70,7 @@ function AppRoutes() {
         <Route path="/payment" element={<Payment />} />
         <Route path="/booking-success" element={<BookingSuccess />} />
         <Route path="/about" element={<About />} />
-        <Route path="/booking" element={<Booking />} />
+        {/* <Route path="/booking" element={<Booking />} /> */}
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/contact" element={<Contact />} />
@@ -147,6 +148,11 @@ function AppRoutes() {
         <Route path="/admin/reviews" element={
           <AdminRoute>
             <ReviewManagement />
+          </AdminRoute>
+        } />
+        <Route path="/admin/reports" element={
+          <AdminRoute>
+            <Reports />
           </AdminRoute>
         } />
         <Route path="/admin/profile" element={

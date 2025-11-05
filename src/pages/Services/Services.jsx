@@ -176,7 +176,7 @@ function Services() {
               <Link to="/contact">
                 <button className="cta-button primary">Liên hệ ngay</button>
               </Link>
-              <Link to="/booking">
+              <Link to="/hotels">
                 <button className="cta-button secondary">Đặt phòng</button>
               </Link>
             </Space>

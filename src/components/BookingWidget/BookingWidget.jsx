@@ -55,13 +55,28 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   useEffect(() => {
     const initialCheckIn = propCheckIn || urlCheckIn
     const initialCheckOut = propCheckOut || urlCheckOut
-    
-    if (initialCheckIn || initialCheckOut) {
-      form.setFieldsValue({
-        checkIn: initialCheckIn ? dayjs(initialCheckIn) : undefined,
-        checkOut: initialCheckOut ? dayjs(initialCheckOut) : undefined
-      })
+
+    // Tính mốc nhận phòng sớm nhất: sau 14:00 hôm nay thì mốc là ngày mai
+    const now = dayjs()
+    const cutoff = now.hour(14).minute(0).second(0).millisecond(0)
+    const earliestCheckIn = now.isAfter(cutoff) ? now.add(1, 'day').startOf('day') : now.startOf('day')
+
+    let checkInValue = initialCheckIn ? dayjs(initialCheckIn) : undefined
+    let checkOutValue = initialCheckOut ? dayjs(initialCheckOut) : undefined
+
+    // Điều chỉnh nếu check-in trước mốc sớm nhất
+    if (!checkInValue || checkInValue.isBefore(earliestCheckIn, 'day')) {
+      checkInValue = earliestCheckIn
     }
+    // Đảm bảo check-out sau check-in ít nhất 1 ngày
+    if (!checkOutValue || !checkOutValue.isAfter(checkInValue, 'day')) {
+      checkOutValue = checkInValue.add(1, 'day')
+    }
+
+    form.setFieldsValue({
+      checkIn: checkInValue,
+      checkOut: checkOutValue
+    })
   }, [propCheckIn, propCheckOut, urlCheckIn, urlCheckOut, form])
 
   const handleSearch = async (values) => {
@@ -106,9 +121,12 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
     }
   }
 
-  // Disable dates before today
+  // Disable dates trước mốc nhận phòng sớm nhất (sau 14:00 thì là ngày mai)
   const disabledDate = (current) => {
-    return current && current < dayjs().startOf('day')
+    const now = dayjs()
+    const cutoff = now.hour(14).minute(0).second(0).millisecond(0)
+    const earliestCheckIn = now.isAfter(cutoff) ? now.add(1, 'day').startOf('day') : now.startOf('day')
+    return current && current < earliestCheckIn
   }
 
   const guestContent = (

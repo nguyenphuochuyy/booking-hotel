@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import authenticationService from '../services/authentication.service'
 import { getUserProfile } from '../services/user.service'
+import { useNavigate } from 'react-router-dom'
 
 const AuthContext = createContext(null)
 
@@ -8,7 +9,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [accessToken, setAccessToken] = useState(null)
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -66,9 +66,12 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
+
     try {
        localStorage.removeItem('accessToken') 
        localStorage.removeItem('user')
+       localStorage.removeItem('pendingPaymentExpiry')
+       localStorage.removeItem('pendingPayment')
     } catch (_err) {}
     setAccessToken(null)
     setUser(null)

@@ -3,13 +3,13 @@ import { Link, useLocation } from 'react-router-dom'
 import './Navigation.css'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 import { useAuth } from '../../context/AuthContext'
-
+import { useNavigate } from 'react-router-dom'
 function Navigation() {
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
-
+  const navigate = useNavigate()
   const menuItems = useMemo(() => ([
     { key: '/', label: 'Trang chủ' },
     { key: '/about', label: 'Về chúng tôi' },
@@ -77,7 +77,7 @@ function Navigation() {
                   {user?.role === 'ADMIN' && (
                     <Link to="/admin" className="user-item">Trang quản lý</Link>
                   )}
-                  <button className="user-item logout" onClick={logout}>Đăng xuất</button>
+                  <button className="user-item logout" onClick={() => { logout(); navigate('/login') }}>Đăng xuất</button>
                 </div>
               )}
             </div>
@@ -114,7 +114,7 @@ function Navigation() {
               {user?.role === 'ADMIN' && (
                 <Link to="/admin" className="login-btn" onClick={() => setIsMenuOpen(false)}>Trang quản lý</Link>
               )}
-              <button className="login-btn" onClick={() => { setIsMenuOpen(false); logout() }}>Đăng xuất</button>
+              <button className="login-btn" onClick={() => { setIsMenuOpen(false); logout(); navigate('/login') }}>Đăng xuất</button>
             </div>
           )}
         </div>

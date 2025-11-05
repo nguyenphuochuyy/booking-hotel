@@ -63,7 +63,7 @@ const RoomPriceManagement = () => {
     fetchRoomTypes()
   }, []) 
 
-  // Filter room prices based on search
+  //  Lọc giá phòng theo tên loại phòng và giá
   const filteredRoomPrices = useMemo(() => {
     if (!searchText) return roomPrices
     
@@ -251,29 +251,6 @@ const RoomPriceManagement = () => {
         </div>
       ),
       sorter: (a, b) => parseFloat(a.price_per_night) - parseFloat(b.price_per_night)
-    },
-    {
-      title: 'Trạng thái',
-      key: 'status',
-      width: 120,
-      align: 'center',
-      render: (_, record) => {
-        const status = getPriceStatus(record.start_date, record.end_date)
-        return (
-          <Tag color={status.color} icon={status.icon}>
-            {status.text}
-          </Tag>
-        )
-      },
-      filters: [
-        { text: 'Đang áp dụng', value: 'active' },
-        { text: 'Sắp áp dụng', value: 'upcoming' },
-        { text: 'Hết hạn', value: 'expired' }
-      ],
-      onFilter: (value, record) => {
-        const status = getPriceStatus(record.start_date, record.end_date)
-        return status.text === value
-      }
     },
     {
       title: 'Ngày tạo',

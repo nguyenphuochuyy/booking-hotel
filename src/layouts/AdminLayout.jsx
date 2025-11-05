@@ -97,6 +97,11 @@ function AdminLayout() {
       icon: <SettingOutlined />,
       label: 'Quản lý dịch vụ',
     },
+    {
+      key: '/admin/reports',
+      icon: <FileTextOutlined />,
+      label: 'Báo cáo thống kê',
+    },
   ]
 
   // User dropdown menu
@@ -115,12 +120,6 @@ function AdminLayout() {
     },
     {
       type: 'divider'
-    },
-    {
-      key: 'back-to-home',
-      icon: <HomeOutlined />,
-      label: 'Về trang chủ',
-      onClick: () => navigate('/')
     },
     {
       key: 'logout',

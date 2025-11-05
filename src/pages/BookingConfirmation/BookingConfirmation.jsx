@@ -7,7 +7,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom'
 import formatPrice from '../../utils/formatPrice'
 import { UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { createTempBooking, createPaymentLink, addServicesToTempBooking, calculateNights } from '../../services/booking.service'
+import { createTempBooking, createPaymentLink, addServicesToTempBooking, calculateNights, formatDate, validatePromotionCode } from '../../services/booking.service'
 import { getAllServices } from '../../services/admin.service'
 import './BookingConfirmation.css'
 import { useAuth } from '../../context/AuthContext'
@@ -24,34 +24,36 @@ const BookingConfirmation = () => {
   const [services, setServices] = useState([])
   const [servicesLoading, setServicesLoading] = useState(false)
   const [selectedServices, setSelectedServices] = useState([])
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplying, setPromoApplying] = useState(false)
+  const [promoInfo, setPromoInfo] = useState(null)
+  const [discountAmount, setDiscountAmount] = useState(0)
 
   const bookingInfo = location.state
   const nights = calculateNights(bookingInfo.checkIn, bookingInfo.checkOut)
   const { user } = useAuth()
 
-  // Load services when component mounts
+  // tải dịch vụ khi component mounts
   useEffect(() => {
     loadServices()
+    console.log(bookingInfo);
+    
   }, [bookingInfo])
 
   // Load available services for the hotel
   const loadServices = async () => {
     setServicesLoading(true)
     try {
-
-
       // Use getAllServices from admin.service.js
       const response = await getAllServices({
         hotel_id: bookingInfo?.roomType?.rooms[0]?.hotel_id
       })
-
       // Backend returns { services: [...], pagination: {...} }
       const servicesList = response?.services
       // Filter only available services
       const availableServices = Array.isArray(servicesList)
         ? servicesList.filter(s => s.is_available === true || s.is_available === 'true')
         : []
-
       setServices(availableServices)
     } catch (error) {
       console.error('Error loading services:', error)
@@ -62,7 +64,7 @@ const BookingConfirmation = () => {
     }
   }
 
-  // Handle service toggle
+  // chọn dịch vụ 
   const handleServiceToggle = (service, checked) => {
     if (checked) {
       setSelectedServices([...selectedServices, { ...service, quantity: 1 }])
@@ -99,7 +101,8 @@ const BookingConfirmation = () => {
         room_type_id: bookingInfo.roomType.room_type_id,
         check_in_date: bookingInfo.checkIn,
         check_out_date: bookingInfo.checkOut,
-        num_person: bookingInfo.guests?.adults || 2
+        num_person: bookingInfo.guests?.adults || 2,
+        num_rooms: bookingInfo.numRooms,
       })
       const tempBookingKey = tempBookingResponse.temp_booking_key
       
@@ -108,11 +111,13 @@ const BookingConfirmation = () => {
       if (selectedServices.length > 0) {
         await addServicesToTempBooking(tempBookingKey, selectedServices)
       }
-
+      if(promoCode) {
+        
+      }
       // 3. Tạo payment link
       const paymentResponse = await createPaymentLink({
         temp_booking_key: tempBookingKey,
-        promotion_code: bookingInfo.promoCode || null
+        promotion_code: promoCode || null
       })
       console.log(paymentResponse);
       // 4. Chuyển sang trang payment
@@ -127,7 +132,9 @@ const BookingConfirmation = () => {
           selectedServices,
           bookingInfo: {
             ...bookingInfo,
-            customerInfo: values
+            numRooms: bookingInfo.numRooms,
+            customerInfo: values,
+            promoCode: promoCode || null
           }
         }
       })
@@ -266,7 +273,7 @@ const BookingConfirmation = () => {
                 {/* Dịch vụ bổ sung */}
                 <Collapse
                   ghost
-                  style={{ marginTop: '16px', marginBottom: '16px' }}
+                  style={{ marginTop: '16px', marginBottom: '16px' , border: '1px solid #ddd' }}
                   items={[
                     {
                       key: 'services',
@@ -365,29 +372,9 @@ const BookingConfirmation = () => {
                     }
                   ]}
                 />
-
-                {/* <Collapse ghost style={{ marginTop: '16px', marginBottom: '16px' }}>
-                  <Panel 
-                    header={
-                      <span style={{ fontSize: '14px', fontWeight: 500 }}>
-                        Bất kỳ yêu cầu cá nhân nào?
-                      </span>
-                    } 
-                    key="personal-requests"
-                  >
-                    <Form.Item name="specialRequests">
-                      <TextArea 
-                        rows={4} 
-                        placeholder="Ví dụ: Phòng ở tầng cao, check-in muộn..."
-                      />
-                    </Form.Item>
-                  </Panel>
-                </Collapse> */}
-
                 <Text type="secondary" style={{ fontSize: '12px', marginBottom: '16px', display: 'block' }}>
                   <InfoCircleOutlined /> Để bảo mật, vui lòng không nhập thông tin thẻ tín dụng trên trang này.
                 </Text>
-
                 <Form.Item style={{ marginTop: '24px', marginBottom: 0 }}>
                   <Button
                     htmlType="submit"
@@ -395,6 +382,7 @@ const BookingConfirmation = () => {
                     block
                     loading={loading}
                     style={{
+                   
                       height: '48px',
                       fontSize: '16px',
                       fontWeight: 600,
@@ -419,8 +407,8 @@ const BookingConfirmation = () => {
             >
               {/* Header - Total */}
               <div style={{ marginBottom: '16px' }}>
-                <Title level={3} style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>
-                  tổng cộng: {bookingInfo?.roomType ? formatPrice((bookingInfo.roomType.price_per_night * nights) + (selectedServices.reduce((total, service) => total + service.price * service.quantity, 0))) : 'VND 0'}
+                <Title level={3} style={{ margin: 0, fontSize: '24px', fontWeight: 600, textAlign: 'center' }}>
+                  TÓM TẮT ĐẶT PHÒNG
                 </Title>
               </div>
 
@@ -428,14 +416,14 @@ const BookingConfirmation = () => {
 
               {/* Dates and guests */}
               <div style={{ marginBottom: '12px' }}>
-                <Text strong style={{ fontSize: '14px' }}>{bookingInfo.checkIn} - {bookingInfo.checkOut}</Text>
+                <Text strong style={{ fontSize: '14px' }}>{formatDate(bookingInfo.checkIn)} - {formatDate(bookingInfo.checkOut)}</Text>
                 <Text type="secondary" style={{ marginLeft: '8px', fontSize: '14px' }}>
                   {/* Tính số đêm từ checkIn đến checkOut ko dùng hàm calculateNights*/}
                   {nights} đêm
                 </Text>
               </div>
               <div style={{ marginBottom: '16px' }}>
-                <Text style={{ fontSize: '14px', color: '#6b7280' }}>1 phòng, {bookingInfo.guests?.adults || 2} khách</Text>
+                <Text style={{ fontSize: '14px', color: '#6b7280' }}>{bookingInfo.numRooms} phòng, {bookingInfo.guests?.adults || 2} khách</Text>
               </div>
 
               <Divider style={{ margin: '16px 0' }} />
@@ -451,12 +439,25 @@ const BookingConfirmation = () => {
                     children: bookingInfo?.roomType && (
                       <div>
                         <Text strong style={{ fontSize: '14px' }}>{bookingInfo.roomType.room_type_name}</Text>
-                        <div style={{ marginTop: '4px' }}>
+                        <div style={{ marginTop: '4px' , display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text style={{ fontSize: '13px', color: '#6b7280' }}>{bookingInfo.guests?.adults || 2} khách {nights} đêm</Text>
+                          <Text style={{ fontSize: '13px', color: '#6b7280' }}>{bookingInfo.numRooms} phòng</Text>
+                    
                         </div>
-                        <div style={{ marginTop: '4px' }}>
-                          <Text style={{ color: '#059669', fontSize: '13px' }}>Hủy miễn phí!</Text>
-                        </div>
+                        {/* dịch vụ nếu có */}
+                     
+                          {selectedServices.length > 0 && (
+                            <div style={{ marginTop: '16px'  }}>
+                              <Text strong style={{ fontSize: '14px' }}>Dịch vụ bổ sung</Text>
+                              <div style={{ marginTop: '4px' , display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={{ fontSize: '13px', color: '#6b7280' }}>{selectedServices.map(service => service.name).join(', ')}</Text>
+                                <Text style={{ fontSize: '13px', color: '#6b7280' }}>{formatPrice(selectedServices.reduce((total, service) => total + service.price * service.quantity, 0))}</Text>
+                              </div>
+                              
+                            </div>
+                          )}
+                
+                      
                         <div style={{ textAlign: 'right', marginTop: '8px' }}>
                           <Text strong style={{ fontSize: '16px', color: '#1f2937' }}>
                             {formatPrice((bookingInfo.roomType.price_per_night * nights) + (selectedServices.reduce((total, service) => total + service.price * service.quantity, 0)))}
@@ -469,46 +470,87 @@ const BookingConfirmation = () => {
               />
 
               <Divider style={{ margin: '16px 0' }} />
+                {/* Mã khuyến mãi */}
+                <div style={{ marginTop: '16px' }}>
+                          <Text strong style={{ fontSize: '14px' }}>Mã khuyến mãi</Text>
+                          <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
+                            <Input
+                              placeholder="Nhập mã khuyến mãi"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value)}
+                              size="middle"
+                            />
+                            <Button
+                              type="default"
+                      loading={promoApplying}
+                      onClick={async () => {
+                        if (!promoCode) {
+                          message.warning('Vui lòng nhập mã khuyến mãi')
+                          return
+                        }
+                        try {
+                          setPromoApplying(true)
+                          const res = await validatePromotionCode(promoCode)
+                          const promo = res?.promotion || res?.data || res
+                          if (!promo) {
+                            message.error('Mã khuyến mãi không hợp lệ')
+                            setPromoInfo(null)
+                            setDiscountAmount(0)
+                            return
+                          }
+                          setPromoInfo(promo)
+                          // Tính tổng trước giảm
+                          const baseRoom = (bookingInfo.roomType.price_per_night || 0) * nights * (bookingInfo.numRooms || 1)
+                          const svcTotal = selectedServices.reduce((total, service) => total + (service.price || 0) * (service.quantity || 1), 0)
+                          const baseTotal = baseRoom + svcTotal
+                          let discount = 0
+                          const dtype = (promo.discount_type || promo.type || '').toLowerCase()
+                          const dval = Number(promo.amount || promo.value || 0)
+                          if (dtype === 'percentage' || dtype === 'percent') {
+                            discount = Math.floor(baseTotal * (dval / 100))
+                          } else {
+                            discount = dval
+                          }
+                          discount = Math.min(Math.max(discount, 0), baseTotal)
+                          setDiscountAmount(discount)
+                          message.success('Áp dụng mã khuyến mãi thành công')
+                        } catch (e) {
+                          message.error(e?.response?.data?.message || 'Mã khuyến mãi không hợp lệ')
+                          setPromoInfo(null)
+                          setDiscountAmount(0)
+                        } finally {
+                          setPromoApplying(false)
+                        }
+                      }}
+                            >
+                              Áp dụng
+                            </Button>
+                          </div>
+                        </div>
 
+              <Divider style={{ margin: '16px 0' }} />
               {/* Total */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <Text strong style={{ fontSize: '16px' }}>Tổng cộng</Text>
-                  <Text strong style={{ fontSize: '18px', color: '#1f2937' }}>
-                    {bookingInfo?.roomType ? formatPrice(bookingInfo.roomType.price_per_night * nights + (selectedServices.reduce((total, service) => total + service.price * service.quantity, 0))) : 'VND 0'}
-                  </Text>
+                    {(() => {
+                      const base = bookingInfo?.roomType ? (bookingInfo.roomType.price_per_night * nights * bookingInfo.numRooms + (selectedServices.reduce((total, service) => total + service.price * service.quantity, 0))) : 0
+                      const final = Math.max(0, base - (discountAmount || 0))
+                      return (
+                        <div style={{ textAlign: 'right' }}>
+                          {discountAmount > 0 && (
+                            <div style={{ fontSize: '12px', color: '#16a34a' }}>
+                              Giảm: -{formatPrice(discountAmount)}
+                            </div>
+                          )}
+                          <Text strong style={{ fontSize: '18px', color: '#1f2937' }}>
+                            {formatPrice(final)}
+                          </Text>
+                        </div>
+                      )
+                    })()}
                 </div>
               </div>
-
-              {/* Expandable Taxes & Fees */}
-              {/* <Collapse 
-                ghost 
-                style={{ marginBottom: '16px' }}
-                items={[
-                  {
-                    key: 'taxes-fees',
-                    label: <span style={{ fontSize: '13px', color: '#6b7280' }}>Bao gồm thuế + phí</span>,
-                    children: <Text type="secondary" style={{ fontSize: '12px' }}>Đã bao gồm VAT và phí dịch vụ</Text>,
-                  }
-                ]}
-              /> */}
-
-              {/* Book now, pay later banner */}
-              {/* {bookingInfo?.roomType && (
-                <div style={{
-                  background: '#ecfdf5',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  marginTop: '16px'
-                }}>
-                  <Text strong style={{ color: '#059669', fontSize: '14px', display: 'block' }}>
-                    Đặt ngay, trả sau!
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginTop: '6px' }}>
-                    Số dư còn lại: {formatPrice(bookingInfo.roomType.price_per_night * nights)}
-                  </Text>
-                </div>
-              )} */}
             </Card>
           </Col>
         </Row>

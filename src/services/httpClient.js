@@ -10,7 +10,7 @@ function getBaseUrl() {
   const envBase = import.meta?.env?.VITE_API_BASE_URL;
   return typeof envBase === 'string' && envBase.length > 0
     ? envBase
-    : 'http://localhost:5000/api';
+    : 'http://103.211.206.168:5000/api';
 }
 
 function safeJoinPaths(baseUrl, path) {

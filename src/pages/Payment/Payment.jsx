@@ -12,19 +12,45 @@ import formatPrice from '../../utils/formatPrice'
 import './Payment.css'
 import QRCode from 'antd/es/qr-code'
 const { Title, Text } = Typography
-import { calculateNights, checkPaymentStatus } from '../../services/booking.service'
+import { calculateNights, checkPaymentStatus, formatDate } from '../../services/booking.service'
 const Payment = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [paymentStatus, setPaymentStatus] = useState('pending')
+  const [remainingSeconds, setRemainingSeconds] = useState(0)
   
-  const bookingData = location.state
+  // Ưu tiên dữ liệu từ location.state, nếu không có thì lấy từ localStorage
+  const stateData = location.state
+  const stored = typeof window !== 'undefined' ? localStorage.getItem('pendingPayment') : null
+  const storedData = stored ? (() => { try { return JSON.parse(stored) } catch { return null } })() : null
+  const bookingData = stateData || storedData
   
-  if (!bookingData) {
-    message.error('Thông tin thanh toán không hợp lệ')
-    navigate('/')
-    return null
-  }
+  useEffect(() => {
+    console.log(bookingData);
+    
+    if (bookingData) {
+      // Lưu thông tin thanh toán vào localStorage để khôi phục khi quay lại site
+      try {
+        localStorage.setItem('pendingPayment', JSON.stringify(bookingData))
+      } catch {}
+      // Thiết lập hạn QR 30 phút nếu chưa có
+      try {
+        const raw = localStorage.getItem('pendingPaymentExpiry')
+        let expiry = raw ? Number(raw) : NaN
+        const now = Date.now()
+        if (!expiry || Number.isNaN(expiry) || expiry < now) {
+          expiry = now + 30 * 60 * 1000 // 30 phút
+          localStorage.setItem('pendingPaymentExpiry', String(expiry))
+        }
+        const initialRemain = Math.max(Math.floor((expiry - now) / 1000), 0)
+        setRemainingSeconds(initialRemain)
+      } catch {}
+    } else {
+      message.error('Thông tin thanh toán không hợp lệ')
+      navigate('/')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Lấy thông tin từ bookingData
   const {
@@ -56,8 +82,9 @@ const Payment = () => {
       const data = res?.data || res
       if (data?.status === 'success' || data?.statusCode === 200) {
         message.success('Thanh toán thành công!')
+        try { localStorage.removeItem('pendingPayment') } catch {}
         setTimeout(() => {
-          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo } })
+          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo, selectedServices: selectedServices , roomNum: bookingInfo.numRooms } })
         }, 1000)
       } else {
         message.error('Thanh toán chưa được xác nhận. Vui lòng thử lại.')
@@ -69,11 +96,20 @@ const Payment = () => {
 
   // Polling để kiểm tra trạng thái thanh toán
   useEffect(() => {
-    return () => {
-      // Cleanup if needed
-    }
-
-    
+    // Đếm ngược mỗi giây cho hạn QR 30 phút
+    const timer = setInterval(() => {
+      try {
+        const raw = localStorage.getItem('pendingPaymentExpiry')
+        const expiry = raw ? Number(raw) : 0
+        const now = Date.now()
+        const remain = Math.max(Math.floor((expiry - now) / 1000), 0)
+        setRemainingSeconds(remain)
+        if (remain <= 0) {
+          setPaymentStatus(prev => (prev === 'pending' ? 'expired' : prev))
+        }
+      } catch {}
+    }, 1000)
+    return () => clearInterval(timer)
   }, [])
 
 
@@ -83,20 +119,17 @@ const Payment = () => {
         {/* Header */}
         <div className="payment-header-new">
           <Title level={2} style={{ margin: 0, textAlign: 'center' }}>
-            <CreditCardOutlined style={{ color: '#1890ff', marginRight: 8 }} />
             Thanh toán đặt phòng
           </Title>
-          <Text type="secondary" style={{ textAlign: 'center', display: 'block', marginTop: '8px' }}>
-            Quét mã QR để hoàn tất thanh toán
-          </Text>
+      
         </div>
 
         <Row gutter={32}>
           {/* Cột trái - QR Code */}
           <Col xs={24} md={10}>
             <Card className="qr-code-card">
+              {/* Tạo đồng hồ đếm ngược 30p  */}
               <div className="qr-code-section">
-                <QrcodeOutlined className="qr-icon" />
                 <Title level={4} style={{ textAlign: 'center', marginTop: '16px' }}>
                   Quét mã QR để thanh toán
                 </Title>
@@ -105,7 +138,7 @@ const Payment = () => {
                 </Text>
                 
                 {/* QR Code */}
-                {qrCode ? (
+                {qrCode && paymentStatus !== 'expired' ? (
                   <div className="qr-code-container">
                     <QRCode value={qrCode} />
                   </div>
@@ -113,10 +146,23 @@ const Payment = () => {
                   <div className="qr-code-placeholder">
                     <Spin size="large" />
                     <Text type="secondary" style={{ display: 'block', marginTop: '16px' }}>
-                      Đang tải mã QR...
+                      {paymentStatus === 'expired' ? 'Mã QR đã hết hạn. Vui lòng tạo lại đơn thanh toán.' : 'Đang tải mã QR...'}
                     </Text>
                   </div>
                 )}
+
+                {/* Đồng hồ đếm ngược 30 phút */}
+                {/* <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <Text type={paymentStatus === 'expired' ? 'danger' : 'secondary'} style={{ fontSize: '14px' }}>
+                    {(() => {
+                      const m = Math.floor(remainingSeconds / 60)
+                      const s = remainingSeconds % 60
+                      const mm = String(m).padStart(2, '0')
+                      const ss = String(s).padStart(2, '0')
+                      return paymentStatus === 'expired' ? '00:00' : `${mm}:${ss}`
+                    })()}
+                  </Text>
+                </div> */}
 
                 {/* Status Indicator */}
                 <div className="payment-status" style={{ marginTop: '24px' }}>
@@ -127,6 +173,14 @@ const Payment = () => {
                       type="info"
                       showIcon
                       icon={<ClockCircleOutlined />}
+                    />
+                  )}
+                  {paymentStatus === 'expired' && (
+                    <Alert
+                      message="Mã QR đã hết hạn"
+                      description="Vui lòng quay lại và tạo lại thanh toán để tiếp tục."
+                      type="warning"
+                      showIcon
                     />
                   )}
                   {paymentStatus === 'success' && (
@@ -173,7 +227,7 @@ const Payment = () => {
 
           {/* Cột phải - Thông tin hóa đơn */}
           <Col xs={24} md={14}>
-            <Card className="invoice-card" title="Thông tin thanh toán">
+            <Card className="invoice-card">
               {/* Booking Code */}
               <div className="invoice-section">
                 <Text strong style={{ fontSize: '16px' }}>Mã đặt phòng</Text>
@@ -197,12 +251,14 @@ const Payment = () => {
                     
                     <div className="invoice-item">
                       <Text type="secondary">Check-in:</Text>
-                      <Text strong>{bookingInfo.checkIn}</Text>
+                      <Text 
+                      strong>{formatDate(bookingInfo.checkIn)}
+                      </Text>
                     </div>
                     
                     <div className="invoice-item">
                       <Text type="secondary">Check-out:</Text>
-                      <Text strong>{bookingInfo.checkOut}</Text>
+                      <Text strong>{formatDate(bookingInfo.checkOut)}</Text>
                     </div>
                     
                     <div className="invoice-item">
@@ -217,9 +273,12 @@ const Payment = () => {
                       <Text type="secondary">Số đêm:</Text>
                       <Text strong>{nights}</Text>
                     </div>
+                    <div className="invoice-item">
+                      <Text type="secondary">Số phòng:</Text>
+                      <Text strong>{bookingInfo.numRooms}</Text>
+                    </div>
                   </div>
-
-                  <Divider />
+                  <Divider/>
                 </>
               )}
 
@@ -258,9 +317,17 @@ const Payment = () => {
                     {nights | 0}
                   </Text>
                 </div>
+
+               
                 
                 <Divider style={{ margin: '16px 0' }} />
                 
+                <div className="invoice-item total">
+                  <Text strong style={{ fontSize: '18px' }}>Khuyến mãi</Text>
+                  <Text strong style={{ fontSize: '20px', color: '#1890ff' }}>
+                    {formatPrice(totalWithServices || 0)}
+                  </Text>
+                </div>
                 <div className="invoice-item total">
                   <Text strong style={{ fontSize: '18px' }}>Tổng cộng</Text>
                   <Text strong style={{ fontSize: '20px', color: '#1890ff' }}>
