@@ -44,8 +44,6 @@ const ServiceManagement = () => {
         limit: pageSize
       }
       const response = await getAllServices(params)
-      console.log('Services API response:', response)
-      
       // Handle different response structures
       let services = []
       let total = 0

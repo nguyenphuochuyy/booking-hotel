@@ -9,6 +9,19 @@ function UserLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Nếu còn đăng nhập và là admin, chuyển hướng sang trang admin khi mở website
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('accessToken')
+      const rawUser = localStorage.getItem('user')
+      const user = rawUser ? JSON.parse(rawUser) : null
+      const isAdmin = user?.role === 'admin'
+      if (token && isAdmin && !location.pathname.startsWith('/admin')) {
+        navigate('/admin', { replace: true })
+      }
+    } catch {}
+  }, [location.pathname, navigate])
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem('pendingPayment')

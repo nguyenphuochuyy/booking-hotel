@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statistic } from 'antd'
-import { FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons'
+import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined } from '@ant-design/icons'
 import httpClient, { getBaseUrl } from '../../../services/httpClient'
 
 const { RangePicker } = DatePicker
@@ -126,10 +126,10 @@ function Reports() {
         { startOf: () => ({ toDate: () => endOfMonth }), endOf: () => ({ toDate: () => endOfMonth }), toDate: () => endOfMonth, format: () => '' }
       ])
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [])
 
-  // No tabs; directly render revenue report content
+
 
   return (
     <div style={{ padding: 24 }}>
@@ -147,7 +147,14 @@ function Reports() {
                 const end_date = e.format('YYYY-MM-DD')
                 downloadFile(`${apiBaseUrl}/reports/revenue?start_date=${start_date}&end_date=${end_date}`, `bao-cao-doanh-thu-${start_date}-${end_date}.xlsx`)
               }}>Xuất Excel</Button>
-              <Button icon={<FilePdfOutlined />} onClick={() => message.info('Báo cáo Doanh thu hiện chỉ hỗ trợ Excel')}>Xuất PDF</Button>
+              <Button style={{ marginRight: 14 }} icon={<FilePdfOutlined />} onClick={() => message.info('Báo cáo Doanh thu hiện chỉ hỗ trợ Excel')}>Xuất PDF</Button>
+              <Button icon={<ReloadOutlined />} loading={calcLoading || loading} onClick={async () => {
+                if (!range || range.length !== 2) {
+                  return message.warning('Chọn khoảng thời gian')
+                }
+                await computeRevenueMetrics(range)
+                message.success('Đã làm mới số liệu doanh thu')
+              }}>Làm mới</Button>
             </div>
             <div style={{ marginBottom: 16 }}>
               <Space>
