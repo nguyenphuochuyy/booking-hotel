@@ -538,7 +538,7 @@ export async function getAvailableRoomsForType(params) {
  * @returns {Promise<Blob>}
  */
 export async function generateInvoicePDF(id) {
-  const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'https://api.beanhotelvn.id.vn/api'
   const token = localStorage.getItem('accessToken')
   
   const response = await fetch(`${apiBaseUrl}/bookings/${id}/invoice/pdf`, {
