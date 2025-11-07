@@ -6,12 +6,25 @@
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
-function getBaseUrl() {
+/**
+ * Get API base URL from environment variable or fallback
+ * Production fallback: https://api.beanhotelvn.id.vn/api
+ * Development fallback: http://localhost:5000/api
+ */
+export function getBaseUrl() {
   const envBase = import.meta?.env?.VITE_API_BASE_URL;
-  return typeof envBase === 'string' && envBase.length > 0
-    ? envBase
-    : 'https://api.beanhotelvn.id.vn/api';
-    // : 'http://localhost:5000/api';
+  if (typeof envBase === 'string' && envBase.length > 0) {
+    return envBase;
+  }
+  
+  // Fallback: check if we're in production (not localhost)
+  const isProduction = typeof window !== 'undefined' && 
+    !window.location.hostname.includes('localhost') && 
+    !window.location.hostname.includes('127.0.0.1');
+  
+  return isProduction 
+    ? 'https://api.beanhotelvn.id.vn/api'
+    : 'http://localhost:5000/api';
 }
 
 function safeJoinPaths(baseUrl, path) {

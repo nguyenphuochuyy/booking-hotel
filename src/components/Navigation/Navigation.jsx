@@ -4,6 +4,8 @@ import './Navigation.css'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 import { useAuth } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { Avatar } from 'antd'
+import { UserOutlined } from '@ant-design/icons'
 function Navigation() {
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -35,7 +37,7 @@ function Navigation() {
 
   return (
     <div className="navigation">
-      <div className="nav-container">
+      <div className="nav-container container">
         {/* Left: Logo */}
         <div className="nav-left">
           <Link to="/" className="nav-logo">
@@ -62,14 +64,27 @@ function Navigation() {
               onMouseEnter={() => setIsUserMenuOpen(true)}
               onMouseLeave={() => setIsUserMenuOpen(false)}
             >
-              <button
+              {user?.avatar ? (
+             
+            
+                  <Avatar size="large" src={user.avatar} />
+              
+
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {user?.full_name ? user.full_name: 'U'}
+                <Avatar size="large" icon={<UserOutlined />} />
+                </div>
+               
+              )}
+              {/* <button
                 className="user-avatar"
                 onClick={() => setIsUserMenuOpen(v => !v)}
                 aria-haspopup="true"
                 aria-expanded={isUserMenuOpen}
               >
                 {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </button>
+              </button> */}
               {isUserMenuOpen && (
                 <div className="user-dropdown">
                   <Link to="/user/profile" className="user-item">Thông tin cá nhân</Link>

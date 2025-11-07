@@ -139,10 +139,20 @@ const Authentication = () => {
 
   // xử lý đăng nhập với Google - redirect đến backend OAuth endpoint
   const handleGoogleLogin = () => {
-    // Lấy base URL từ httpClient hoặc từ env
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-    // Redirect đến backend Google OAuth endpoint
-    window.location.href = `${apiBaseUrl}/auth/google`
+    // Sử dụng helper function từ httpClient để đảm bảo nhất quán
+    // Import động để tránh circular dependency
+    import('../../services/httpClient').then(({ getBaseUrl }) => {
+      const apiBaseUrl = getBaseUrl()
+      // Redirect đến backend Google OAuth endpoint
+      window.location.href = `${apiBaseUrl}/auth/google`
+    }).catch(() => {
+      // Fallback nếu import thất bại
+      const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 
+        (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')
+          ? 'http://localhost:5000/api'
+          : 'https://api.beanhotelvn.id.vn/api')
+      window.location.href = `${apiBaseUrl}/auth/google`
+    })
   }
   // Xử lý quên mật khẩu
   const handleForgotPassword = async (values) => {

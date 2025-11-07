@@ -50,7 +50,8 @@ export async function resetPassword(payload) {
  */
 export async function googleLogin() {
   // Không sử dụng function này, thay vào đó redirect trực tiếp
-  const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  // Sử dụng helper function từ httpClient để đảm bảo nhất quán
+  const apiBaseUrl = getBaseUrl()
   window.location.href = `${apiBaseUrl}${AUTH.GOOGLE_LOGIN}`
 }
 

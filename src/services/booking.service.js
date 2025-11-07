@@ -336,7 +336,9 @@ export const cancelBookingOnline = async (bookingId, reason = '') => {
 // Download invoice PDF for user
 export const downloadInvoicePDF = async (bookingId) => {
   try {
-    const apiBaseUrl = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
+    // Sử dụng helper function từ httpClient để đảm bảo nhất quán
+    const { getBaseUrl } = await import('./httpClient.js')
+    const apiBaseUrl = getBaseUrl()
     const token = localStorage.getItem('accessToken')
     
     const response = await fetch(`${apiBaseUrl}/bookings/${bookingId}/invoice/pdf`, {

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statistic } from 'antd'
 import { FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons'
-import httpClient from '../../../services/httpClient'
+import httpClient, { getBaseUrl } from '../../../services/httpClient'
 
 const { RangePicker } = DatePicker
 const { Text } = Typography
 
 function Reports() {
   const [loading, setLoading] = useState(false)
-  const apiBaseUrl = (import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000/api')
+  // Sử dụng helper function từ httpClient để đảm bảo nhất quán
+  const apiBaseUrl = getBaseUrl()
 
   const downloadFile = async (url, filename, headers = {}) => {
     try {

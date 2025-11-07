@@ -2,7 +2,15 @@ import http from './httpClient'
 
 export async function sendChatMessage({ message, history = [], session_id = null }) {
   try {
-    const data = await http.post('/chat', { message })
+    const payload = { message }
+    // Chỉ thêm history và session_id nếu có
+    if (history && history.length > 0) {
+      payload.history = history
+    }
+    if (session_id) {
+      payload.session_id = session_id
+    }
+    const data = await http.post('/chat', payload)
     return data
   } catch (err) {
     console.error('sendChatMessage error:', err)

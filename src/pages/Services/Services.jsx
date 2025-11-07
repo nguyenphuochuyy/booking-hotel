@@ -1,89 +1,127 @@
-import React, { useState } from 'react'
-import { Row, Col, Card, Typography, Breadcrumb, Space } from 'antd'
-import { HomeOutlined, CalendarOutlined, HeartOutlined, CoffeeOutlined, CarOutlined, WifiOutlined, SafetyOutlined } from '@ant-design/icons'
+import React, { useState, useEffect } from 'react'
+import { Row, Col, Card, Typography, Breadcrumb, Space, Spin, message } from 'antd'
+import { HomeOutlined, CalendarOutlined, HeartOutlined, CoffeeOutlined, CarOutlined, WifiOutlined, SafetyOutlined, ShopOutlined } from '@ant-design/icons'
 import { Link, useNavigate } from 'react-router-dom'
 import './Services.css'
+import { serviceService } from '../../services/service.service'
 
 const { Title, Paragraph } = Typography
+
+// Mapping icon và color dựa trên tên service
+const getServiceIcon = (serviceName) => {
+  const name = serviceName.toLowerCase()
+  if (name.includes('hội nghị') || name.includes('sự kiện') || name.includes('hội thảo')) {
+    return <CalendarOutlined />
+  }
+  if (name.includes('cưới') || name.includes('tiệc')) {
+    return <HeartOutlined />
+  }
+  if (name.includes('sức khỏe') || name.includes('làm đẹp') || name.includes('spa')) {
+    return <HeartOutlined />
+  }
+  if (name.includes('nhà hàng') || name.includes('ẩm thực') || name.includes('ăn uống')) {
+    return <CoffeeOutlined />
+  }
+  if (name.includes('sân bay') || name.includes('đưa đón') || name.includes('xe')) {
+    return <CarOutlined />
+  }
+  if (name.includes('phòng') || name.includes('room service')) {
+    return <WifiOutlined />
+  }
+  if (name.includes('bảo vệ') || name.includes('an ninh') || name.includes('security')) {
+    return <SafetyOutlined />
+  }
+  if (name.includes('giặt') || name.includes('ủi') || name.includes('vệ sinh')) {
+    return <ShopOutlined />
+  }
+  return <ShopOutlined />
+}
+
+const getServiceColor = (serviceName) => {
+  const name = serviceName.toLowerCase()
+  if (name.includes('hội nghị') || name.includes('sự kiện')) return '#1890ff'
+  if (name.includes('cưới') || name.includes('tiệc')) return '#ff4d4f'
+  if (name.includes('sức khỏe') || name.includes('làm đẹp')) return '#ff85c0'
+  if (name.includes('nhà hàng') || name.includes('ẩm thực')) return '#faad14'
+  if (name.includes('sân bay') || name.includes('đưa đón')) return '#52c41a'
+  if (name.includes('phòng')) return '#722ed1'
+  if (name.includes('bảo vệ') || name.includes('an ninh')) return '#2f54eb'
+  if (name.includes('giặt') || name.includes('ủi')) return '#13c2c2'
+  return '#1890ff'
+}
+
+// Tạo slug từ name
+const createSlug = (name) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
 
 function Services() {
   const navigate = useNavigate()
   const [hoveredCard, setHoveredCard] = useState(null)
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const services = [
-    {
-      id: 1,
-      title: 'Hội nghị - Sự kiện',
-      slug: 'hoi-nghi-su-kien',
-      description: 'Tổ chức hội nghị, hội thảo chuyên nghiệp với đầy đủ trang thiết bị hiện đại, phòng họp rộng rãi và dịch vụ hỗ trợ tận tình.',
-      icon: <CalendarOutlined />,
-      image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800',
-  
-    },
-    {
-      id: 2,
-      title: 'Tiệc cưới',
-      slug: 'tiec-cuoi',
-      description: 'Không gian lãng mạn cho ngày trọng đại của bạn. Đội ngũ chuyên nghiệp sẽ biến giấc mơ đám cưới của bạn thành hiện thực.',
-      icon: <HeartOutlined />,
-      image: 'https://bizweb.dktcdn.net/thumb/large/100/472/947/articles/to-chuc-tiec-cuoi-ket-noi-nhan-duyen.jpg?v=1670341337250',
+  useEffect(() => {
+    fetchServices()
+  }, [])
 
-    },
-    {
-      id: 3,
-      title: 'Sức khỏe - Làm đẹp',
-      slug: 'suc-khoe-lam-dep',
-      description: 'Spa cao cấp với các liệu trình massage, chăm sóc da mặt, và trị liệu thư giãn bằng các sản phẩm thiên nhiên cao cấp.',
-      icon: <HeartOutlined />,
-      image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800',
+  const fetchServices = async () => {
+    try {
+      setLoading(true)
+      const response = await serviceService.getServices({ limit: 100 }) // Lấy tất cả services
+      if (response && response.services) {
+        // Map dữ liệu từ API sang format cần thiết
+        const mappedServices = response.services
+          .filter(service => service.is_available) // Chỉ hiển thị service available
+          .map(service => {
+            // Lấy ảnh đầu tiên từ images (có thể là JSON array hoặc string)
+            let imageUrl = ''
+            if (service.images) {
+              if (typeof service.images === 'string') {
+                try {
+                  const parsed = JSON.parse(service.images)
+                  imageUrl = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : service.images
+                } catch {
+                  imageUrl = service.images
+                }
+              } else if (Array.isArray(service.images) && service.images.length > 0) {
+                imageUrl = service.images[0]
+              }
+            }
+            
+            // Fallback image nếu không có
+            if (!imageUrl) {
+              imageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'
+            }
 
-    },
-    {
-      id: 4,
-      title: 'Nhà hàng - Ẩm thực',
-      slug: 'nha-hang-am-thuc',
-      description: 'Thưởng thức ẩm thực đa dạng từ Á đến Âu với đội ngũ đầu bếp hàng đầu và không gian sang trọng, lãng mạn.',
-      icon: <CoffeeOutlined />,
-      image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
-
-    },
-    {
-      id: 5,
-      title: 'Đưa đón sân bay',
-      slug: 'dua-don-san-bay',
-      description: 'Dịch vụ đưa đón sân bay 24/7 với xe sang trọng, tài xế chuyên nghiệp, đảm bảo sự thoải mái và đúng giờ.',
-      icon: <CarOutlined />,
-      image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800',
-
-    },
-    {
-      id: 6,
-      title: 'Dịch vụ phòng 24/7',
-      slug: 'dich-vu-phong',
-      description: 'Phục vụ tận phòng 24/7 với thực đơn đa dạng, nước uống và các tiện ích khác theo yêu cầu của quý khách.',
-      icon: <WifiOutlined />,
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
-
-    },
-    {
-      id: 7,
-      title: 'Bảo vệ - An ninh',
-      slug: 'bao-ve-an-ninh',
-      description: 'Hệ thống an ninh 24/7 với camera giám sát hiện đại và đội ngũ bảo vệ chuyên nghiệp để đảm bảo an toàn tuyệt đối.',
-      icon: <SafetyOutlined />,
-      image: 'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=800',
-
-    },
-    {
-      id: 8,
-      title: 'Giặt ủi - Vệ sinh',
-      slug: 'giat-ui-ve-sinh',
-      description: 'Dịch vụ giặt ủi cao cấp với công nghệ hiện đại, trả nhanh trong ngày, đảm bảo quần áo luôn sạch sẽ và thơm tho.',
-      icon: <CoffeeOutlined />,
-      image: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=800',
-
+            return {
+              id: service.service_id,
+              title: service.name,
+              slug: createSlug(service.name),
+              description: service.description || 'Dịch vụ chất lượng cao từ Bean Hotel',
+              icon: getServiceIcon(service.name),
+              image: imageUrl,
+              color: getServiceColor(service.name),
+              price: service.price,
+              service_type: service.service_type
+            }
+          })
+        setServices(mappedServices)
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error)
+      message.error('Không thể tải danh sách dịch vụ. Vui lòng thử lại sau.')
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
   const handleServiceClick = (service) => {
     // Chuyển trực tiếp sang trang chi tiết (không truyền service object có icon)
@@ -116,8 +154,17 @@ function Services() {
 
         {/* Services Grid */}
         <div className="services-grid">
-          <Row gutter={[24, 24]}>
-            {services.map((service) => (
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" />
+            </div>
+          ) : services.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Paragraph>Hiện tại chưa có dịch vụ nào.</Paragraph>
+            </div>
+          ) : (
+            <Row gutter={[24, 24]}>
+              {services.map((service) => (
               <Col xs={24} sm={12} lg={8} xl={6} key={service.id}>
                 <div 
                   className="service-card-wrapper"
@@ -159,8 +206,9 @@ function Services() {
                   </Card>
                 </div>
               </Col>
-            ))}
-          </Row>
+              ))}
+            </Row>
+          )}
         </div>
 
         {/* Call to Action */}
