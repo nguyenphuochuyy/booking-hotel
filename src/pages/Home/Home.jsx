@@ -2,7 +2,7 @@ import React from 'react'
 import './Home.css'
 import { Row, Col, Typography, Button, Grid } from 'antd'
 const { useBreakpoint } = Grid
-
+import { motion } from 'framer-motion';
 import { GlobalOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useRoomTypes } from "../../hooks/roomtype"
@@ -27,7 +27,20 @@ function Home() {
     page, setPage, limit, setLimit,
     refresh, nextPage, prevPage,
   } = useRoomTypes();
-  
+  // Nó sẽ làm cho component con "nảy" lên và mờ dần xuất hiện khi cuộn tới
+const AnimatedSection = ({ children }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }} // Trạng thái ban đầu: mờ, ở dưới 50px
+      whileInView={{ opacity: 1, y: 0 }} // Trạng thái khi lọt vào tầm nhìn: rõ, ở vị trí 0
+      viewport={{ once: false }} // 
+      transition={{ duration: 1, ease: "easeInOut" }} // Thời gian và kiểu hiệu ứng
+      className="animated-section-home"
+    >
+      {children}
+    </motion.div>
+  );
+};
   return (
     <>
       <div className="banner-slider">
@@ -45,6 +58,7 @@ function Home() {
       </div>
 
       <div className="home-page container">
+        <AnimatedSection>
         <div className="about">
           <div className="about-container">
             <Row
@@ -107,8 +121,10 @@ function Home() {
             </Row>
           </div>
         </div>
-        {/* Luxury Section */}
-        <div className="luxury-section">
+        </AnimatedSection>
+        <AnimatedSection> 
+   {/* Luxury Section */}
+   <div className="luxury-section">
           <div className="luxury-container">
             {/* Header */}
             <div className="luxury-header">
@@ -166,9 +182,11 @@ function Home() {
             </Row>
           </div>
         </div>
-
-        {/* Culinary Section */}
-        <div className="culinary-section">
+        </AnimatedSection>
+     
+        <AnimatedSection>
+ {/* Culinary Section */}
+ <div className="culinary-section">
           <div className="culinary-container">
             <Row 
               gutter={screens.xs ? [16, 24] : screens.md ? [24, 32] : [32, 48]}
@@ -214,8 +232,10 @@ function Home() {
             </Row>
           </div>
         </div>
-
-        {/* Spa Section */}
+        </AnimatedSection>
+       
+        <AnimatedSection>
+             {/* Spa Section */}
         <div className="spa-section">
           <div className="spa-container">
             <Row 
@@ -261,19 +281,21 @@ function Home() {
               </Col>
             </Row>
           </div>
-        </div>
+        </div> 
+        </AnimatedSection>
+     
 
         {/* <div className='features'>
           <RoomList />
         </div> */}
        {/* Section khoảng khắc thú vị với chúng tôi */}
         {/* Tại sao chọn chúng tôi */}
-        {/* <HomeNews /> */}
       </div>
 
       <div className='container'>
-
-        <WhyChooseUs />
+        <AnimatedSection>
+          <WhyChooseUs />
+        </AnimatedSection>
       </div>
 
 

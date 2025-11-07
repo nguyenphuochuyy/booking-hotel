@@ -1,6 +1,6 @@
 /* Tổng thể trang */
 .about-page {
-  background-color: #f8f9fa; /* Một màu nền nhẹ nhàng */
+  background-color: #fff; /* Một màu nền nhẹ nhàng */
   padding-bottom: 60px;
 }
 
@@ -10,32 +10,19 @@
 
 /* Helper cho các khối nội dung */
 .animated-section {
-  margin-bottom: 60px; /* Tạo khoảng cách giữa các khối */
-  background-color: #ffffff;
+  background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden; /* Đảm bảo bo góc hoạt động */
   padding: 40px;
 }
 
 /* --- Khối Hero --- */
-.about-hero {
-  text-align: center;
-  padding: 20px 0;
-}
-
 .about-hero h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #333;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 650;
+  color: #c08a19;
   margin-bottom: 16px;
-}
-
-.about-hero .subtitle {
-  font-size: 1.2rem;
-  color: #555;
-  max-width: 800px;
-  margin: 0 auto;
 }
 
 /* --- Khối Giới thiệu & Hình ảnh --- */
@@ -61,6 +48,104 @@
   height: auto;
   border-radius: 8px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Khối Câu chuyện & Sứ mệnh --- */
+.story-mission-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Căn giữa theo chiều dọc cho hàng */
+.story-mission-section .ant-row {
+  align-items: center;
+}
+
+/* Căn giữa cột ảnh và giới hạn kích thước ảnh nhỏ gọn */
+.story-img-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Đảm bảo hai cột có chiều cao bằng nhau */
+.story-mission-section .ant-row {
+  align-items: stretch;
+}
+
+.story-content,
+.story-img-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-content .section-subtitle {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c08a19;
+  margin-bottom: 12px;
+}
+
+.story-content h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 18px;
+}
+
+.story-content p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.mission-box {
+  background: linear-gradient(135deg, rgba(192, 138, 25, 0.1), rgba(192, 138, 25, 0.05));
+  border-left: 4px solid #c08a19;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(192, 138, 25, 0.08);
+}
+
+.mission-box h3 {
+  font-size: 1.3rem;
+  color: #c08a19;
+  margin-bottom: 10px;
+}
+
+.mission-box p {
+  margin-bottom: 0;
+  color: #444;
+}
+
+.story-img-wrapper {
+  width: 100%;
+  max-width: 700px;
+  height: 700px;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.story-img-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 100%);
+}
+
+.story-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* --- Khối Dịch vụ --- */
@@ -111,24 +196,25 @@
 .gallery-section .ant-carousel .slick-slide {
   position: relative;
   text-align: center;
-  height: 500px; /* Cho chiều cao cố định */
-  line-height: 500px;
-  background: #364d79;
+  height: 240px; /* Chiều cao mỗi item */
+  line-height: normal;
+  background: transparent;
   overflow: hidden;
   border-radius: 8px;
+  padding: 6px;
 }
 
 .gallery-section .ant-carousel img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Đảm bảo ảnh lấp đầy, không bị méo */
+  object-fit: cover; /* Ảnh phủ đầy khung nhỏ */
+  border-radius: 8px;
 }
 
 /* --- Khối CTA --- */
 .cta-section {
   text-align: center;
   padding: 40px;
-  background-color: #001529; /* Màu tối sang trọng */
   border-radius: 8px;
 }
 
@@ -141,14 +227,14 @@
 
 .cta-section p {
   font-size: 1.1rem;
-  color: #ccc;
+  color: #000;
   max-width: 700px;
   margin: 0 auto 32px auto;
 }
 
 .cta-section .ant-btn-primary {
-  background-color: #1890ff;
-  border-color: #1890ff;
+  background-color: #c08a19;
+  border-color: #c08a19;
   font-size: 1.1rem;
   height: 50px;
   padding: 0 30px;
@@ -162,11 +248,19 @@
   .about-hero h1 {
     font-size: 2.5rem;
   }
+  .story-content h2 {
+    font-size: 1.6rem;
+  }
+  .story-img-wrapper {
+    max-width: 100%;
+    height: 200px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+  }
   .features-section h2, .gallery-section h2, .cta-section h2 {
     font-size: 2rem;
   }
   .gallery-section .ant-carousel .slick-slide {
-    height: 300px;
-    line-height: 300px;
+    height: 200px;
+    line-height: normal;
   }
 }

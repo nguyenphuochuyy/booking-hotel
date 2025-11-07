@@ -51,8 +51,13 @@ function AppRoutes() {
     if (loading) {
       return <Loading message="Đang xác thực quyền truy cập..." />
     }
+
+    // Nếu chưa đăng nhập, chuyển về trang đăng nhập
+    if (!user) {
+      return <Navigate to="/login" replace />
+    }
     
-    // Sau khi loading xong, kiểm tra quyền admin
+    // Nếu không phải admin, chặn truy cập
     if (!isAdmin) {
       return <Navigate to="/access-denied" replace />
     }

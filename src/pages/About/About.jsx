@@ -22,8 +22,7 @@ const AnimatedSection = ({ children }) => {
 
 function About() {
   return (
-    <div className='about-page'>
-      <div className="container">
+    <div className='about-page container'>
         {/* Phần Breadcrumb giữ nguyên */}
         <Breadcrumb className="breadcrumb-custom">
           <Breadcrumb.Item href="/">
@@ -36,8 +35,7 @@ function About() {
         {/* --- KHỐI HERO --- */}
         <AnimatedSection>
           <div className="about-hero">
-            <h1>Về Bean Hotel</h1>
-            <p className="subtitle">Là khách sạn 5 sao đẳng cấp quốc tế, tọa lạc tại giao điểm của bốn quận chính, nơi được xem như trái tim và trung tâm của TP. Hồ Chí Minh.</p>
+            <h1>VỀ CHÚNG TÔI</h1>
           </div>
         </AnimatedSection>
         
@@ -46,7 +44,7 @@ function About() {
           <Row gutter={[32, 32]} className="about-intro-section">
             <Col xs={24} md={12}>
               <div className='about-image'>
-                <img src="https://bizweb.dktcdn.net/100/423/358/files/alper-gio-thieu.jpg?v=1623225626615" alt="Bean Hotel" />
+                <img src="https://images.pexels.com/photos/14024792/pexels-photo-14024792.jpeg?_gl=1*1qf4o9w*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDY2OTIkajU5JGwwJGgw" alt="Bean Hotel" />
               </div>
             </Col>
             <Col xs={24} md={12}>
@@ -55,6 +53,45 @@ function About() {
               <p>Bean Hotel tích hợp đầy đủ tất cả các dịch vụ cho Quý khách có một chuyến công tác hoặc kỳ nghỉ thật sự tiện ích...</p>
             </Col>
           </Row>
+        </AnimatedSection>
+
+        {/* --- KHỐI CÂU CHUYỆN & SỨ MỆNH --- */}
+        <AnimatedSection>
+          <div className="story-mission-section">
+              <Row gutter={[32, 32]} align="middle">
+              <Col xs={24} md={12}>
+                <div className="story-content">
+                  <span className="section-subtitle">Chào mừng đến với Bean Hotel</span>
+                  <h2>Hành trình kiến tạo trải nghiệm nghỉ dưỡng tinh tế</h2>
+                  <p>
+                    Bean Hotel được thành lập vào năm 2024 bởi đội ngũ những người trẻ đam mê du lịch
+                    và nghệ thuật hiếu khách. Chúng tôi bắt đầu từ một homestay nhỏ, nuôi dưỡng khát
+                    vọng đem đến cho du khách một nơi chốn thân thuộc, nơi từng chi tiết đều được chăm chút
+                    tỉ mỉ như đang ở chính ngôi nhà của mình.
+                  </p>
+                  <p>
+                    Lấy cảm hứng từ tinh thần cởi mở, chân thành của văn hóa Á Đông, Bean Hotel phát triển
+                    nên phong cách phục vụ ấm áp, tinh tế nhưng vẫn phóng khoáng. Mỗi không gian trong khách
+                    sạn đều được thiết kế để kết nối con người với thiên nhiên, với những giá trị bền vững và
+                    trải nghiệm cá nhân hóa.
+                  </p>
+                  <div className="mission-box">
+                    <h3>Sứ mệnh của chúng tôi</h3>
+                    <p>
+                      Tạo nên một không gian nghỉ dưỡng tinh tế, nơi dịch vụ tận tâm và sự thoải mái vượt trên
+                      cả mong đợi. Chúng tôi cam kết mang lại trải nghiệm đáng nhớ, nuôi dưỡng cảm hứng và nguồn
+                      năng lượng tích cực cho mỗi chuyến đi của quý khách.
+                    </p>
+                  </div>
+                </div>
+              </Col>
+              <Col xs={24} md={12} className="story-img-col">
+                <div className="story-img-wrapper">
+                  <img src="https://images.pexels.com/photos/2565222/pexels-photo-2565222.jpeg?_gl=1*1ey5rmr*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDY5MDMkajMxJGwwJGgw" alt="Bean Hotel" />
+                </div>
+              </Col>
+            </Row>
+          </div>
         </AnimatedSection>
 
         {/* --- KHỐI DỊCH VỤ NỔI BẬT --- */}
@@ -99,15 +136,34 @@ function About() {
         <AnimatedSection>
           <div className="gallery-section">
             <h2>Khoảnh khắc tại Bean Hotel</h2>
-            <Carousel autoplay>
-              <div>
-                <img src="https://kksapahotel.com/uploads/images/VQK_2153%20(1).jpg" alt="Sảnh khách sạn" />
+            <Carousel
+              autoplay
+              draggable 
+              slidesToShow={4}
+              slidesToScroll={1}
+              responsive={[
+                { breakpoint: 1200, settings: { slidesToShow: 3 } },
+                { breakpoint: 992, settings: { slidesToShow: 2 } },
+                { breakpoint: 576, settings: { slidesToShow: 1  } },
+              ]}
+            >
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg?_gl=1*1eh6xqo*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDc1NTkkajU0JGwwJGgw" alt="Sảnh khách sạn" />
               </div>
-              <div>
-                <img src="https://images.unsplash.com/photo-1542314831-068cd1db356d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Phòng ngủ" />
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/1838554/pexels-photo-1838554.jpeg?_gl=1*lnhbds*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDg0MDEkajU2JGwwJGgw" alt="Phòng ngủ" />
               </div>
-              <div>
-                <img src="https://images.unsplash.com/photo-1582719508428-2cd401214s9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Hồ bơi" />
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/1134176/pexels-photo-1134176.jpeg?_gl=1*8teq6v*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDg0MjEkajM2JGwwJGgw" alt="Hồ bơi" />
+              </div>
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/2869215/pexels-photo-2869215.jpeg?_gl=1*q0g9qi*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDg0NDMkajE0JGwwJGgw" alt="Sảnh lounge" />
+              </div>
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/460537/pexels-photo-460537.jpeg?_gl=1*1y6p9mw*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDg0NjgkajU5JGwwJGgw" alt="Nhà hàng" />
+              </div>
+              <div className="gallery-item">
+                <img src="https://images.pexels.com/photos/2507010/pexels-photo-2507010.jpeg?_gl=1*1glvtnv*_ga*MjEzNjEzNjIxNC4xNzYyNDM0NDAy*_ga_8JE65Q40S6*czE3NjI1MDU4NTEkbzIkZzEkdDE3NjI1MDgyOTAkajU0JGwwJGgw" alt="Cảnh quan" />
               </div>
             </Carousel>
           </div>
@@ -121,7 +177,7 @@ function About() {
             <Button type="primary" size="large" href="/hotels">Khám phá phòng ngay</Button>
           </div>
         </AnimatedSection>
-      </div>
+      
     </div>
   );
 }
