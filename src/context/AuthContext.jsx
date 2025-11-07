@@ -72,6 +72,7 @@ export function AuthProvider({ children }) {
        localStorage.removeItem('user')
        localStorage.removeItem('pendingPaymentExpiry')
        localStorage.removeItem('pendingPayment')
+       localStorage.removeItem('chatbot_session_id')
     } catch (_err) {}
     setAccessToken(null)
     setUser(null)

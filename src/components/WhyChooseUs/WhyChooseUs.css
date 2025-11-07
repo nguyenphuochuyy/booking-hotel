@@ -1,0 +1,104 @@
+/* Tổng thể section */
+.why-choose-us-section {
+  padding: 60px 0; /* 60px trên dưới, 0 trái phải */
+  background-color: #f9fafb; /* Màu nền xám rất nhạt để tách biệt section */
+}
+
+/* Container để giới hạn chiều rộng nội dung và căn giữa */
+.why-choose-us-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px; /* Padding trái phải cho màn hình nhỏ */
+}
+
+/* Tiêu đề chính và phụ */
+.why-choose-us-title {
+  text-align: center;
+  margin-bottom: 16px !important;
+  color: #1f2937; /* Màu đen xám đậm */
+  font-weight: 700 !important;
+}
+
+.why-choose-us-subtitle {
+  text-align: center;
+  font-size: 16px;
+  color: #6b7280; /* Màu xám */
+  max-width: 600px;
+  margin: 0 auto 40px auto; /* Căn giữa và tạo khoảng cách dưới */
+}
+
+/* Tùy chỉnh thẻ Card */
+.why-choose-us-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%; /* Đảm bảo các thẻ trên cùng 1 hàng cao bằng nhau */
+  text-align: center;
+}
+
+.why-choose-us-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.why-choose-us-card .ant-card-body {
+  padding: 32px 24px;
+}
+
+/* Tùy chỉnh Icon */
+.why-choose-us-icon {
+  font-size: 48px; /* Kích thước Icon */
+  color: #667eea; /* Màu tím/xanh (bạn có thể đổi màu chủ đạo) */
+  margin-bottom: 20px;
+}
+
+/* Tiêu đề của thẻ */
+.why-choose-us-card-title {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #374151;
+  margin-bottom: 12px !important;
+}
+
+/* Mô tả của thẻ */
+.why-choose-us-card-desc {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 0 !important;
+}
+
+/* Responsive cho Tablet */
+@media (max-width: 992px) {
+  .why-choose-us-section {
+    padding: 50px 0;
+  }
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 576px) {
+  .why-choose-us-section {
+    padding: 40px 0;
+  }
+
+  .why-choose-us-container {
+    padding: 0 16px; /* Giảm padding trái phải trên mobile */
+  }
+
+  .why-choose-us-title {
+    font-size: 28px !important; /* Giảm cỡ chữ tiêu đề */
+  }
+
+  .why-choose-us-subtitle {
+    margin-bottom: 32px;
+  }
+
+  .why-choose-us-icon {
+    font-size: 40px; /* Giảm cỡ chữ icon */
+  }
+
+  .why-choose-us-card-title {
+    font-size: 18px !important;
+  }
+}

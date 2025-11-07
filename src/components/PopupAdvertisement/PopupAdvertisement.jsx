@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Row, Col, Typography, Button, Image } from 'antd'
 import { CloseOutlined, GiftOutlined, CalendarOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import khuyenmai from "../../assets/images/khuyenmai1.jpg"
 import './PopupAdvertisement.css'
 
 const { Title, Paragraph } = Typography
@@ -15,14 +16,23 @@ function PopupAdvertisement() {
   const isAdminPage = location.pathname.startsWith('/admin')
 
   useEffect(() => {
-    // Chỉ hiển thị popup nếu không phải trang admin
+    // Chỉ hiển thị popup nếu không phải trang admin VÀ chỉ khi người dùng refresh trình duyệt
     if (!isAdminPage) {
-      // Hiển thị popup sau 1 giây khi component mount
-      const timer = setTimeout(() => {
-        setVisible(true)
-      }, 1000)
+      let isReload = false
+      const navEntries = performance && performance.getEntriesByType ? performance.getEntriesByType('navigation') : []
+      if (navEntries && navEntries.length > 0) {
+        isReload = navEntries[0].type === 'reload'
+      } else if (window.performance && window.performance.navigation) {
+        // Fallback (deprecated API)
+        isReload = window.performance.navigation.type === 1
+      }
 
-      return () => clearTimeout(timer)
+      if (isReload) {
+        const timer = setTimeout(() => {
+          setVisible(true)
+        }, 1000)
+        return () => clearTimeout(timer)
+      }
     }
   }, [isAdminPage])
 
@@ -32,7 +42,7 @@ function PopupAdvertisement() {
 
   const handleBookNow = () => {
     setVisible(false)
-    navigate('/booking')
+    navigate('/hotels')
   }
 
   const handleOverlayClick = (e) => {
@@ -71,7 +81,7 @@ function PopupAdvertisement() {
           <Col xs={24} md={12} className="popup-image-col">
             <div className="popup-image-container">
               <Image
-                src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                src={khuyenmai}
                 alt="Ưu đãi đặt phòng"
                 className="popup-image"
                 preview={false}
@@ -106,7 +116,7 @@ function PopupAdvertisement() {
                     <span className="promo-code">FIRST10</span>
                   </div>
                   <Paragraph className="promo-description">
-                    Áp dụng cho lần đặt phòng đầu tiên
+                    Áp dụng cho lần đặt phòng đầu tiên  
                   </Paragraph>
                 </div>
               </div>
@@ -115,7 +125,6 @@ function PopupAdvertisement() {
                 <ul className="benefits-list">
                   <li>Giảm giá 10% cho lần đặt phòng đầu tiên</li>
                   <li>Miễn phí bữa sáng cho 2 người</li>
-                  <li>Nâng cấp phòng miễn phí (nếu có)</li>
                   <li>Hỗ trợ 24/7 trong suốt chuyến đi</li>
                 </ul>
               </div>
@@ -123,20 +132,12 @@ function PopupAdvertisement() {
               <div className="popup-actions">
                 <Button
                   type="primary"
-                  size="large"
-                  icon={<CalendarOutlined />}
+                  size="middle"
                   className="book-now-btn"
                   onClick={handleBookNow}
                   block
                 >
                   Đặt phòng ngay
-                </Button>
-                <Button
-                  type="link"
-                  className="skip-btn"
-                  onClick={handleClose}
-                >
-                  Bỏ qua
                 </Button>
               </div>
             </div>
