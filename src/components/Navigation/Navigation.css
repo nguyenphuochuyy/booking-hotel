@@ -137,7 +137,6 @@
 .user-menu {
   position: relative;
   padding-bottom: 14px;
-  /* mở rộng vùng hover để không bị tụt */
 }
 
 .user-avatar {
@@ -148,7 +147,6 @@
   cursor: pointer;
   background: #c08a19;
   color: #fff;
-  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;

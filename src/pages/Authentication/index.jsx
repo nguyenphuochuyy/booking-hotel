@@ -123,11 +123,9 @@ const Authentication = () => {
         showSuccessMessage()
         // lấy thông tin của user sau khi đăng nhập thành công bằng accessToken
         const userProfile = await getUserProfile()
-        console.log(userProfile.user);
-        
+        localStorage.setItem('user', JSON.stringify(userProfile.user))
         const profileUser = userProfile?.user
         if(profileUser?.role === 'admin'){
-          localStorage.setItem('user', JSON.stringify(profileUser))
           navigate('/admin')
         }
          setUser(profileUser)
@@ -213,7 +211,6 @@ const Authentication = () => {
         label="Mật khẩu"
         rules={[
           { required: true, message: 'Vui lòng nhập mật khẩu!' },
-          { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
         ]}
       >
         <Input.Password
@@ -262,14 +259,6 @@ const Authentication = () => {
        
         >
           Đăng nhập với Google
-        </Button>
-        <Button
-          icon={<FacebookOutlined />}
-          block
-          className="social-button facebook-button"
-          size="middle"
-        >
-          Đăng nhập với Facebook
         </Button>
       </Space>
     </Form>
@@ -367,18 +356,7 @@ const Authentication = () => {
         <Text type="secondary" style={{ fontSize: screens.xs ? 12 : 14 }}>Hoặc đăng ký với</Text>
       </Divider>
 
-      <Space direction="vertical" style={{ width: '100%' }} size={8}>
       
-        
-        <Button
-          icon={<FacebookOutlined />}
-          block
-          className="social-button facebook-button"
-          size="middle"
-        >
-          Đăng ký với Facebook
-        </Button>
-      </Space>
     </Form>
   )
 

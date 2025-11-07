@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
 import { FloatButton, notification, Button } from "antd";
+import ChatBot from '../components/ChatBot/ChatBot'
 import { ArrowUpOutlined } from '@ant-design/icons';
 function UserLayout() {
   const navigate = useNavigate()
@@ -40,6 +41,7 @@ function UserLayout() {
       </main>
       <Footer />
       <FloatButton.BackTop icon={<ArrowUpOutlined />} />
+      <ChatBot />
     </div>
   )
 }

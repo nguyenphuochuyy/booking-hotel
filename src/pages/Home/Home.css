@@ -179,13 +179,14 @@
 .about-banner-container {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .about-banner-images {
-  display: flex;
+  /* display: flex;
   flex-direction: row;
   gap: 20px;
-  width: 100%;
+  width: 100%; */
 }
 
 .about-banner-item {
@@ -196,6 +197,7 @@
 .about-banner-image {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
   border-radius: 20px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -451,7 +453,7 @@
   .banner-overlay {
     padding: 70px 0 50px 0;
   }
-
+  
   .banner-title {
     font-size: 84px !important;
     letter-spacing: 10px !important;
@@ -466,7 +468,8 @@
   }
 
   .about-main-title {
-    font-size: 48px !important;
+    text-wrap: nowrap;
+    font-size: 40px !important;
   }
 
   .about-subtitle {
@@ -475,6 +478,7 @@
 
   .about-description {
     font-size: 17px !important;
+    text-align: justify;
   }
 
   .about-banner-image {

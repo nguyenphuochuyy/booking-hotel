@@ -7,13 +7,16 @@ import { GlobalOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useRoomTypes } from "../../hooks/roomtype"
 import banner1 from '../../assets/images/main-banner.png'
-import aboutBanner from "../../assets/images/aboutBanner.jpg"
+import aboutBanner from "../../assets/images/banner/banner1.jpg"
 import luxuryRoom from "../../assets/images/luxyryRoom.jpg"
 import dishes from "../../assets/images/dishes.jpg"
 import spaImage from "../../assets/images/pin.jpg"
 import RoomList from '../../components/RoomList/RoomList'
 import HomeNews from '../../components/HomeNews'
 import BookingWidget from '../../components/BookingWidget'
+import WhyChooseUs from '../../components/WhyChooseUs'
+import Testimonials from '../../components/Testimonials/Testimonials'
+import Moments from '../../components/Moments/Moments'
 
 function Home() {
   const screens = useBreakpoint()
@@ -31,9 +34,7 @@ function Home() {
         <div className="banner-image-container">
           <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">
-            {/* <Typography.Title className="banner-title">
-              BEAN HOTEL
-            </Typography.Title> */}
+        
           </div>
         </div>
         
@@ -73,7 +74,7 @@ function Home() {
                     Thư Giãn & Sang Trọng
                   </Typography.Title>
                   <Typography.Paragraph className="about-description">
-                    Chào mừng bạn đến với dịch vụ 5 sao sang trọng tại La Vela Sài Gòn. 
+                    Chào mừng bạn đến với dịch vụ 5 sao sang trọng tại Bean Hotel. 
                     Thiết kế hiện đại kết hợp cùng phong cách cổ điển sẽ mang lại trải nghiệm 
                     tuyệt vời cho những ai có niềm đam mê du lịch. Tạo ra một phong cách sống 
                     hoàn toàn mới với dịch vụ của chúng tôi: từ phòng nghỉ tiện nghi đến bữa 
@@ -155,7 +156,7 @@ function Home() {
                     Một Kỳ Nghỉ Thú Vị
                   </Typography.Title>
                   <Typography.Paragraph className="luxury-card-description">
-                    La Vela Saigon - khách sạn với thiết kế mang tính biểu tượng cùng 280 phòng bao gồm 
+                    Bean Hotel - khách sạn với thiết kế mang tính biểu tượng cùng 70 phòng bao gồm 
                     phòng tiêu chuẩn, phòng suite, phòng tổng thống. Màu sắc nhẹ nhàng, nội thất sang trọng 
                     trong mỗi phòng tạo nên một không gian thư giãn tuyệt vời cho du khách sau một ngày khám phá 
                     thành phố cùng nhịp sống sôi động nơi đây.
@@ -265,8 +266,23 @@ function Home() {
         {/* <div className='features'>
           <RoomList />
         </div> */}
-        
-        <HomeNews />
+       {/* Section khoảng khắc thú vị với chúng tôi */}
+        {/* Tại sao chọn chúng tôi */}
+        {/* <HomeNews /> */}
+      </div>
+
+      <div className='container'>
+
+        <WhyChooseUs />
+      </div>
+
+
+      {/* <div className='container'>
+        <Testimonials />
+      </div> */}
+
+      <div className='container'>
+      <Moments />
       </div>
     </>
 

@@ -68,7 +68,7 @@ function Navigation() {
                 aria-haspopup="true"
                 aria-expanded={isUserMenuOpen}
               >
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
               </button>
               {isUserMenuOpen && (
                 <div className="user-dropdown">
