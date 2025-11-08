@@ -37,6 +37,7 @@ import ServiceManagement from '../pages/Admin/Service'
 import ReviewManagement from '../pages/Admin/Review'
 import BookingConfirmation from '../pages/BookingConfirmation'
 import Payment from '../pages/Payment'
+import PaymentSuccess from '../pages/PaymentSuccess/PaymentSuccess'
 import BookingSuccess from '../pages/BookingSuccess'
 import BookingManagement from '../pages/Admin/Booking'
 import GalleryPage from '../pages/Gallery'
@@ -73,6 +74,7 @@ function AppRoutes() {
         <Route path="/rooms/:id" element={<RoomDetail />} />
         <Route path="/booking-confirmation" element={<BookingConfirmation />} />
         <Route path="/payment" element={<Payment />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/booking-success" element={<BookingSuccess />} />
         <Route path="/about" element={<About />} />
         {/* <Route path="/booking" element={<Booking />} /> */}

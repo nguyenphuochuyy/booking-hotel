@@ -13,6 +13,7 @@ import './Payment.css'
 import QRCode from 'antd/es/qr-code'
 const { Title, Text } = Typography
 import { calculateNights, checkPaymentStatus, formatDate } from '../../services/booking.service'
+import { savePendingPayment, getPendingPayment, clearPendingPayment, getRemainingTime } from '../../utils/pendingPayment.util'
 const Payment = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -21,8 +22,7 @@ const Payment = () => {
   
   // Ưu tiên dữ liệu từ location.state, nếu không có thì lấy từ localStorage
   const stateData = location.state
-  const stored = typeof window !== 'undefined' ? localStorage.getItem('pendingPayment') : null
-  const storedData = stored ? (() => { try { return JSON.parse(stored) } catch { return null } })() : null
+  const storedData = getPendingPayment()
   const bookingData = stateData || storedData
   
   useEffect(() => {
@@ -30,21 +30,11 @@ const Payment = () => {
     
     if (bookingData) {
       // Lưu thông tin thanh toán vào localStorage để khôi phục khi quay lại site
-      try {
-        localStorage.setItem('pendingPayment', JSON.stringify(bookingData))
-      } catch {}
-      // Thiết lập hạn QR 30 phút nếu chưa có
-      try {
-        const raw = localStorage.getItem('pendingPaymentExpiry')
-        let expiry = raw ? Number(raw) : NaN
-        const now = Date.now()
-        if (!expiry || Number.isNaN(expiry) || expiry < now) {
-          expiry = now + 30 * 60 * 1000 // 30 phút
-          localStorage.setItem('pendingPaymentExpiry', String(expiry))
-        }
-        const initialRemain = Math.max(Math.floor((expiry - now) / 1000), 0)
-        setRemainingSeconds(initialRemain)
-      } catch {}
+      savePendingPayment(bookingData, 30) // 30 phút
+      
+      // Thiết lập thời gian còn lại
+      const initialRemain = getRemainingTime()
+      setRemainingSeconds(initialRemain)
     } else {
       message.error('Thông tin thanh toán không hợp lệ')
       navigate('/')
@@ -82,7 +72,7 @@ const Payment = () => {
       const data = res?.data || res
       if (data?.status === 'success' || data?.statusCode === 200) {
         message.success('Thanh toán thành công!')
-        try { localStorage.removeItem('pendingPayment') } catch {}
+        clearPendingPayment()
         setTimeout(() => {
           navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo, selectedServices: selectedServices , roomNum: bookingInfo.numRooms } })
         }, 1000)
@@ -94,23 +84,6 @@ const Payment = () => {
     }
   }
 
-  // Polling để kiểm tra trạng thái thanh toán
-  useEffect(() => {
-    // Đếm ngược mỗi giây cho hạn QR 30 phút
-    const timer = setInterval(() => {
-      try {
-        const raw = localStorage.getItem('pendingPaymentExpiry')
-        const expiry = raw ? Number(raw) : 0
-        const now = Date.now()
-        const remain = Math.max(Math.floor((expiry - now) / 1000), 0)
-        setRemainingSeconds(remain)
-        if (remain <= 0) {
-          setPaymentStatus(prev => (prev === 'pending' ? 'expired' : prev))
-        }
-      } catch {}
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
 
 
   return (
@@ -150,20 +123,6 @@ const Payment = () => {
                     </Text>
                   </div>
                 )}
-
-                {/* Đồng hồ đếm ngược 30 phút */}
-                {/* <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                  <Text type={paymentStatus === 'expired' ? 'danger' : 'secondary'} style={{ fontSize: '14px' }}>
-                    {(() => {
-                      const m = Math.floor(remainingSeconds / 60)
-                      const s = remainingSeconds % 60
-                      const mm = String(m).padStart(2, '0')
-                      const ss = String(s).padStart(2, '0')
-                      return paymentStatus === 'expired' ? '00:00' : `${mm}:${ss}`
-                    })()}
-                  </Text>
-                </div> */}
-
                 {/* Status Indicator */}
                 <div className="payment-status" style={{ marginTop: '24px' }}>
                   {paymentStatus === 'pending' && (

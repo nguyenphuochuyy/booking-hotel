@@ -1,0 +1,65 @@
+.payment-success-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 40px 0;
+}
+
+.payment-success-page .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.payment-status-header {
+  background: #fff;
+  border-radius: 8px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.booking-info-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.booking-info-content {
+  padding: 8px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.info-row:first-child {
+  padding-top: 0;
+}
+
+.info-row:last-child {
+  padding-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payment-success-page {
+    padding: 20px 0;
+  }
+
+  .payment-status-header {
+    padding: 20px;
+  }
+
+  .payment-success-page .container {
+    max-width: 100%;
+  }
+
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+

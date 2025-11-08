@@ -44,10 +44,9 @@ let AMENITIES_OPTIONS = getAmenitiesFromLocal()
 
 // Danh sách danh mục loại phòng
 const CATEGORY_OPTIONS = [
-  { label: 'Đơn thường', value: 'don-thuong' },
-  { label: 'Đơn VIP', value: 'don-vip' },
-  { label: 'Đôi thường', value: 'doi-thuong' },
-  { label: 'Đôi VIP', value: 'doi-vip' },
+  { label: 'Đơn', value: 'don' },
+  { label: 'Đôi', value: 'doi' },
+  { label: 'Vip', value: 'vip' },
   { label: 'Gia đình', value: 'gia-dinh' },
   { label: 'Suite', value: 'suite' },
   { label: 'Presidential', value: 'presidential' }
@@ -73,6 +72,7 @@ function RoomTypes() {
   const [isManageAmenitiesModalVisible, setIsManageAmenitiesModalVisible] = useState(false)
   const [newAmenity, setNewAmenity] = useState('')
   const [amenitiesList, setAmenitiesList] = useState(() => getAmenitiesFromLocal())
+  const [originalValues, setOriginalValues] = useState(null) // Lưu giá trị ban đầu khi edit
 
   // Chuẩn hóa danh sách ảnh từ API về dạng mảng URL
   const normalizeImages = (images) => {
@@ -395,7 +395,7 @@ function RoomTypes() {
 
   const handleEdit = (record) => {
     setEditingRoomType(record)
-    form.setFieldsValue({
+    const formValues = {
       room_type_name: record.room_type_name,
       category: record.category,
       capacity: record.capacity,
@@ -403,6 +403,13 @@ function RoomTypes() {
       amenities: Array.isArray(record.amenities) ? record.amenities : [],
       area: record.area,
       quantity: record.quantity,
+    }
+    form.setFieldsValue(formValues)
+
+    // Lưu giá trị ban đầu để so sánh khi submit
+    setOriginalValues({
+      ...formValues,
+      images: normalizeImages(record.images)
     })
 
     // Set existing images to fileList for preview
@@ -490,6 +497,7 @@ function RoomTypes() {
 
   const handleAddNew = () => {
     setEditingRoomType(null)
+    setOriginalValues(null)
     form.resetFields()
     setFileList([])
     setIsModalVisible(true)
@@ -555,132 +563,165 @@ function RoomTypes() {
         return
       }
 
-      // Tạo FormData để upload images
+      // Tạo FormData
       const formData = new FormData()
-      formData.append('room_type_name', values.room_type_name)
-      formData.append('category', values.category || '')
-      formData.append('capacity', values.capacity || 0)
-      formData.append('description', values.description || '')
-      formData.append('area', values.area || 0)
-      formData.append('quantity', values.quantity || 0)
 
-      // Xử lý amenities
-      if (values.amenities && values.amenities.length > 0) {
-        formData.append('amenities', JSON.stringify(values.amenities))
+      if (editingRoomType && originalValues) {
+        // Khi sửa: Chỉ gửi các trường đã thay đổi
+        if (values.room_type_name !== originalValues.room_type_name) {
+          formData.append('room_type_name', values.room_type_name)
+        }
+        if (values.category !== originalValues.category) {
+          formData.append('category', values.category || '')
+        }
+        if (values.capacity !== originalValues.capacity) {
+          formData.append('capacity', values.capacity || 0)
+        }
+        if (values.description !== originalValues.description) {
+          formData.append('description', values.description || '')
+        }
+        if (values.area !== originalValues.area) {
+          formData.append('area', values.area || 0)
+        }
+        if (values.quantity !== originalValues.quantity) {
+          formData.append('quantity', values.quantity || 0)
+        }
+
+        // So sánh amenities (so sánh mảng)
+        const currentAmenities = Array.isArray(values.amenities) ? values.amenities.sort().join(',') : ''
+        const originalAmenities = Array.isArray(originalValues.amenities) ? originalValues.amenities.sort().join(',') : ''
+        if (currentAmenities !== originalAmenities) {
+          if (values.amenities && values.amenities.length > 0) {
+            formData.append('amenities', JSON.stringify(values.amenities))
+          } else {
+            formData.append('amenities', JSON.stringify([]))
+          }
+        }
+
+        // Xử lý ảnh: Chỉ gửi ảnh nếu có ảnh mới được thêm vào
+        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
+        const existingImages = fileList.filter(file => file.url && !file.originFileObj)
+        const originalImageUrls = originalValues.images || []
+        const currentImageUrls = existingImages.map(f => f.url).sort()
+        const originalImageUrlsSorted = [...originalImageUrls].sort()
+
+        // Kiểm tra xem có ảnh mới hoặc ảnh bị xóa không
+        const hasNewImages = newFiles.length > 0
+        const hasImagesRemoved = currentImageUrls.length !== originalImageUrlsSorted.length || 
+          currentImageUrls.some((url, idx) => url !== originalImageUrlsSorted[idx])
+
+        if (hasNewImages || hasImagesRemoved) {
+          // Có thay đổi về ảnh: Gộp ảnh cũ còn lại và ảnh mới
+          setLoading(true)
+
+          if (existingImages.length > 0) {
+            message.loading({ 
+              content: `Đang tải ${existingImages.length} ảnh cũ...`, 
+              key: 'downloadingImages', 
+              duration: 0 
+            })
+
+            const existingFiles = await Promise.all(
+              existingImages.map(async (file, index) => {
+                try {
+                  const fileName = file.name || `existing-image-${index + 1}.jpg`
+                  return await urlToFile(file.url, fileName)
+                } catch (error) {
+                  console.error(`Error downloading image ${file.url}:`, error)
+                  return null
+                }
+              })
+            )
+
+            const validExistingFileObjects = existingFiles.filter(file => file !== null)
+            message.destroy('downloadingImages')
+
+            const allFilesToUpload = [...validExistingFileObjects, ...newFiles.map(f => f.originFileObj)]
+            
+            if (allFilesToUpload.length === 0) {
+              message.warning('Vui lòng giữ lại ít nhất 1 ảnh hoặc thêm ảnh mới!')
+              setLoading(false)
+              return
+            }
+
+            allFilesToUpload.forEach((file) => {
+              if (file instanceof File) {
+                formData.append('images', file)
+              }
+            })
+          } else {
+            // Không có ảnh cũ, chỉ có ảnh mới
+            if (newFiles.length === 0) {
+              message.warning('Vui lòng giữ lại ít nhất 1 ảnh hoặc thêm ảnh mới!')
+              setLoading(false)
+              return
+            }
+            newFiles.forEach((file) => {
+              if (file.originFileObj instanceof File) {
+                formData.append('images', file.originFileObj)
+              }
+            })
+          }
+        }
+        // Nếu không có thay đổi về ảnh, không gửi trường images
+      } else {
+        // Khi tạo mới: Gửi tất cả các trường
+        formData.append('room_type_name', values.room_type_name)
+        formData.append('category', values.category || '')
+        formData.append('capacity', values.capacity || 0)
+        formData.append('description', values.description || '')
+        formData.append('area', values.area || 0)
+        formData.append('quantity', values.quantity || 0)
+
+        if (values.amenities && values.amenities.length > 0) {
+          formData.append('amenities', JSON.stringify(values.amenities))
+        }
+
+        // Xử lý ảnh cho trường hợp tạo mới
+        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
+        if (newFiles.length === 0) {
+          message.warning('Vui lòng tải lên ít nhất 1 ảnh!')
+          return
+        }
+        newFiles.forEach((file) => {
+          if (file.originFileObj instanceof File) {
+            formData.append('images', file.originFileObj)
+          }
+        })
       }
 
       setLoading(true)
 
-      // Xử lý ảnh: Gộp ảnh cũ và ảnh mới
-      let allFilesToUpload = []
-
-      if (editingRoomType) {
-        // Khi edit: Lấy ảnh cũ (có url nhưng không có originFileObj) và ảnh mới
-        // Chỉ lấy những ảnh còn lại trong fileList (chưa bị xóa)
-        const existingImages = fileList.filter(file => file.url && !file.originFileObj)
-        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
-
-        // Download ảnh cũ về File objects (chỉ những ảnh còn lại trong fileList)
-        if (existingImages.length > 0) {
-          message.loading({ 
-            content: `Đang tải ${existingImages.length} ảnh cũ...`, 
-            key: 'downloadingImages', 
-            duration: 0 
-          })
-
-          const existingFiles = await Promise.all(
-            existingImages.map(async (file, index) => {
-              try {
-                const fileName = file.name || `existing-image-${index + 1}.jpg`
-                return await urlToFile(file.url, fileName)
-              } catch (error) {
-                console.error(`Error downloading image ${file.url}:`, error)
-                // Trả về null nếu không tải được
-                return null
-              }
-            })
-          )
-
-          // Lọc bỏ các file null (lỗi khi download)
-          const validExistingFileObjects = existingFiles.filter(file => file !== null)
-          
-          message.destroy('downloadingImages')
-
-          // Gộp ảnh cũ và ảnh mới
-          allFilesToUpload = [...validExistingFileObjects, ...newFiles.map(f => f.originFileObj)]
-          
-          // Chỉ cảnh báo nếu có ảnh cũ bị lỗi và vẫn còn ảnh mới hoặc ảnh cũ khác
-          if (validExistingFileObjects.length < existingImages.length && allFilesToUpload.length > 0) {
-            const failedCount = existingImages.length - validExistingFileObjects.length
-            message.warning({
-              content: `${failedCount} ảnh cũ không thể tải (có thể do CORS). ${allFilesToUpload.length} ảnh sẽ được lưu.`,
-              duration: 4
-            })
-          }
-        } else {
-          // Không có ảnh cũ trong fileList (đã bị xóa hết hoặc không có từ đầu)
-          // Chỉ upload ảnh mới
-          allFilesToUpload = newFiles.map(f => f.originFileObj)
-          
-          // Validate: nếu không có ảnh nào (cả cũ và mới) thì báo lỗi
-          if (allFilesToUpload.length === 0) {
-            message.warning('Vui lòng giữ lại ít nhất 1 ảnh hoặc thêm ảnh mới!')
-            setLoading(false)
-            return
-          }
-        }
-      } else {
-        // Khi tạo mới: Chỉ có ảnh mới
-        const newFiles = fileList.filter(file => file.originFileObj && file.originFileObj instanceof File)
-        allFilesToUpload = newFiles.map(f => f.originFileObj)
-      }
-
-      // Validate cuối cùng: phải có ít nhất 1 ảnh để upload
-      if (allFilesToUpload.length === 0) {
-        message.warning('Vui lòng tải lên ít nhất 1 ảnh!')
-        setLoading(false)
-        return
-      }
-
-      // Thêm tất cả ảnh vào FormData
-      allFilesToUpload.forEach((file) => {
-        if (file instanceof File) {
-          formData.append('images', file)
-        }
-      })
-
-      // Log để debug
-      console.log('Uploading room type:', {
-        totalFiles: allFilesToUpload.length,
-        existingImages: editingRoomType ? fileList.filter(f => f.url && !f.originFileObj).length : 0,
-        newImages: fileList.filter(f => f.originFileObj).length,
-        editing: !!editingRoomType
-      })
-
       if (editingRoomType) {
         await updateRoomType(editingRoomType.room_type_id, formData)
         const newImagesCount = fileList.filter(f => f.originFileObj).length
-        const existingImagesCount = fileList.filter(f => f.url && !f.originFileObj).length
-        const totalImages = allFilesToUpload.length
+        const hasImageChanges = formData.has('images')
         
-        let successMsg = `Cập nhật loại phòng thành công! (${totalImages} ảnh`
-        if (existingImagesCount > 0 && newImagesCount > 0) {
-          successMsg += `: ${existingImagesCount} ảnh cũ, ${newImagesCount} ảnh mới`
-        } else if (existingImagesCount > 0) {
-          successMsg += `: ${existingImagesCount} ảnh cũ`
-        } else if (newImagesCount > 0) {
-          successMsg += `: ${newImagesCount} ảnh mới`
+        let successMsg = 'Cập nhật loại phòng thành công!'
+        if (hasImageChanges) {
+          const existingImagesCount = fileList.filter(f => f.url && !f.originFileObj).length
+          const totalImages = existingImagesCount + newImagesCount
+          successMsg += ` (${totalImages} ảnh`
+          if (existingImagesCount > 0 && newImagesCount > 0) {
+            successMsg += `: ${existingImagesCount} ảnh cũ, ${newImagesCount} ảnh mới`
+          } else if (existingImagesCount > 0) {
+            successMsg += `: ${existingImagesCount} ảnh cũ`
+          } else if (newImagesCount > 0) {
+            successMsg += `: ${newImagesCount} ảnh mới`
+          }
+          successMsg += ')'
         }
-        successMsg += ')'
         
         message.success(successMsg)
       } else {
+        const imageCount = fileList.filter(f => f.originFileObj).length
         await createRoomType(formData)
-        message.success(`Tạo loại phòng thành công (${allFilesToUpload.length} ảnh)`)
+        message.success(`Tạo loại phòng thành công (${imageCount} ảnh)`)
       }
 
       setIsModalVisible(false)
       setEditingRoomType(null)
+      setOriginalValues(null)
       setFileList([])
       form.resetFields()
       fetchRoomTypes() // Reload danh sách
@@ -700,6 +741,7 @@ function RoomTypes() {
   const handleModalCancel = () => {
     setIsModalVisible(false)
     setEditingRoomType(null)
+    setOriginalValues(null)
     setFileList([])
     form.resetFields()
   }
