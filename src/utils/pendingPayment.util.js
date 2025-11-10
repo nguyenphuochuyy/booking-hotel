@@ -14,7 +14,7 @@ const PENDING_PAYMENT_EXPIRY_KEY = 'pendingPaymentExpiry'
 export const savePendingPayment = (paymentData, expiryMinutes = 30) => {
   try {
     if (!paymentData) {
-      console.error('Payment data is required')
+      console.error('Dữ liệu thanh toán không hợp lệ')
       return false
     }
 

@@ -154,7 +154,7 @@ const Payment = () => {
                 </div>
 
                 {/* Test Button (Remove in production) */}
-                {paymentStatus === 'pending' && (
+                {/* {paymentStatus === 'pending' && (
                   <div style={{ marginTop: '16px' }}>
                     <Button 
                       type="dashed" 
@@ -165,7 +165,7 @@ const Payment = () => {
                       Test: Đã thanh toán
                     </Button>
                   </div>
-                )}
+                )} */}
 
                 {/* Security Info */}
                 <div className="security-info" style={{ marginTop: '24px' }}>

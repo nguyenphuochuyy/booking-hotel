@@ -9,6 +9,7 @@ import formatPrice from '../../utils/formatPrice'
 import { UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { createTempBooking, createPaymentLink, addServicesToTempBooking, calculateNights, formatDate, validatePromotionCode } from '../../services/booking.service'
 import { getAllServices } from '../../services/admin.service'
+import { savePendingPayment } from '../../utils/pendingPayment.util'
 import './BookingConfirmation.css'
 import { useAuth } from '../../context/AuthContext'
 
@@ -119,25 +120,35 @@ const BookingConfirmation = () => {
         temp_booking_key: tempBookingKey,
         promotion_code: promoCode || null
       })
-      console.log(paymentResponse);
-      // 4. Chuyển sang trang payment
-      navigate('/payment', {
-        state: {
-          tempBookingKey,
-          paymentUrl: paymentResponse.payment_url,
-          qrCode: paymentResponse.qr_code,
-          orderCode: paymentResponse.order_code,
-          bookingCode: paymentResponse.booking_code,
-          amount: paymentResponse.amount,
-          selectedServices,
-          bookingInfo: {
-            ...bookingInfo,
-            numRooms: bookingInfo.numRooms,
-            customerInfo: values,
-            promoCode: promoCode || null
-          }
+      
+      // 4. Lưu thông tin thanh toán vào localStorage
+      const paymentData = {
+        tempBookingKey,
+        paymentUrl: paymentResponse.payment_url,
+        qrCode: paymentResponse.qr_code,
+        orderCode: paymentResponse.order_code,
+        bookingCode: paymentResponse.booking_code,
+        amount: paymentResponse.amount,
+        selectedServices,
+        bookingInfo: {
+          ...bookingInfo,
+          numRooms: bookingInfo.numRooms,
+          customerInfo: values,
+          promoCode: promoCode || null
         }
-      })
+      }
+      savePendingPayment(paymentData, 30) // Lưu 30 phút
+      
+      // 5. Mở URL thanh toán trực tiếp cho khách hàng
+      if (paymentResponse.payment_url) {
+        message.success('Đang chuyển đến trang thanh toán...')
+        // Mở trong tab mới để khách hàng có thể quay lại sau khi thanh toán
+        window.open(paymentResponse.payment_url, '_blank')
+        // Hoặc redirect trực tiếp (bỏ comment dòng dưới nếu muốn redirect thay vì mở tab mới)
+        // window.location.href = paymentResponse.payment_url
+      } else {
+        message.error('Không thể tạo link thanh toán')
+      }
 
     } catch (error) {
       console.error('có lỗi xảy ra khi tạo đặt phòng:', error)
