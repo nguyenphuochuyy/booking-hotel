@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import Home from '../pages/Home'
@@ -45,7 +45,22 @@ import Reports from '../pages/Admin/Reports/Reports'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
-  const isAdmin = user?.role === 'admin'
+  
+  // Sử dụng user từ context hoặc localStorage (tránh race condition khi login)
+  const currentUser = useMemo(() => {
+    if (user) return user
+    try {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        return JSON.parse(storedUser)
+      }
+    } catch (e) {
+      return null
+    }
+    return null
+  }, [user])
+  
+  const isAdmin = currentUser?.role === 'admin'
 
   const AdminRoute = ({ children }) => {
     // Nếu đang loading, hiển thị loading indicator
@@ -53,8 +68,11 @@ function AppRoutes() {
       return <Loading message="Đang xác thực quyền truy cập..." />
     }
 
-    // Nếu chưa đăng nhập, chuyển về trang đăng nhập
-    if (!user) {
+    // Kiểm tra token trong localStorage
+    const token = localStorage.getItem('accessToken')
+    
+    // Nếu không có token hoặc user, chuyển về trang đăng nhập
+    if (!token || !currentUser) {
       return <Navigate to="/login" replace />
     }
     

@@ -159,30 +159,81 @@ function UserBookingHistory() {
     return d
   }
 
-  // Tính chính sách hoàn tiền dựa trên mốc 48h trước check-in
-  const computeRefundInfo = (checkInDate, totalAmount) => {
+  // Tính chính sách hoàn tiền dựa trên các mốc thời gian (48h và 12h)
+  const computeRefundInfo = (checkInDate, totalAmount, bookingDate) => {
     if (!checkInDate || typeof totalAmount !== 'number') return null
     const checkIn = getCheckInDateTime(checkInDate)
     if (!checkIn) return null
+    
     const now = new Date()
-    const diffMs = checkIn.getTime() - now.getTime()
-    const fortyEightHoursMs = 48 * 60 * 60 * 1000
-    const eligible = diffMs >= fortyEightHoursMs
-    if (eligible) {
+    const checkInTime = checkIn.getTime()
+    const nowTime = now.getTime()
+    
+    // Tính thời gian từ bây giờ đến check-in (giờ)
+    const hoursUntilCheckIn = Math.floor((checkInTime - nowTime) / (1000 * 60 * 60))
+    
+    // Tính thời gian từ lúc đặt đến bây giờ (giờ)
+    let hoursSinceBooking = null
+    if (bookingDate) {
+      const bookingTime = new Date(bookingDate).getTime()
+      hoursSinceBooking = Math.floor((nowTime - bookingTime) / (1000 * 60 * 60))
+    }
+    
+    // Mốc 1: Nếu < 48h trước check-in: mất 100% (hoàn 0%)
+    if (hoursUntilCheckIn < 48) {
+      return {
+        eligible: false,
+        refundable: 0,
+        nonRefundable: totalAmount,
+        hoursUntilCheckIn,
+        hoursSinceBooking,
+        policy: 'Hủy trong vòng 48 giờ trước giờ check-in - mất 100%',
+        message: `Không thể hoàn tiền do hủy trong vòng 48 giờ trước giờ check-in (còn ${hoursUntilCheckIn} giờ). Tổng tiền không hoàn: ${formatCurrency(totalAmount)}.`
+      }
+    }
+    
+    // Mốc 2: Nếu ≥ 48h trước check-in, xét thời gian từ lúc đặt
+    if (hoursSinceBooking !== null) {
+      // Nếu hủy ≤ 12h từ lúc đặt: hoàn 85%, phí 15%
+      if (hoursSinceBooking <= 12) {
+        const refundable = Math.round(totalAmount * 0.85)
+        const nonRefundable = totalAmount - refundable
+        return {
+          eligible: true,
+          refundable,
+          nonRefundable,
+          hoursUntilCheckIn,
+          hoursSinceBooking,
+          policy: 'Hủy trước 48 giờ và trong vòng 12 giờ từ lúc đặt - hoàn 85%, phí 15%',
+          message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (85%). Khách sạn giữ ${formatCurrency(nonRefundable)} (15%).`
+        }
+      }
+      
+      // Nếu hủy > 12h từ lúc đặt: hoàn 70%, phí 30%
       const refundable = Math.round(totalAmount * 0.7)
       const nonRefundable = totalAmount - refundable
       return {
-        eligible,
+        eligible: true,
         refundable,
         nonRefundable,
+        hoursUntilCheckIn,
+        hoursSinceBooking,
+        policy: 'Hủy trước 48 giờ và sau 12 giờ từ lúc đặt - hoàn 70%, phí 30%',
         message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (70%). Khách sạn giữ ${formatCurrency(nonRefundable)} (30%).`
       }
     }
+    
+    // Nếu không có bookingDate, mặc định hoàn 70% (trường hợp cũ)
+    const refundable = Math.round(totalAmount * 0.7)
+    const nonRefundable = totalAmount - refundable
     return {
-      eligible,
-      refundable: 0,
-      nonRefundable: totalAmount,
-      message: `Không thể hoàn tiền do hủy trong vòng 48 giờ trước giờ check-in. Tổng tiền không hoàn: ${formatCurrency(totalAmount)}.`
+      eligible: true,
+      refundable,
+      nonRefundable,
+      hoursUntilCheckIn,
+      hoursSinceBooking: null,
+      policy: 'Hủy trước 48 giờ - hoàn 70%, phí 30%',
+      message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (70%). Khách sạn giữ ${formatCurrency(nonRefundable)} (30%).`
     }
   }
 
@@ -640,6 +691,81 @@ function UserBookingHistory() {
                 </Col>
               </Row>
 
+              {/* Hiển thị thông tin hoàn tiền nếu booking chưa hủy và đã thanh toán */}
+              {detailModal.data && 
+               detailModal.data.status !== 'cancelled' && 
+               detailModal.data.paymentStatus === 'paid' && (
+                <>
+                  <Divider />
+                  <Card size="small" title="Chính sách hủy phòng và hoàn tiền" bordered>
+                    {(() => {
+                      const refundInfo = computeRefundInfo(
+                        detailModal.data.checkInDate, 
+                        detailModal.data.totalAmount,
+                        detailModal.data.bookingDate
+                      )
+                      if (!refundInfo) return <Text type="secondary">Không thể tính toán chính sách hoàn tiền</Text>
+                      
+                      return (
+                        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                          <div>
+                            <Text strong>Thời gian đến check-in: </Text>
+                            <Text>{refundInfo.hoursUntilCheckIn !== null ? `${refundInfo.hoursUntilCheckIn} giờ` : 'N/A'}</Text>
+                          </div>
+                          {refundInfo.hoursSinceBooking !== null && (
+                            <div>
+                              <Text strong>Thời gian từ lúc đặt: </Text>
+                              <Text>{refundInfo.hoursSinceBooking} giờ</Text>
+                            </div>
+                          )}
+                          <Divider style={{ margin: '8px 0' }} />
+                          <div>
+                            <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                              Chính sách áp dụng:
+                            </Text>
+                            <Text type={refundInfo.eligible ? 'success' : 'danger'}>
+                              {refundInfo.policy}
+                            </Text>
+                          </div>
+                          <div>
+                            <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                              Số tiền được hoàn:
+                            </Text>
+                            <Text 
+                              strong 
+                              style={{ 
+                                fontSize: 16, 
+                                color: refundInfo.eligible ? '#52c41a' : '#ff4d4f' 
+                              }}
+                            >
+                              {formatCurrency(refundInfo.refundable)}
+                            </Text>
+                            {refundInfo.eligible && (
+                              <Text type="secondary" style={{ marginLeft: 8 }}>
+                                ({Math.round((refundInfo.refundable / detailModal.data.totalAmount) * 100)}%)
+                              </Text>
+                            )}
+                          </div>
+                          {refundInfo.eligible && (
+                            <div>
+                              <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                                Phí hủy:
+                              </Text>
+                              <Text type="secondary">
+                                {formatCurrency(refundInfo.nonRefundable)}
+                                <Text type="secondary" style={{ marginLeft: 8 }}>
+                                  ({Math.round((refundInfo.nonRefundable / detailModal.data.totalAmount) * 100)}%)
+                                </Text>
+                              </Text>
+                            </div>
+                          )}
+                        </Space>
+                      )
+                    })()}
+                  </Card>
+                </>
+              )}
+
               <Divider />
 
               <Row gutter={[16, 16]}>
@@ -766,13 +892,30 @@ function UserBookingHistory() {
             {cancelModal.checkInDate !== undefined && cancelModal.totalAmount !== undefined && (
               <div style={{ marginTop: 12 }}>
                 {(() => {
-                  const info = computeRefundInfo(cancelModal.checkInDate, cancelModal.totalAmount)
+                  // Lấy bookingDate từ booking data
+                  const booking = bookings.find(b => b.bookingId === cancelModal.bookingId)
+                  const bookingDate = booking?.bookingDate || null
+                  const info = computeRefundInfo(cancelModal.checkInDate, cancelModal.totalAmount, bookingDate)
                   if (!info) return null
                   const checkInStr = formatDateWithTime(cancelModal.checkInDate, 14, 0)
                   return (
                     <Card size="small" bordered>
-                      <Space direction="vertical" size={4}>
+                      <Space direction="vertical" size={8} style={{ width: '100%' }}>
                         <Text><strong>Giờ check-in:</strong> {checkInStr}</Text>
+                        {info.hoursUntilCheckIn !== null && (
+                          <Text type="secondary">
+                            Còn {info.hoursUntilCheckIn} giờ đến giờ check-in
+                          </Text>
+                        )}
+                        {info.hoursSinceBooking !== null && (
+                          <Text type="secondary">
+                            Đã đặt {info.hoursSinceBooking} giờ trước
+                          </Text>
+                        )}
+                        <Divider style={{ margin: '8px 0' }} />
+                        <Text strong style={{ color: info.eligible ? '#52c41a' : '#ff4d4f' }}>
+                          {info.policy}
+                        </Text>
                         <Text type={info.eligible ? 'success' : 'danger'}>{info.message}</Text>
                       </Space>
                     </Card>

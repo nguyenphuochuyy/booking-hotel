@@ -24,7 +24,6 @@ import {
 } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePosts, useCategories } from '../../hooks/posts'
-import { mockNewsData, mockNewsCategories } from '../../data/mockNews'
 import './News.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -41,57 +40,14 @@ function News() {
   const initialSearch = searchParams.get('search') || ''
   const initialCategory = searchParams.get('category') || 'all'
   
-  const { posts: apiPosts, loading, error, pagination: apiPagination, search, category, searchPosts, filterByCategory, goToPage } = usePosts({
+  const { posts, loading, error, pagination, search, category, searchPosts, filterByCategory, goToPage } = usePosts({
     search: initialSearch,
     category: initialCategory,
     status: 'published'
   })
   
-  const { categories: apiCategories } = useCategories()
+  const { categories } = useCategories()
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
-  
-  // Use mock data if API fails or returns empty - with safe access
-  const posts = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) ? apiPosts : mockNewsData
-  const categories = (apiCategories && Array.isArray(apiCategories) && apiCategories.length > 0) ? apiCategories : mockNewsCategories
-  
-  // Adjust pagination for mock data - with safe access
-  const pagination = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0 && apiPagination)
-    ? {
-        current: apiPagination.current || 1,
-        pageSize: apiPagination.pageSize || 10,
-        total: apiPagination.total || 0
-      }
-    : {
-        current: 1,
-        pageSize: 10,
-        total: mockNewsData.length
-      }
-  
-  // For mock data, filter locally
-  const filteredMockPosts = useMemo(() => {
-    if (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) return posts
-    
-    let filtered = [...mockNewsData]
-    
-    // Filter by search
-    if (search) {
-      const searchLower = search.toLowerCase()
-      filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(searchLower) ||
-        (post.content && post.content.toLowerCase().includes(searchLower))
-      )
-    }
-    
-    // Filter by category
-    if (category !== 'all') {
-      const categoryId = typeof category === 'string' ? parseInt(category) : category
-      filtered = filtered.filter(post => post.category_id === categoryId)
-    }
-    
-    return filtered
-  }, [apiPosts, posts, search, category])
-  
-  const displayPosts = (apiPosts && Array.isArray(apiPosts) && apiPosts.length > 0) ? posts : filteredMockPosts
 
   // Update URL when filters change
   useEffect(() => {
@@ -250,7 +206,7 @@ function News() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && displayPosts.length === 0 && (
+        {!loading && !error && posts.length === 0 && (
           <div className="news-empty">
             <Empty 
               description="Không tìm thấy tin tức nào"
@@ -272,13 +228,13 @@ function News() {
         )}
 
         {/* News Grid */}
-        {!loading && !error && displayPosts.length > 0 && (
+        {!loading && !error && posts.length > 0 && (
           <>
             <Row 
               gutter={screens.xs ? [16, 24] : screens.md ? [24, 32] : [32, 40]}
               className="news-grid"
             >
-              {displayPosts.map((post) => (
+              {posts.map((post) => (
                 <Col 
                   key={post.post_id}
                   xs={24} 

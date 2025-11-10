@@ -121,17 +121,31 @@ const Authentication = () => {
       const response = await login(values)
       if(response){
         showSuccessMessage()
-        // lấy thông tin của user sau khi đăng nhập thành công bằng accessToken
-        const userProfile = await getUserProfile()
-        localStorage.setItem('user', JSON.stringify(userProfile.user))
-        const profileUser = userProfile?.user
-        if(profileUser?.role === 'admin'){
-          navigate('/admin')
+        // Hàm login trong AuthContext đã set user rồi, nhưng để đảm bảo, lấy lại user profile
+        try {
+          const userProfile = await getUserProfile()
+          const profileUser = userProfile?.user
+          if (profileUser) {
+            // Lưu user vào localStorage
+            localStorage.setItem('user', JSON.stringify(profileUser))
+            // Set user vào context để đảm bảo state được cập nhật
+            setUser(profileUser)
+            // Đợi một chút để React cập nhật state
+              // Navigate dựa trên role
+              if(profileUser.role === 'admin'){
+                navigate('/admin', { replace: true })
+              } else {
+                navigate('/', { replace: true })
+              }
+          }
+        } catch (profileError) {
+          console.error('Error fetching user profile:', profileError)
+          // Nếu không lấy được profile, vẫn navigate về trang chủ
+          navigate('/', { replace: true })
         }
-         setUser(profileUser)
     }
     } catch (error) {
-      message.error('Đăng nhập thất bại!')
+      message.error('Tài khoản hoặc mật khẩu không chính xác , vui lòng thử lại')
     } finally {
       setLoading(false)
     }

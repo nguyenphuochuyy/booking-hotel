@@ -1,23 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { 
-  Table, Button, Space, Modal, Form, Input, Select, message, 
-  Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip, 
+import {
+  Table, Button, Space, Modal, Form, Input, Select, message,
+  Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip,
   Typography, Badge, Divider, Empty, Spin, DatePicker, InputNumber
 } from 'antd'
-import { 
+import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   CalendarOutlined, ReloadOutlined, ExclamationCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
   UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined
 } from '@ant-design/icons'
-import { 
-  getAllBookings, getBookingById, cancelBooking,
+import {
+  getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
   getAllHotels, getAllRoomTypes, getAllUsers,
   checkOutGuest,
   checkInGuest,
   createWalkInBooking,
   getAvailableRoomsForType,
-  generateInvoicePDF
+  generateInvoicePDF,
+  getInfoRefundBooking
 } from '../../../services/admin.service'
 import CheckInOut from '../../../components/CheckInOut/CheckInOut'
 import formatPrice from '../../../utils/formatPrice'
@@ -65,6 +66,11 @@ const BookingManagement = () => {
   const [availableRooms, setAvailableRooms] = useState([])
   const [selectedRoomId, setSelectedRoomId] = useState(null)
   const [selectedRoomType, setSelectedRoomType] = useState(null)
+  const [cancelModal, setCancelModal] = useState({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [refundSubmitting, setRefundSubmitting] = useState(false)
+  const [refundInfo, setRefundInfo] = useState(null) // Thông tin hoàn tiền
+  const [loadingRefundInfo, setLoadingRefundInfo] = useState(false)
 
   const handleLoadAvailableRooms = async () => {
     try {
@@ -73,11 +79,11 @@ const BookingManagement = () => {
       if (!room_type_id) return
       const today = new Date()
       const pad = (n) => String(n).padStart(2, '0')
-      const check_in_date = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`
+      const check_in_date = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
       const d2 = new Date(today)
       const nights = Number(num_nights) > 0 ? Number(num_nights) : 1
       d2.setDate(d2.getDate() + nights)
-      const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth()+1)}-${pad(d2.getDate())}`
+      const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth() + 1)}-${pad(d2.getDate())}`
       const res = await getAvailableRoomsForType({ room_type_id, check_in_date, check_out_date })
       const rooms = res?.rooms || []
       setAvailableRooms(rooms)
@@ -95,11 +101,11 @@ const BookingManagement = () => {
       setWalkInLoading(true)
       const today = new Date()
       const pad = (n) => String(n).padStart(2, '0')
-      const check_in_date = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`
+      const check_in_date = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
       const d2 = new Date(today)
       const nights = Number(values.num_nights) > 0 ? Number(values.num_nights) : 1
       d2.setDate(d2.getDate() + nights)
-      const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth()+1)}-${pad(d2.getDate())}`
+      const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth() + 1)}-${pad(d2.getDate())}`
 
       const payload = {
         full_name: values.full_name,
@@ -135,16 +141,16 @@ const BookingManagement = () => {
         limit: pageSize,
         ...filters
       }
-      
+
       // Add date range filter
       if (dateRange && dateRange.length === 2) {
         params.check_in_date = dateRange[0].format('YYYY-MM-DD')
         params.check_out_date = dateRange[1].format('YYYY-MM-DD')
       }
-      
+
       const response = await getAllBookings(params)
       console.log(response);
-      
+
       setBookings(response.bookings || [])
       setPagination({
         current: page,
@@ -199,7 +205,7 @@ const BookingManagement = () => {
   // lọc danh sách đặt phòng theo từ khóa, trạng thái, loại đặt
   const filteredBookings = useMemo(() => {
     let filtered = bookings
-    
+
     if (searchText) {
       const searchLower = searchText.toLowerCase()
       filtered = filtered.filter(booking => {
@@ -207,25 +213,25 @@ const BookingManagement = () => {
         const userName = booking.user?.full_name?.toLowerCase() || ''
         const userEmail = booking.user?.email?.toLowerCase() || ''
         // Lấy room_type từ booking trực tiếp hoặc từ booking_rooms
-        const roomTypeName = (booking.room_type?.room_type_name || 
-                             booking.booking_rooms?.[0]?.room?.room_type?.room_type_name || 
-                             '').toLowerCase()
-        
+        const roomTypeName = (booking.room_type?.room_type_name ||
+          booking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+          '').toLowerCase()
+
         return bookingCode.includes(searchLower) ||
-               userName.includes(searchLower) ||
-               userEmail.includes(searchLower) ||
-               roomTypeName.includes(searchLower)
+          userName.includes(searchLower) ||
+          userEmail.includes(searchLower) ||
+          roomTypeName.includes(searchLower)
       })
     }
-    
+
     if (statusFilter) {
       filtered = filtered.filter(booking => booking.booking_status === statusFilter)
     }
-    
+
     if (typeFilter) {
       filtered = filtered.filter(booking => booking.booking_type === typeFilter)
     }
-    
+
     // Sort mapping for status
     const statusRank = {
       pending: 1,
@@ -258,9 +264,28 @@ const BookingManagement = () => {
   // Handle view booking details
   const handleViewDetails = async (bookingId) => {
     try {
-      const response = await getBookingById(bookingId)      
-      setSelectedBooking(response.booking)
+      const response = await getBookingById(bookingId)
+      const booking = response.booking
+      setSelectedBooking(booking)
       setIsDetailModalVisible(true)
+      
+      // Nếu booking có trạng thái đã hủy, gọi API lấy thông tin hoàn tiền
+      if (booking.booking_status === 'cancelled') {
+        setLoadingRefundInfo(true)
+        try {
+          const refundResponse = await getInfoRefundBooking(bookingId)
+          // Giả định API trả về refund info trong response.booking hoặc response
+          setRefundInfo(refundResponse?.booking || refundResponse || null)
+        } catch (refundError) {
+          console.error('Error fetching refund info:', refundError)
+          setRefundInfo(null)
+        } finally {
+          setLoadingRefundInfo(false)
+        }
+      } else {
+        // Reset refund info nếu không phải cancelled
+        setRefundInfo(null)
+      }
     } catch (error) {
       console.error('Error fetching booking details:', error)
       message.error('Không thể tải chi tiết đặt phòng')
@@ -271,19 +296,19 @@ const BookingManagement = () => {
   // Booking online chỉ có thể check-in sau 12:00 (12h chiều) của ngày check-in
   const canCheckInBooking = (booking) => {
     if (!booking) return { can: true }
-    
+
     // Walk-in không cần kiểm tra thời gian
     if (booking.booking_type !== 'online') {
       return { can: true }
     }
-    
+
     const now = new Date()
     const checkInDate = new Date(booking.check_in_date)
-    
+
     // So sánh ngày (bỏ qua giờ, chỉ lấy ngày/tháng/năm)
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const checkInDay = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate())
-    
+
     // Nếu ngày hiện tại < ngày check-in: chưa tới ngày
     if (today < checkInDay) {
       return {
@@ -291,25 +316,25 @@ const BookingManagement = () => {
         message: `Chưa tới ngày check-in. Ngày check-in là ${formatDate(booking.check_in_date)}. Vui lòng quay lại sau 12:00 trưa ngày đó.`
       }
     }
-    
+
     // Nếu ngày hiện tại > ngày check-in: đã quá ngày, cho phép check-in
     if (today > checkInDay) {
       return { can: true }
     }
-    
+
     // Nếu cùng ngày: kiểm tra giờ >= 12:00 (12h chiều)
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
     const currentTime = currentHour * 60 + currentMinute // Tổng số phút từ đầu ngày
     const checkInTime = 12 * 60 // 12:00 = 720 phút
-    
+
     if (currentTime < checkInTime) {
       const checkInDateTime = new Date(checkInDate)
       checkInDateTime.setHours(12, 0, 0, 0)
       return {
         can: false,
-        message: `Chưa tới giờ check-in. Booking online chỉ có thể check-in từ 12:00 trưa trở đi. Thời gian sớm nhất: ${checkInDateTime.toLocaleString('vi-VN', { 
-          hour: '2-digit', 
+        message: `Chưa tới giờ check-in. Booking online chỉ có thể check-in từ 12:00 trưa trở đi. Thời gian sớm nhất: ${checkInDateTime.toLocaleString('vi-VN', {
+          hour: '2-digit',
           minute: '2-digit',
           day: '2-digit',
           month: '2-digit',
@@ -317,7 +342,7 @@ const BookingManagement = () => {
         })}`
       }
     }
-    
+
     return { can: true }
   }
   // hanlde check in 
@@ -336,11 +361,11 @@ const BookingManagement = () => {
       }
 
       const response = await checkInGuest(bookingCode)
-      if(response.statusCode === 200) {
+      if (response.statusCode === 200) {
         message.success('Check-in thành công!')
         fetchBookings(pagination.current, pagination.pageSize)
       }
-      else{
+      else {
         const errorMessage = response?.message || 'Không thể check-in đặt phòng!'
         message.error(errorMessage)
       }
@@ -357,7 +382,7 @@ const BookingManagement = () => {
     setLoading(true)
     try {
       const response = await checkOutGuest(bookingCode)
-      if(response.statusCode === 200) {
+      if (response.statusCode === 200) {
         message.success('Check-out thành công!')
         fetchBookings(pagination.current, pagination.pageSize)
       } else {
@@ -378,31 +403,28 @@ const BookingManagement = () => {
       message.error('Không tìm thấy thông tin đặt phòng!')
       return
     }
-
     try {
       setLoading(true)
       // Gọi API để tạo PDF
       const blob = await generateInvoicePDF(bookingId)
-      
+
       // Tạo URL từ blob
       const url = window.URL.createObjectURL(blob)
-      
+
       // Tạo link tải xuống
       const link = document.createElement('a')
       link.href = url
-      
+
       // Lấy tên file từ response header hoặc đặt tên mặc định
       const bookingCode = selectedBooking?.booking_code || 'booking'
       link.download = `invoice-${bookingCode}.pdf`
-      
+
       // Trigger download
       document.body.appendChild(link)
       link.click()
-      
       // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-      
       message.success('Đã tải hóa đơn thành công!')
     } catch (error) {
       console.error('Error generating invoice:', error)
@@ -412,15 +434,80 @@ const BookingManagement = () => {
       setLoading(false)
     }
   }
-  // Handle cancel booking
-  const handleCancelBooking = async (bookingId) => {
+  // Kiểm tra xem có thể hủy booking không (chưa tới check-in và chưa checked_out)
+  const canCancelBooking = (booking) => {
+    if (!booking) return false
+    // Không thể hủy nếu đã checked_out
+    if (booking.booking_status === 'checked_out') return false
+    // Kiểm tra xem đã tới check-in chưa (14:00 ngày check-in)
+    if (booking.check_in_date) {
+      const checkInDate = new Date(booking.check_in_date)
+      checkInDate.setHours(14, 0, 0, 0)
+      const now = new Date()
+      // Nếu đã qua thời gian check-in thì không cho hủy
+      if (now >= checkInDate) return false
+    }
+    return true
+  }
+
+  // Mở modal hủy booking
+  const handleOpenCancelModal = (booking) => {
+    setCancelModal({
+      visible: true,
+      bookingId: booking.booking_id,
+      bookingCode: booking.booking_code,
+      reason: '',
+      refundManually: false
+    })
+  }
+  // Xử lý hủy booking (admin)
+  const handleCancelBookingAdmin = async () => {
+    if (!cancelModal.bookingId) {
+      message.error('Không xác định được booking cần hủy')
+      return
+    }
+    if (!cancelModal.reason || cancelModal.reason.trim().length < 3) {
+      message.warning('Vui lòng nhập lý do hủy (tối thiểu 3 ký tự)')
+      return
+    }
+
+    setCancelSubmitting(true)
     try {
-      await cancelBooking(bookingId, 'Hủy bởi admin')
+      await cancelBookingAdmin(
+        cancelModal.bookingId,
+        cancelModal.reason.trim(),
+        cancelModal.refundManually
+      )
       message.success('Hủy đặt phòng thành công!')
+      setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })
+      setIsDetailModalVisible(false)
       fetchBookings(pagination.current, pagination.pageSize)
     } catch (error) {
       console.error('Error cancelling booking:', error)
-      message.error('Không thể hủy đặt phòng!')
+      message.error(error?.response?.data?.message || 'Không thể hủy đặt phòng!')
+    } finally {
+      setCancelSubmitting(false)
+    }
+  }
+
+  // Xử lý đánh dấu đã hoàn tiền
+  const handleMarkRefundCompleted = async (bookingId) => {
+    if (!bookingId) {
+      message.error('Không xác định được booking')
+      return
+    }
+    setRefundSubmitting(true)
+    try {
+      // Gọi API với method và note mặc định (nếu có pending refund thì không cần amount)
+      await markRefundCompleted(bookingId, refundInfo.payment_summary.total_refunded, 'banking', 'Hoàn theo STK khách cung cấp')
+      message.success('Đã đánh dấu hoàn tiền thành công!')
+      await fetchBookings(pagination.current, pagination.pageSize)
+      setIsDetailModalVisible(false)
+    } catch (error) {
+      console.error('Error marking refund completed:', error)
+      message.error(error?.response?.data?.message || 'Không thể đánh dấu hoàn tiền!')
+    } finally {
+      setRefundSubmitting(false)
     }
   }
 
@@ -438,18 +525,16 @@ const BookingManagement = () => {
   }
   // handle refresh
   const handleRefresh = () => {
-    
-  
+
+
   }
   // Get status tag
   const getStatusTag = (status) => {
     const statusConfig = {
-  
       confirmed: { color: 'blue', icon: <CheckCircleOutlined />, text: 'Đã xác nhận' },
       checked_in: { color: 'green', icon: <CheckCircleOutlined />, text: 'Đã nhận phòng' },
       checked_out: { color: 'purple', icon: <CheckCircleOutlined />, text: 'Đã trả phòng' },
       cancelled: { color: 'red', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
-
     }
     const config = statusConfig[status] || statusConfig.pending
     return (
@@ -465,6 +550,7 @@ const BookingManagement = () => {
       pending: { color: 'orange', text: 'Chờ thanh toán' },
       paid: { color: 'green', text: 'Đã thanh toán' },
       refunded: { color: 'blue', text: 'Đã hoàn tiền' },
+      partial_refunded: { color: 'cyan', text: 'Hoàn tiền một phần' },
       failed: { color: 'red', text: 'Thanh toán thất bại' }
     }
     const config = statusConfig[status] || statusConfig.pending
@@ -501,7 +587,7 @@ const BookingManagement = () => {
     {
       title: 'Mã đặt phòng',
       dataIndex: 'booking_code',
-      
+
       key: 'booking_code',
       width: 100,
       align: 'center',
@@ -534,21 +620,21 @@ const BookingManagement = () => {
       width: 180,
       render: (_, record) => {
         // Lấy room_type từ booking trực tiếp hoặc từ booking_rooms
-        const roomTypeName = record.room_type?.room_type_name || 
-                            record.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
-                            'Chưa xác định'
-        
+        const roomTypeName = record.room_type?.room_type_name ||
+          record.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+          'Chưa xác định'
+
         // Lấy danh sách phòng từ booking_rooms
         const rooms = record.booking_rooms?.map(br => br.room?.room_num).filter(Boolean) || []
         const numRooms = rooms.length || record.num_rooms || 0
-        
+
         return (
           <div>
             <Text strong>{roomTypeName}</Text>
             {numRooms > 0 && (
               <div>
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                  {numRooms === 1 && rooms.length > 0 
+                  {numRooms === 1 && rooms.length > 0
                     ? `Phòng ${rooms[0]}`
                     : numRooms > 1
                       ? `${numRooms} phòng ${rooms.length > 0 ? `(${rooms.slice(0, 2).join(', ')}${rooms.length > 2 ? '...' : ''})` : ''}`
@@ -594,7 +680,7 @@ const BookingManagement = () => {
       dataIndex: 'final_price',
       key: 'final_price',
       width: 120,
-      align: 'center',
+      align: 'left',
       render: (price) => (
         <Text strong style={{ color: '#000' }}>
           {formatPrice(price)}
@@ -607,7 +693,7 @@ const BookingManagement = () => {
       dataIndex: 'booking_status',
       key: 'booking_status',
       width: 120,
-      align: 'center',
+      align: 'left',
       render: (status) => getStatusTag(status),
       filters: [
         { text: 'Đã xác nhận', value: 'confirmed' },
@@ -622,13 +708,13 @@ const BookingManagement = () => {
       dataIndex: 'payment_status',
       key: 'payment_status',
       width: 100,
-      align: 'center',
+      align: 'left',
       render: (status) => getPaymentStatusTag(status),
       filters: [
         { text: 'Chờ thanh toán', value: 'pending' },
         { text: 'Đã thanh toán', value: 'paid' },
         { text: 'Đã hoàn tiền', value: 'refunded' },
-        { text: 'Thanh toán thất bại', value: 'failed' }
+        { text: 'Thanh toán thất bại', value: 'failed' },
       ],
       onFilter: (value, record) => record.payment_status === value
     },
@@ -679,16 +765,15 @@ const BookingManagement = () => {
   ]
 
   return (
-
     <div className="booking-management"
-    style={{ padding: '24px' }}
+      style={{ padding: '24px' }}
     >
       {/* Header */}
       <div className="booking-header">
         <h2 className="page-title">
           <CalendarOutlined /> Quản lý đặt phòng
         </h2>
-     
+
       </div>
 
       {/* Statistics */}
@@ -757,15 +842,6 @@ const BookingManagement = () => {
             >
               Check-out
             </Button>
-            {/* <Button
-              type="default"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={() => setIsModalVisible(true)}
-            >
-              Thêm đặt phòng
-            </Button> */}
-
             {/* Nút làm mới */}
             <Button
               type="primary"
@@ -777,10 +853,8 @@ const BookingManagement = () => {
             </Button>
           </Space>
         </Col>
-        
       </Row>
 
-     
       {/* Table */}
       <Table
         columns={columns}
@@ -817,27 +891,42 @@ const BookingManagement = () => {
         onCancel={() => {
           setIsDetailModalVisible(false)
           setSelectedBooking(null)
+          setRefundInfo(null) // Reset refund info khi đóng modal
         }}
         width={800}
         footer={[
           <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
             Đóng
           </Button>,
+          // Nút hủy phòng (chỉ hiển thị nếu trạng thái là confirmed và chưa tới check-in)
+          selectedBooking?.booking_status === 'confirmed' && canCancelBooking(selectedBooking) && (
+            <Button
+              key="cancel"
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => {
+                setIsDetailModalVisible(false)
+                handleOpenCancelModal(selectedBooking)
+              }}
+            >
+              Hủy phòng
+            </Button>
+          ),
           selectedBooking?.booking_status === 'confirmed' && (() => {
             const checkResult = canCheckInBooking(selectedBooking)
             return (
               <Tooltip title={!checkResult.can ? checkResult.message : ''}>
-                <Button 
-                  key="checkin" 
-                  type="primary" 
+                <Button
+                  key="checkin"
+                  type="primary"
                   icon={<CheckCircleOutlined />}
                   onClick={() => {
                     setIsDetailModalVisible(false)
                     handleCheckIn(selectedBooking?.booking_code)
                   }}
                   disabled={!checkResult.can}
-                  style={{ 
-                    background: !checkResult.can ? '#d9d9d9' : '#52c41a', 
+                  style={{
+                    background: !checkResult.can ? '#d9d9d9' : '#52c41a',
                     borderColor: !checkResult.can ? '#d9d9d9' : '#52c41a',
                     cursor: !checkResult.can ? 'not-allowed' : 'pointer'
                   }}
@@ -848,9 +937,9 @@ const BookingManagement = () => {
             )
           })(),
           selectedBooking?.booking_status === 'checked_in' && (
-            <Button 
-              key="checkout" 
-              type="primary" 
+            <Button
+              key="checkout"
+              type="primary"
               icon={<ClockCircleOutlined />}
               onClick={() => {
                 setIsDetailModalVisible(false)
@@ -862,9 +951,10 @@ const BookingManagement = () => {
               Check-out
             </Button>
           ),
-          <Button 
-            key="print" 
-            type="primary" 
+
+          <Button
+            key="print"
+            type="primary"
             icon={<PrinterOutlined />}
             onClick={() => handlePrintInvoice(selectedBooking?.booking_id)}
             loading={loading}
@@ -917,16 +1007,16 @@ const BookingManagement = () => {
                 </Card>
               </Col>
             </Row>
-            
+
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
               <Col span={12}>
                 <Card title="Thông tin phòng" size="small" >
                   <div className="detail-item">
                     <Text strong>Loại phòng:</Text>
                     <Text>
-                      {selectedBooking.room_type?.room_type_name || 
-                       selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
-                       'Chưa xác định'}
+                      {selectedBooking.room_type?.room_type_name ||
+                        selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+                        'Chưa xác định'}
                     </Text>
                   </div>
                   <div className="detail-item">
@@ -934,10 +1024,10 @@ const BookingManagement = () => {
                     <Text>
                       {selectedBooking.booking_rooms && selectedBooking.booking_rooms.length > 0
                         ? selectedBooking.booking_rooms
-                            .map(br => br.room?.room_num)
-                            .filter(Boolean)
-                            .join(', ') || 'Chưa gán'
-                        : selectedBooking.num_rooms 
+                          .map(br => br.room?.room_num)
+                          .filter(Boolean)
+                          .join(', ') || 'Chưa gán'
+                        : selectedBooking.num_rooms
                           ? `${selectedBooking.num_rooms} phòng`
                           : 'Chưa gán'}
                     </Text>
@@ -970,10 +1060,43 @@ const BookingManagement = () => {
                     <Text strong>Phương thức:</Text>
                     <Text>{selectedBooking.payment_status === 'paid' ? 'PayOS' : 'Chưa thanh toán'}</Text>
                   </div>
+                  
+                  {/* Hiển thị thông tin hoàn tiền khi booking đã hủy */}
+                  {selectedBooking.booking_status === 'cancelled' && (
+                    <>
+                      <Divider style={{ margin: '12px 0' }} />
+                      {loadingRefundInfo ? (
+                        <div style={{ textAlign: 'center', padding: '16px' }}>
+                          <Spin size="small" />
+                          <div style={{ marginTop: 8 }}>
+                            <Text type="secondary">Đang tải thông tin hoàn tiền...</Text>
+                          </div>
+                        </div>
+                      ) : refundInfo ? (
+                        <>
+                          <div className="detail-item" style={{ marginTop: 8 }}>
+                            <Text strong>Số tiền khách sạn phải hoàn trả cho khách hàng:</Text>
+                            <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
+                              {formatPrice(
+                                refundInfo.payment_summary?.total_refunded 
+                              )}
+                            </Text>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="detail-item" style={{ marginTop: 8 }}>
+                          <Text type="secondary">Không có thông tin hoàn tiền</Text>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Hiển thị số tiền được hoàn và nút đánh dấu đã hoàn tiền nếu payment_status là partial_refunded */}
+                  
                 </Card>
               </Col>
             </Row>
-            
+
             <Card title="Lịch trình" size="small" style={{ marginTop: 16 }}>
               <Row gutter={16}>
                 <Col span={12}>
@@ -983,8 +1106,8 @@ const BookingManagement = () => {
                 </Col>
                 <Col span={12}>
                   <div className="detail-item">
-                    <Text strong>Ngày trả phòng:</Text>
-                    <Text>{formatDate(selectedBooking.check_out_date)}</Text>
+                    <Text >Ngày trả phòng:</Text>
+                    <Text strong>{formatDate(selectedBooking.check_out_date)}</Text>
                   </div>
                 </Col>
               </Row>
@@ -997,10 +1120,95 @@ const BookingManagement = () => {
               {selectedBooking.check_out_time && (
                 <div className="detail-item">
                   <Text strong>Thời gian check-out:</Text>
-                  <Text>{new Date(selectedBooking.check_out_time).toLocaleString('vi-VN')}</Text>
+                  <Text strong>{new Date(selectedBooking.check_out_time).toLocaleString('vi-VN')}</Text>
                 </div>
               )}
             </Card>
+
+            {/* Thông tin hủy phòng - chỉ hiển thị khi booking_status là cancelled */}
+            {selectedBooking.booking_status === 'cancelled' && (
+              <Card
+                title={
+                  <Space>
+                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                    <Text strong>Thông tin hủy phòng</Text>
+                  </Space>
+                }
+                size="small"
+                style={{ marginTop: 16 }}
+                headStyle={{ backgroundColor: '#fff1f0', borderColor: '#ffccc7' }}
+              >
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <div className="detail-item">
+                    <Text strong>Lý do hủy:</Text>
+                    <div style={{ marginTop: 8 }}>
+                      {selectedBooking.note ? (
+                        <Text>{selectedBooking.note}</Text>
+                      ) : (
+                        <Text type="secondary">Không có thông tin</Text>
+                      )}
+                    </div>
+                  </div>
+
+                  <Divider style={{ margin: '8px 0' }} />
+
+                  <div className="detail-item">
+                    <Text strong>Trạng thái hoàn tiền:</Text>
+                    <div style={{ marginTop: 8 }}>
+                      {selectedBooking.payment_status === 'refunded' && (
+                        <Text type="success" style={{ marginLeft: 8 }}>
+                          ✓ Đã hoàn tiền đầy đủ
+                        </Text>
+                      )}
+                      {selectedBooking.payment_status === 'partial_refunded' && (
+                        <Text type="warning" style={{ marginLeft: 8 }}>
+                          ⚠ Chờ hoàn tiền từ admin
+                        </Text>
+                      )}
+                      {selectedBooking.payment_status === 'paid' && (
+                        <Text type="danger" style={{ marginLeft: 8 }}>
+                          ⚠ Chưa hoàn tiền
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedBooking.note && selectedBooking.note.includes('Admin hủy') && (
+                    <>
+                      <Divider style={{ margin: '8px 0' }} />
+                      <div className="detail-item">
+                        <Text strong>Người hủy:</Text>
+                        <Tag color="red" style={{ marginLeft: 8 }}>Admin</Tag>
+                        {selectedBooking.note.includes('Đã hoàn tiền thủ công') && (
+                          <Tag color="green" style={{ marginLeft: 8 }}>Đã hoàn tiền thủ công</Tag>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <div style={{ textAlign: 'center' }}>
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      loading={refundSubmitting}
+                      onClick={() => handleMarkRefundCompleted(selectedBooking.booking_id)}
+                      style={{
+                        backgroundColor: '#52c41a',
+                        borderColor: '#52c41a'
+                      }}
+                    >
+                      Đánh dấu đã hoàn tiền
+                    </Button>
+                    <div style={{ marginTop: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        Click để đánh dấu đã hoàn tiền thủ công cho khách hàng
+                      </Text>
+                    </div>
+                  </div>
+
+                </Space>
+              </Card>
+            )}
           </div>
         )}
       </Modal>
@@ -1079,7 +1287,7 @@ const BookingManagement = () => {
                     <Empty description="Không có phòng trống" />
                   )}
                 </Form.Item>
-                <Form.Item name="room_id" hidden rules={[{ required: true, message: 'Vui lòng chọn phòng' }]}> 
+                <Form.Item name="room_id" hidden rules={[{ required: true, message: 'Vui lòng chọn phòng' }]}>
                   <Input />
                 </Form.Item>
               </Card>
@@ -1107,6 +1315,72 @@ const BookingManagement = () => {
           fetchBookings(pagination.current, pagination.pageSize)
         }}
       />
+
+      {/* Modal hủy booking (Admin) */}
+      <Modal
+        title={
+          <Space direction="vertical" size={0}>
+            <Text strong>Hủy đặt phòng (Admin)</Text>
+            {cancelModal.bookingCode && (
+              <Text type="secondary">Mã: {cancelModal.bookingCode}</Text>
+            )}
+          </Space>
+        }
+        open={cancelModal.visible}
+        onCancel={() => setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })}
+          >
+            Đóng
+          </Button>,
+          <Button
+            key="ok"
+            type="primary"
+            danger
+            loading={cancelSubmitting}
+            onClick={handleCancelBookingAdmin}
+          >
+            Xác nhận hủy
+          </Button>
+        ]}
+        width={600}
+      >
+        <div>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            Vui lòng nhập lý do hủy đặt phòng. Lưu ý: Admin hủy booking sẽ không hoàn tiền tự động, cần xử lý thủ công.
+          </Text>
+
+          <Form.Item label="Lý do hủy" required>
+            <Input.TextArea
+              value={cancelModal.reason}
+              onChange={(e) => setCancelModal(prev => ({ ...prev, reason: e.target.value }))}
+              rows={4}
+              placeholder="Nhập lý do hủy đặt phòng..."
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <input
+                type="checkbox"
+                checked={cancelModal.refundManually}
+                onChange={(e) => setCancelModal(prev => ({ ...prev, refundManually: e.target.checked }))}
+                id="refund-manually"
+              />
+              <label htmlFor="refund-manually">
+                <Text>Đã hoàn tiền thủ công cho khách hàng</Text>
+              </label>
+            </Space>
+            <Text type="secondary" style={{ display: 'block', marginTop: 8, fontSize: 12 }}>
+              Đánh dấu nếu bạn đã xử lý hoàn tiền cho khách hàng bên ngoài hệ thống
+            </Text>
+          </Form.Item>
+        </div>
+      </Modal>
     </div>
   )
 }

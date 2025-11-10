@@ -41,14 +41,15 @@ export const usePosts = (initialParams = {}) => {
       }
 
       const response = await postService.getPosts(params)
-      // Safe access to response data
-      const postsData = response?.posts || response?.data?.posts || []
-      const paginationData = response?.pagination || response?.data?.pagination || {}
+      // httpClient trả về body trực tiếp, không có .data
+      const postsData = response?.posts || []
+      const paginationData = response?.pagination || {}
       
       setPosts(Array.isArray(postsData) ? postsData : [])
       setPagination(prev => ({
         ...prev,
-        current: params.page || prev.current,
+        current: params.page || paginationData?.currentPage || prev.current,
+        pageSize: params.limit || prev.pageSize,
         total: paginationData?.totalItems || paginationData?.total || 0
       }))
     } catch (err) {
@@ -194,17 +195,10 @@ export const useCategories = () => {
     
     try {
       const response = await categoryService.getCategoriesForSelect()
-      setCategories(response)
+      setCategories(Array.isArray(response) ? response : [])
     } catch (err) {
       setError(err?.message || 'Có lỗi xảy ra khi tải danh mục')
-      // Fallback to mock data
-      const mockCategories = [
-        { category_id: 1, name: 'Tin tức', slug: 'tin-tuc' },
-        { category_id: 2, name: 'Sự kiện', slug: 'su-kien' },
-        { category_id: 3, name: 'Khuyến mãi', slug: 'khuyen-mai' },
-        { category_id: 4, name: 'Du lịch', slug: 'du-lich' }
-      ]
-      setCategories(mockCategories)
+      setCategories([])
     } finally {
       setLoading(false)
     }
@@ -245,8 +239,8 @@ export const usePostDetail = (identifier) => {
         response = await postService.getPostBySlug(idOrSlug)
       }
       
-      // Safe access to response data
-      const postData = response?.post || response?.data?.post || null
+      // Safe access to response data - httpClient trả về body trực tiếp
+      const postData = response?.post || null
       
       if (!postData) {
         setError('Không tìm thấy bài viết')

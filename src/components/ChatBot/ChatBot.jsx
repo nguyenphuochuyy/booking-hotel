@@ -7,6 +7,51 @@ import { useAuth } from '../../context/AuthContext'
 
 const { Text } = Typography
 
+// Hàm format message để hiển thị đẹp hơn (loại bỏ dấu * và format list)
+const formatMessage = (text) => {
+  if (!text || typeof text !== 'string') return text
+  
+  // Tách text thành các dòng
+  const lines = text.split('\n')
+  const formattedElements = []
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim()
+    
+    // Nếu dòng bắt đầu bằng * hoặc - (markdown list), format thành list item
+    if (trimmedLine.startsWith('*') || trimmedLine.startsWith('-')) {
+      const listText = trimmedLine.replace(/^[\*\-\s]+/, '').trim()
+      if (listText) {
+        formattedElements.push(
+          <div key={index} style={{ marginLeft: '16px', marginTop: '4px', marginBottom: '4px' }}>
+            <Text>• {listText}</Text>
+          </div>
+        )
+      }
+    } else if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
+      // Bold text (markdown **text**)
+      const boldText = trimmedLine.replace(/\*\*/g, '')
+      formattedElements.push(
+        <div key={index} style={{ marginTop: index > 0 ? '8px' : '0', marginBottom: '4px' }}>
+          <Text strong>{boldText}</Text>
+        </div>
+      )
+    } else if (trimmedLine) {
+      // Text thường
+      formattedElements.push(
+        <div key={index} style={{ marginTop: index > 0 ? '8px' : '0', marginBottom: '4px' }}>
+          <Text>{trimmedLine}</Text>
+        </div>
+      )
+    } else {
+      // Dòng trống
+      formattedElements.push(<div key={index} style={{ height: '4px' }} />)
+    }
+  })
+  
+  return formattedElements.length > 0 ? formattedElements : text
+}
+
 function ChatBot() {
   const { isAuthenticated } = useAuth()
   const [open, setOpen] = useState(false)
@@ -43,10 +88,7 @@ function ChatBot() {
       if (!user || !user.user_id) return
       
       const chatHistory = await getChatHistoryByUserId({user_id: user.user_id})
-      console.log(chatHistory);
-      
       const chatHistoryData = chatHistory.sessions || []
-      
       // Gộp tất cả tin nhắn từ tất cả sessions, sắp xếp theo thời gian
       const allHistoryMessages = []
       chatHistoryData.forEach(session => {
@@ -516,7 +558,9 @@ function ChatBot() {
                           <Avatar icon={<RobotOutlined />} className="message-avatar" />
                           <div className="message-content bot-content">
                             <Text strong style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>BeanBot</Text>
-                            <Text>{messageText}</Text>
+                            <div style={{ whiteSpace: 'pre-wrap' }}>
+                              {formatMessage(messageText)}
+                            </div>
                           </div>
                         </div>
                       )}

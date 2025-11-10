@@ -14,12 +14,14 @@ import {
   getAllPosts, createPost, updatePost, deletePost,
   getAllCategories, createCategory, updateCategory, deleteCategory
 } from '../../../services/admin.service'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import './posts.css'
 import dayjs from 'dayjs'
+import TextArea from 'antd/es/input/TextArea'
 
 const { Title, Text } = Typography
 const { Option } = Select
-const { TextArea } = Input
 
 const PostManagement = () => {
   const [posts, setPosts] = useState([])
@@ -35,6 +37,7 @@ const PostManagement = () => {
     total: 0
   })
   const [form] = Form.useForm()
+  const [content, setContent] = useState('') // State để lưu content từ ReactQuill
 
   // Category management states
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false)
@@ -147,6 +150,9 @@ const PostManagement = () => {
     try {
       const values = await form.validateFields()
       
+      // Đảm bảo content từ ReactQuill được thêm vào values
+      values.content = content || values.content || ''
+      
       // Use helper function to create FormData
       const formData = createFormData(values)
 
@@ -170,6 +176,7 @@ const PostManagement = () => {
 
       setIsModalVisible(false)
       setEditingPost(null)
+      setContent('') // Reset content
       form.resetFields()
       fetchPosts(pagination.current, pagination.pageSize, selectedCategory)
     } catch (error) {
@@ -184,16 +191,19 @@ const PostManagement = () => {
   const handleModalCancel = () => {
     setIsModalVisible(false)
     setEditingPost(null)
+    setContent('') // Reset content
     form.resetFields()
   }
 
   // Handle edit post
   const handleEdit = (record) => {
     setEditingPost(record)
+    const recordContent = record.content || ''
+    setContent(recordContent) // Set content vào state cho ReactQuill
     form.setFieldsValue({
       title: record.title,
       slug: record.slug,
-      content: record.content,
+      content: recordContent,
       category_id: record.category_id,
       status: record.status,
       tags: record.tags ? (Array.isArray(record.tags) ? record.tags.join(', ') : record.tags) : ''
@@ -505,7 +515,10 @@ const PostManagement = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setIsModalVisible(true)}
+            onClick={() => {
+              setContent('') // Reset content khi tạo mới
+              setIsModalVisible(true)
+            }}
             className="create-button"
           >
             Thêm bài viết mới
@@ -708,20 +721,51 @@ const PostManagement = () => {
           <Form.Item
             name="content"
             label="Nội dung bài viết"
-            rules={[{ required: true, message: 'Vui lòng nhập nội dung!' }]}
+            rules={[
+              { required: true, message: 'Vui lòng nhập nội dung!' },
+              {
+                validator: (_, value) => {
+                  // Validate content từ ReactQuill (có thể là HTML rỗng)
+                  const textContent = content?.replace(/<[^>]*>/g, '').trim()
+                  if (!textContent || textContent.length === 0) {
+                    return Promise.reject(new Error('Vui lòng nhập nội dung!'))
+                  }
+                  return Promise.resolve()
+                }
+              }
+            ]}
           >
-            <TextArea
-              rows={8}
+            <ReactQuill
+              theme="snow"
+              value={content}
+              onChange={(value) => {
+                setContent(value)
+                form.setFieldsValue({ content: value })
+              }}
               placeholder="Nhập nội dung bài viết..."
+              style={{ 
+                height: '300px',
+                marginBottom: '42px'
+              }}
+              modules={{
+                toolbar: [
+                  [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                  [{ 'font': [] }],
+                  [{ 'size': [] }],
+                  ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                  [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                  [{ 'script': 'sub'}, { 'script': 'super' }],
+                  [{ 'direction': 'rtl' }],
+                  [{ 'color': [] }, { 'background': [] }],
+                  [{ 'align': [] }],
+                  ['link', 'image', 'video'],
+                  ['clean']
+                ]
+              }}
             />
           </Form.Item>
 
-          <Form.Item
-            name="tags"
-            label="Tags (cách nhau bởi dấu phẩy)"
-          >
-            <Input placeholder="tag1, tag2, tag3" />
-          </Form.Item>
+    
 
             <Row gutter={16}>
               <Col xs={24} md={12}>

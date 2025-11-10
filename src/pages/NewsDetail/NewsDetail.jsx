@@ -23,7 +23,6 @@ import {
   EyeOutlined
 } from '@ant-design/icons'
 import { usePostDetail } from '../../hooks/posts'
-import { getMockPostByIdentifier } from '../../data/mockNews'
 import './NewsDetail.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -35,11 +34,7 @@ function NewsDetail() {
   const screens = useBreakpoint()
   
   // usePostDetail hỗ trợ cả ID và slug tự động
-  const { post: apiPost, loading, error } = usePostDetail(slug)
-  
-  // Fallback to mock data if API fails or no data
-  const mockPost = useMemo(() => getMockPostByIdentifier(slug), [slug])
-  const post = apiPost || (!loading ? mockPost : null)
+  const { post, loading, error } = usePostDetail(slug)
 
   // Format date
   const formatDate = (dateString) => {

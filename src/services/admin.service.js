@@ -495,6 +495,30 @@ export async function cancelBooking(id, reason = '') {
 }
 
 /**
+ * Admin hủy đặt phòng (không hoàn tiền tự động)
+ * @param {number|string} id - Booking ID
+ * @param {string} reason - Lý do hủy
+ * @param {boolean} refund_manually - Đã hoàn tiền thủ công hay chưa
+ * @returns {Promise}
+ */
+export async function cancelBookingAdmin(id, reason = '', refund_manually = false) {
+  return http.post(`/bookings/${id}/cancel-admin`, { reason, refund_manually })
+}
+
+/**
+ * Admin đánh dấu đã hoàn tiền cho booking
+ * @param {number|string} id - Booking ID
+ * @param {number} amount - Số tiền đã hoàn (optional, nếu không có pending refund)
+ * @param {string} method - Phương thức hoàn tiền: 'banking' | 'cash' | 'payos'
+ * @param {string} note - Ghi chú
+ * @returns {Promise}
+ */
+export async function markRefundCompleted(id, amount = null, method = 'banking', note = '') {
+  const payload = { method, amount, note }
+  return http.post(`/bookings/${id}/refund-admin`, payload)
+}
+
+/**
  * Check-in khách hàng
  * @param {string} bookingCode - Mã đặt phòng
  * @returns {Promise}
@@ -592,6 +616,11 @@ export async function createWalkInUser(data) {
 export async function createWalkInBooking(data) {
   return http.post('/bookings/walk-in-checkin', data)
 }
+
+export async function getInfoRefundBooking(id) {
+  return http.get(`/bookings/${id}`)
+}
+
 export default {
   // Users
   getAllUsers,
@@ -660,6 +689,8 @@ export default {
   generateInvoicePDF,
   viewInvoice,
   createWalkInUser,
-  createWalkInBooking
+  createWalkInBooking,
+  getInfoRefundBooking,
+  markRefundCompleted
 }
 

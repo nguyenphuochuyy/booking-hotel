@@ -18,15 +18,23 @@ export const postService = {
    */
   async getPosts(params = {}) {
     try {
-      const response = await httpClient.get(API_ENDPOINTS.POSTS.GET_POSTS, {
-        params: {
-          page: 1,
-          limit: 10,
-          status: 'published', // Chỉ lấy posts đã publish
-          ...params
+      const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        status: params.status || 'published', // Mặc định chỉ lấy posts đã publish
+        ...params
+      }
+      // Loại bỏ các params undefined
+      Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === undefined || queryParams[key] === null || queryParams[key] === 'all') {
+          delete queryParams[key]
         }
       })
-      return response.data
+      const response = await httpClient.get(API_ENDPOINTS.POSTS.GET_POSTS, {
+        params: queryParams
+      })
+      // httpClient trả về body trực tiếp
+      return response || {}
     } catch (error) {
       console.error('Error fetching posts:', error)
       throw error
@@ -41,7 +49,8 @@ export const postService = {
   async getPostById(id) {
     try {
       const response = await httpClient.get(API_ENDPOINTS.POSTS.GET_POST_BY_ID(id))
-      return response.data
+      // httpClient trả về body trực tiếp, không có .data
+      return response || {}
     } catch (error) {
       console.error('Error fetching post by ID:', error)
       throw error
@@ -56,7 +65,8 @@ export const postService = {
   async getPostBySlug(slug) {
     try {
       const response = await httpClient.get(API_ENDPOINTS.POSTS.GET_POST_BY_SLUG(slug))
-      return response.data
+      // httpClient trả về body trực tiếp, không có .data
+      return response || {}
     } catch (error) {
       console.error('Error fetching post by slug:', error)
       throw error
