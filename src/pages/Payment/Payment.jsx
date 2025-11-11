@@ -71,7 +71,6 @@ const Payment = () => {
   useEffect(() => {
     if (bookingData && bookingData.bookingInfo) {
       // Lưu thông tin thanh toán vào localStorage để khôi phục khi quay lại site
-      
       // Thiết lập thời gian còn lại
       const initialRemain = getRemainingTime()
       setRemainingSeconds(initialRemain)
@@ -146,7 +145,9 @@ const Payment = () => {
           clearPendingPayment()
         }
         setTimeout(() => {
-          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo, selectedServices: selectedServices , roomNum: bookingInfo?.numRooms, promoCode } })
+          // Điều hướng sang trang thành công với query params theo yêu cầu
+          const successUrl = `/payment/success?code=00&id=${encodeURIComponent(orderCode || bookingCode || tempBookingKey || '')}&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
+          navigate(successUrl, { replace: true })
         }, 1000)
       } else {
         setPaymentStatus('pending') // Reset về pending nếu không thành công

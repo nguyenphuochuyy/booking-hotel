@@ -191,11 +191,12 @@ function RoomTypes() {
   }, [searchText, allRoomTypes])
 
   const columns = [
+
     {
       title: 'ID',
       dataIndex: 'room_type_id',
       key: 'room_type_id',
-      width: 70,
+      width: 60,
       sorter: (a, b) => a.room_type_id - b.room_type_id
   
     },
@@ -265,7 +266,7 @@ function RoomTypes() {
       title: 'Tên loại phòng',
       dataIndex: 'room_type_name',
       key: 'room_type_name',
-      width: 200,
+      width: 180,
       render: (text) => (
         <Space>
           <span style={{ fontWeight: 500 }}>{text}</span>
@@ -282,7 +283,7 @@ function RoomTypes() {
       title: 'Danh mục',
       dataIndex: 'category',
       key: 'category',
-      width: 120,
+      width: 110,
       render: (category) => {
         const categoryOption = CATEGORY_OPTIONS.find(opt => opt.value === category)
         return categoryOption ? (
@@ -302,7 +303,7 @@ function RoomTypes() {
       title: 'Số khách',
       dataIndex: 'capacity',
       key: 'capacity',
-      width: 100,
+      width: 90,
       render: (capacity) => (
         <Tag color="green">{capacity ? `${capacity} người` : '-'}</Tag>
       ),
@@ -311,21 +312,21 @@ function RoomTypes() {
       title: 'Diện tích',
       dataIndex: 'area',
       key: 'area',
-      width: 100,
+      width: 90,
       render: (area) => area ? `${area} m²` : '-',
     },
     {
       title: 'Số lượng',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 100,
+      width: 90,
       render: (quantity) => <Tag color="blue">{quantity} phòng</Tag>,
     },
     {
       title: 'Tiện nghi',
       dataIndex: 'amenities',
       key: 'amenities',
-      width: 200,
+      width: 180,
       render: (amenities) => {
         const list = Array.isArray(amenities) ? amenities : []
         return list.length > 0 ? (
@@ -343,20 +344,10 @@ function RoomTypes() {
       },
     },
     {
-      title: 'Số ảnh',
-      dataIndex: 'images',
-      key: 'image_count',
-      width: 90,
-      render: (images) => {
-        const count = Array.isArray(images) ? images.length : 0
-        return <Tag color={count > 0 ? 'blue' : 'default'}>{count} ảnh</Tag>
-      },
-    },
-    {
       title: 'Ngày tạo',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 110,
+      width: 100,
       render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
       sorter: (a, b) => {
         if (!a.created_at) return -1;
@@ -368,8 +359,8 @@ function RoomTypes() {
     {
       title: 'Thao tác',
       key: 'action',
-      width: 180,
-      fixed: 'right',
+      width: 120,
+      fixed: 'left',
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -1006,7 +997,8 @@ function RoomTypes() {
           showTotal: (total) => `Tổng ${total} loại phòng`,
         }}
         onChange={handleTableChange}
-        scroll={{ x: 1700 }}
+        // Loại bỏ scroll ngang để thao tác luôn hiển thị
+        scroll={{ x: 'max-content' }}
       />
 
       <Modal

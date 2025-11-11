@@ -301,6 +301,7 @@ const PromotionManagement = () => {
       dataIndex: 'promotion_code',
       key: 'code',
       width: 120,
+      align: 'left',
       render: (code) => (
         <div className="promotion-code-display">
           <Text code style={{ fontSize: '12px', color: '#1890ff' }}>
@@ -314,7 +315,7 @@ const PromotionManagement = () => {
       dataIndex: 'discount_type',
       key: 'discount_type',
       width: 120,
-      align: 'center',
+      align: 'left',
       render: (type) => (
         <Tag color={type === 'percentage' ? 'blue' : 'green'} icon={type === 'percentage' ? <PercentageOutlined /> : <DollarOutlined />}>
           {type === 'percentage' ? 'Phần trăm' : 'Số tiền'}
@@ -326,21 +327,11 @@ const PromotionManagement = () => {
       dataIndex: 'amount',
       key: 'discount_value',
       width: 120,
-      align: 'center',
+      align: 'left',
       render: (value, record) => (
         <Text strong style={{ color: '#52c41a' }}>
           {record.discount_type === 'percentage' ? `${value}%` : formatPrice(value)}
         </Text>
-      )
-    },
-    {
-      title: 'Đơn tối thiểu',
-      dataIndex: 'min_order_amount',
-      key: 'min_order_amount',
-      width: 120,
-      align: 'center',
-      render: (amount) => (
-        <Text>{amount ? formatPrice(amount) : 'Không giới hạn'}</Text>
       )
     },
     {

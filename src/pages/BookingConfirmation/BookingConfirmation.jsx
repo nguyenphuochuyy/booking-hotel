@@ -4,7 +4,7 @@ import {
   Image, Form, Input, Select, message, Collapse, Spin,
   Checkbox, Tag
 } from 'antd'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import formatPrice from '../../utils/formatPrice'
 import { UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { createTempBooking, createPaymentLink, addServicesToTempBooking, calculateNights, formatDate, validatePromotionCode } from '../../services/booking.service'
@@ -412,7 +412,7 @@ const BookingConfirmation = () => {
                   ]}
                 />
                 <Text type="secondary" style={{ fontSize: '12px', marginBottom: '16px', display: 'block' }}>
-                  <InfoCircleOutlined /> Để bảo mật, vui lòng không nhập thông tin thẻ tín dụng trên trang này.
+                 Bằng việc đặt phòng, bạn đồng ý với <Link to="/terms-of-service">Điều khoản và điều kiện</Link> và <Link to="/privacy-policy">Chính sách bảo mật</Link>
                 </Text>
                 <Form.Item style={{ marginTop: '24px', marginBottom: 0 }}>
                   <Button

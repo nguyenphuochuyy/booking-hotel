@@ -52,7 +52,6 @@ const PaymentSuccess = () => {
     try {
       setLoading(true)
       setError(null)
-
       // Thử lấy booking_code từ localStorage (nếu có)
       const pendingPayment = getPendingPayment()
       const bookingCode = pendingPayment?.bookingCode || null
@@ -67,6 +66,8 @@ const PaymentSuccess = () => {
             // Lấy chi tiết đầy đủ booking bằng ID
             try {
               const bookingDetail = await getBookingById(bookingData.booking_id)
+              console.log("bookingDetail", bookingDetail);
+              
               setBooking(bookingDetail?.booking || bookingDetail || bookingData)
             } catch (err) {
               // Nếu không lấy được chi tiết, dùng dữ liệu từ findBookingByCode

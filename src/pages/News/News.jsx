@@ -77,6 +77,24 @@ function News() {
     return plainText.substring(0, maxLength) + '...'
   }
 
+  // Get short HTML excerpt (preserve first paragraph/line-breaks)
+  const getExcerptHtml = (contentHtml) => {
+    if (!contentHtml || typeof contentHtml !== 'string') return ''
+    try {
+      // Lấy đoạn <p> đầu tiên (nếu có), bỏ hình ảnh để tránh vỡ layout
+      const parts = contentHtml.split(/<\/p>/i)
+      const firstPara = parts[0] || ''
+      const cleaned = firstPara
+        .replace(/<img[^>]*>/gi, '') // bỏ ảnh
+        .replace(/<br\s*\/?>/gi, '<br/>') // chuẩn hóa br
+      // Nếu không có thẻ <p>, bọc lại
+      const hasP = /<p[^>]*>/i.test(cleaned)
+      return hasP ? `${cleaned}</p>` : `<p>${cleaned}</p>`
+    } catch {
+      return ''
+    }
+  }
+
   // Handle search
   const handleSearch = (value) => {
     searchPosts(value)
@@ -274,7 +292,12 @@ function News() {
                       </Title>
                       
                       <Paragraph className="news-card-excerpt">
-                        {getExcerpt(post.content)}
+                        {/* Fallback text if HTML excerpt empty */}
+                        <span style={{ display: 'none' }}>{getExcerpt(post.content)}</span>
+                        <div
+                          className="news-card-excerpt-html"
+                          dangerouslySetInnerHTML={{ __html: getExcerptHtml(post.content) }}
+                        />
                       </Paragraph>
 
                       <div className="news-card-meta">

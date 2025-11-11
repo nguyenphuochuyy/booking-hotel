@@ -31,6 +31,7 @@ const PostManagement = () => {
   const [editingPost, setEditingPost] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [slugTouched, setSlugTouched] = useState(false)
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -71,18 +72,26 @@ const PostManagement = () => {
       if (file && file.originFileObj instanceof File) {
         formData.append('cover_image', file.originFileObj)
       }
-    }
-    
-    // Handle additional images
-    if (values.images && Array.isArray(values.images) && values.images.length > 0) {
-      values.images.forEach((file) => {
-        if (file && file.originFileObj instanceof File) {
-          formData.append('images', file.originFileObj)
-        }
-      })
+      // Nếu là file từ URL (đã có sẵn), không cần append
     }
     
     return formData
+  }
+
+  // Slugify from title (remove accents, special chars → kebab-case)
+  const generateSlug = (text) => {
+    if (!text) return ''
+    return text
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+      .replace(/đ/g, 'd').replace(/Đ/g, 'd')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
   }
 
   // Fetch posts data
@@ -193,6 +202,7 @@ const PostManagement = () => {
     setEditingPost(null)
     setContent('') // Reset content
     form.resetFields()
+    setSlugTouched(false)
   }
 
   // Handle edit post
@@ -200,15 +210,28 @@ const PostManagement = () => {
     setEditingPost(record)
     const recordContent = record.content || ''
     setContent(recordContent) // Set content vào state cho ReactQuill
+
+    // Chuẩn bị fileList cho ảnh đại diện nếu có
+    const coverFileList = record.cover_image_url
+      ? [{
+          uid: '-1',
+          name: 'cover.jpg',
+          status: 'done',
+          url: record.cover_image_url
+        }]
+      : []
+
     form.setFieldsValue({
       title: record.title,
       slug: record.slug,
       content: recordContent,
       category_id: record.category_id,
       status: record.status,
-      tags: record.tags ? (Array.isArray(record.tags) ? record.tags.join(', ') : record.tags) : ''
+      tags: record.tags ? (Array.isArray(record.tags) ? record.tags.join(', ') : record.tags) : '',
+      cover_image: coverFileList
     })
     setIsModalVisible(true)
+    setSlugTouched(true) // tránh tự động sửa slug khi chỉnh sửa
   }
 
   // Handle delete post
@@ -381,25 +404,11 @@ const PostManagement = () => {
       ellipsis: true
     },
     {
-      title: 'Slug',
-      dataIndex: 'slug',
-      key: 'slug',
-      width: 100,
-      align: 'center',
-      render: (slug) => (
-        <div className="slug-display">
-          <Text code style={{ fontSize: '12px', color: '#1890ff' }}>
-            {slug}
-          </Text>
-        </div>
-      )
-    },
-    {
       title: 'Danh mục',
       dataIndex: 'category_id',
       key: 'category_id',
       width: 150,
-      align: 'center',
+      align: 'left',
       render: (categoryId) => {
         const category = categories.find(c => c.category_id === categoryId)
         return category ? (
@@ -656,7 +665,16 @@ const PostManagement = () => {
                 label="Tiêu đề bài viết"
                 rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
               >
-                <Input placeholder="Nhập tiêu đề bài viết" />
+                <Input
+                  placeholder="Nhập tiêu đề bài viết"
+                  onChange={(e) => {
+                    const titleVal = e.target.value
+                    if (!slugTouched) {
+                      const nextSlug = generateSlug(titleVal)
+                      form.setFieldsValue({ slug: nextSlug })
+                    }
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -668,7 +686,10 @@ const PostManagement = () => {
                   { pattern: /^[a-z0-9-]+$/, message: 'Slug chỉ chứa chữ thường, số và dấu gạch ngang!' }
                 ]}
               >
-                <Input placeholder="slug-bai-viet" />
+                <Input
+                  placeholder="slug-bai-viet"
+                  onChange={() => setSlugTouched(true)}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -783,35 +804,6 @@ const PostManagement = () => {
                   <Upload
                     listType="picture-card"
                     maxCount={1}
-                    beforeUpload={() => false}
-                    accept="image/*"
-                    showUploadList={{
-                      showPreviewIcon: true,
-                      showRemoveIcon: true,
-                    }}
-                  >
-                    <div>
-                      <UploadOutlined />
-                      <div style={{ marginTop: 8 }}>Tải lên</div>
-                    </div>
-                  </Upload>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="images"
-                  label="Ảnh bổ sung"
-                  valuePropName="fileList"
-                  getValueFromEvent={(e) => {
-                    if (Array.isArray(e)) {
-                      return e;
-                    }
-                    return e && e.fileList;
-                  }}
-                >
-                  <Upload
-                    listType="picture-card"
-                    multiple
                     beforeUpload={() => false}
                     accept="image/*"
                     showUploadList={{

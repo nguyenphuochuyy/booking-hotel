@@ -292,74 +292,12 @@ const BookingManagement = () => {
     }
   }
 
-  // Kiểm tra thời gian check-in cho booking online
-  // Booking online chỉ có thể check-in sau 12:00 (12h chiều) của ngày check-in
-  const canCheckInBooking = (booking) => {
-    if (!booking) return { can: true }
 
-    // Walk-in không cần kiểm tra thời gian
-    if (booking.booking_type !== 'online') {
-      return { can: true }
-    }
 
-    const now = new Date()
-    const checkInDate = new Date(booking.check_in_date)
-
-    // So sánh ngày (bỏ qua giờ, chỉ lấy ngày/tháng/năm)
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const checkInDay = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate())
-
-    // Nếu ngày hiện tại < ngày check-in: chưa tới ngày
-    if (today < checkInDay) {
-      return {
-        can: false,
-        message: `Chưa tới ngày check-in. Ngày check-in là ${formatDate(booking.check_in_date)}. Vui lòng quay lại sau 12:00 trưa ngày đó.`
-      }
-    }
-
-    // Nếu ngày hiện tại > ngày check-in: đã quá ngày, cho phép check-in
-    if (today > checkInDay) {
-      return { can: true }
-    }
-
-    // Nếu cùng ngày: kiểm tra giờ >= 12:00 (12h chiều)
-    const currentHour = now.getHours()
-    const currentMinute = now.getMinutes()
-    const currentTime = currentHour * 60 + currentMinute // Tổng số phút từ đầu ngày
-    const checkInTime = 12 * 60 // 12:00 = 720 phút
-
-    if (currentTime < checkInTime) {
-      const checkInDateTime = new Date(checkInDate)
-      checkInDateTime.setHours(12, 0, 0, 0)
-      return {
-        can: false,
-        message: `Chưa tới giờ check-in. Booking online chỉ có thể check-in từ 12:00 trưa trở đi. Thời gian sớm nhất: ${checkInDateTime.toLocaleString('vi-VN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        })}`
-      }
-    }
-
-    return { can: true }
-  }
   // hanlde check in 
   const handleCheckIn = async (bookingCode) => {
     setLoading(true)
     try {
-      // Kiểm tra thời gian check-in cho booking online trước khi gọi API
-      const booking = bookings.find(b => b.booking_code === bookingCode) || selectedBooking
-      if (booking) {
-        const checkResult = canCheckInBooking(booking)
-        if (!checkResult.can) {
-          message.error(checkResult.message)
-          setLoading(false)
-          return
-        }
-      }
-
       const response = await checkInGuest(bookingCode)
       if (response.statusCode === 200) {
         message.success('Check-in thành công!')
@@ -580,8 +518,8 @@ const BookingManagement = () => {
       title: 'ID',
       dataIndex: 'booking_id',
       key: 'booking_id',
-      width: 50,
-      align: 'center',
+      width: 60,
+      align: 'left',
       sorter: (a, b) => a.booking_id - b.booking_id
     },
     {
@@ -640,6 +578,11 @@ const BookingManagement = () => {
                       ? `${numRooms} phòng ${rooms.length > 0 ? `(${rooms.slice(0, 2).join(', ')}${rooms.length > 2 ? '...' : ''})` : ''}`
                       : `${numRooms} phòng`
                   }
+                </Text>
+                <br />
+                {/* Hiển thị số khách của booking đó */}
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {record.num_person} khách
                 </Text>
               </div>
             )}
@@ -868,7 +811,7 @@ const BookingManagement = () => {
         }}
         onChange={handleTableChange}
         loading={loading}
-        scroll={{ x: 1500 }}
+        scroll={{ x: 'min-content' }}
         locale={{
           emptyText: (
             <Empty
@@ -913,9 +856,9 @@ const BookingManagement = () => {
             </Button>
           ),
           selectedBooking?.booking_status === 'confirmed' && (() => {
-            const checkResult = canCheckInBooking(selectedBooking)
+         
             return (
-              <Tooltip title={!checkResult.can ? checkResult.message : ''}>
+              <Tooltip title={"Click để check-in khách hàng" }>
                 <Button
                   key="checkin"
                   type="primary"
@@ -923,12 +866,6 @@ const BookingManagement = () => {
                   onClick={() => {
                     setIsDetailModalVisible(false)
                     handleCheckIn(selectedBooking?.booking_code)
-                  }}
-                  disabled={!checkResult.can}
-                  style={{
-                    background: !checkResult.can ? '#d9d9d9' : '#52c41a',
-                    borderColor: !checkResult.can ? '#d9d9d9' : '#52c41a',
-                    cursor: !checkResult.can ? 'not-allowed' : 'pointer'
                   }}
                 >
                   Check-in

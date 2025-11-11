@@ -206,6 +206,26 @@
   overflow: hidden;
 }
 
+.news-card-excerpt-html {
+  color: #6b7280 !important;
+  line-height: 1.6 !important;
+  font-size: 14px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-card-excerpt-html p {
+  margin: 0 0 8px 0;
+}
+
+.news-card-excerpt-html br {
+  content: '';
+  display: block;
+  margin-bottom: 6px;
+}
+
 .news-card-meta {
   margin-bottom: 12px;
   font-size: 13px;
