@@ -9,9 +9,10 @@ import formatPrice from '../../utils/formatPrice'
 import { UserOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { createTempBooking, createPaymentLink, addServicesToTempBooking, calculateNights, formatDate, validatePromotionCode } from '../../services/booking.service'
 import { getAllServices } from '../../services/admin.service'
-import { savePendingPayment } from '../../utils/pendingPayment.util'
+// import { savePendingPayment } from '../../utils/pendingPayment.util'
 import './BookingConfirmation.css'
 import { useAuth } from '../../context/AuthContext'
+import { savePendingPayment } from '../../utils/pendingPayment.util'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -41,7 +42,7 @@ const BookingConfirmation = () => {
     
   }, [bookingInfo])
 
-  // Load available services for the hotel
+  // load danh sách dịch vụ 
   const loadServices = async () => {
     setServicesLoading(true)
     try {
@@ -105,8 +106,9 @@ const BookingConfirmation = () => {
         num_person: bookingInfo.guests?.adults || 2,
         num_rooms: bookingInfo.numRooms,
       })
-      const tempBookingKey = tempBookingResponse.temp_booking_key
+      console.log(tempBookingResponse);
       
+      const tempBookingKey = tempBookingResponse.temp_booking_key
       
       // 2. Thêm dịch vụ (nếu có chọn)
       if (selectedServices.length > 0) {
@@ -120,8 +122,9 @@ const BookingConfirmation = () => {
         temp_booking_key: tempBookingKey,
         promotion_code: promoCode || null
       })
-      
-      // 4. Lưu thông tin thanh toán vào localStorage
+
+       
+      // 5. Lưu thông tin thanh toán vào localStorage (cho tương thích ngược)
       const paymentData = {
         tempBookingKey,
         paymentUrl: paymentResponse.payment_url,
@@ -137,17 +140,42 @@ const BookingConfirmation = () => {
           promoCode: promoCode || null
         }
       }
-      savePendingPayment(paymentData, 30) // Lưu 30 phút
+      savePendingPayment(user?.user_id, paymentData, 30) // Lưu 30 phút
       
-      // 5. Mở URL thanh toán trực tiếp cho khách hàng
-      if (paymentResponse.payment_url) {
+      // 6. Kiểm tra môi trường và xử lý thanh toán
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname === ''
+      
+      if (isLocalhost) {
+        // Ở localhost: chuyển đến trang Payment để test
         message.success('Đang chuyển đến trang thanh toán...')
-        // Mở trong tab mới để khách hàng có thể quay lại sau khi thanh toán
-        window.open(paymentResponse.payment_url, '_blank')
-        // Hoặc redirect trực tiếp (bỏ comment dòng dưới nếu muốn redirect thay vì mở tab mới)
-        // window.location.href = paymentResponse.payment_url
+        navigate('/payment', {
+          state: {
+            tempBookingKey,
+            paymentUrl: paymentResponse.payment_url,
+            qrCode: paymentResponse.qr_code,
+            orderCode: paymentResponse.order_code,
+            bookingCode: paymentResponse.booking_code,
+            amount: paymentResponse.amount,
+            selectedServices,
+            bookingInfo: {
+              ...bookingInfo,
+              numRooms: bookingInfo.numRooms,
+              customerInfo: values,
+              promoCode: promoCode || null
+            }
+          }
+        })
       } else {
-        message.error('Không thể tạo link thanh toán')
+        // Ở production: mở URL thanh toán trực tiếp
+        if (paymentResponse.payment_url) {
+          message.success('Đang chuyển đến trang thanh toán...')
+          // Mở trong tab mới để khách hàng có thể quay lại sau khi thanh toán
+          window.open(paymentResponse.payment_url, '_blank')
+        } else {
+          message.error('Không thể tạo link thanh toán')
+        }
       }
 
     } catch (error) {

@@ -21,31 +21,7 @@ function UserLayout() {
       }
     } catch {}
   }, [location.pathname, navigate])
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('pendingPayment')
-      if (!raw) return
-      if (location.pathname === '/payment') return
-      const data = JSON.parse(raw)
-      const key = 'pendingPaymentNotice'
-      notification.open({
-        message: 'Bạn có đơn hàng chưa thanh toán',
-        description: 'Tiếp tục thanh toán để hoàn tất đặt phòng.',
-        placement: 'bottomLeft',
-        key,
-        btn: (
-          <Button type="primary" size="small" onClick={() => {
-            navigate('/payment')
-            notification.close(key)
-
-          }}>
-            Đi đến
-          </Button>
-        )
-      })
-    } catch {}
-  }, [location.pathname, navigate])
+  
   return (
     <div className="App">
       <Navigation/>

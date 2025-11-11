@@ -18,7 +18,7 @@ import {
   getUserBookings
 } from '../../services/booking.service'
 import httpClient from '../../services/httpClient'
-import { getPendingPayment, clearPendingPayment } from '../../utils/pendingPayment.util'
+import { getPendingPayment, clearPendingPayment, removePendingPayment, getAllPendingPayments } from '../../utils/pendingPayment.util'
 import './PaymentSuccess.css'
 
 const { Title, Text } = Typography
@@ -26,6 +26,7 @@ const { Title, Text } = Typography
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [booking, setBooking] = useState(null)
   const [error, setError] = useState(null)
@@ -70,8 +71,32 @@ const PaymentSuccess = () => {
               // Nếu không lấy được chi tiết, dùng dữ liệu từ findBookingByCode
               setBooking(bookingData)
             }
-            // Xóa pendingPayment sau khi lấy được booking
+            // Xóa pendingPayment và temp booking sau khi lấy được booking
             clearPendingPayment()
+            
+            // Xóa temp booking từ danh sách theo userId
+            const bookingCode = pendingPayment?.bookingCode || bookingData?.booking_code
+            const orderCode = pendingPayment?.orderCode || bookingData?.payos_order_code
+            const tempBookingKey = pendingPayment?.tempBookingKey
+            
+            // Lấy userId từ pendingPayment, user context hoặc từ localStorage
+            const userId = pendingPayment?.userId || user?.user_id || user?.id || null
+            if (userId && (bookingCode || orderCode || tempBookingKey)) {
+              // Xóa temp booking theo bookingCode, orderCode hoặc tempBookingKey
+              if (bookingCode) {
+                removePendingPayment(userId, bookingCode)
+              }
+              if (orderCode) {
+                removePendingPayment(userId, orderCode)
+              }
+              if (tempBookingKey) {
+                removePendingPayment(userId, tempBookingKey)
+              }
+            }
+            
+            // Xóa temp booking cũ (tương thích ngược)
+            localStorage.removeItem('temp_booking_key')
+            localStorage.removeItem('temp_booking_info')
             return
           }
         } catch (err) {
@@ -94,7 +119,17 @@ const PaymentSuccess = () => {
             
             if (payment) {
               setBooking(bookingDetail?.booking || bookingDetail)
-              clearPendingPayment()
+              clearPendingPayment(user?.user_id)
+              
+              // Xóa temp booking từ danh sách theo userId và orderCode
+              const userId = user?.user_id || user?.id || null
+              if (userId && orderCode) {
+                removePendingPayment(userId, orderCode)
+              }
+              
+              // Xóa temp booking cũ (tương thích ngược)
+              localStorage.removeItem('temp_booking_key')
+              localStorage.removeItem('temp_booking_info')
               return
             }
           } catch (err) {
@@ -125,7 +160,6 @@ const PaymentSuccess = () => {
     try {
       message.loading({ content: 'Đang tải hóa đơn...', key: 'downloadInvoice' })
       const blob = await downloadInvoicePDF(booking.booking_id)
-      
       // Tạo URL và tải file
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -135,7 +169,6 @@ const PaymentSuccess = () => {
       link.click()
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-      
       message.success({ content: 'Đã tải hóa đơn thành công!', key: 'downloadInvoice' })
     } catch (err) {
       console.error('Error downloading invoice:', err)
@@ -172,7 +205,17 @@ const PaymentSuccess = () => {
   }
 
   const handleGoHome = () => {
-    navigate('/')
+    // Nếu tab này được mở từ window.open (tab thanh toán)
+    if (window.opener && !window.opener.closed) {
+      // Focus và navigate tab gốc về trang chủ
+      window.opener.location.href = '/'
+      window.opener.focus()
+      // Đóng tab thanh toán hiện tại
+      window.close()
+    } else {
+      // Nếu không phải tab mới, navigate bình thường
+      navigate('/')
+    }
   }
 
   const handleViewBookings = () => {

@@ -37,6 +37,8 @@ import { cancelBookingOnline } from '../../services/booking.service'
 import { getBookingStatusText, getBookingStatusColor, getPaymentStatusText, getPaymentStatusColor } from '../../services/booking.service'
 import { createReview } from '../../services/review.service'
 import { Tooltip } from 'antd'
+import { getAllPendingPayments, removePendingPayment } from '../../utils/pendingPayment.util'
+import { useNavigate } from 'react-router-dom'
 const { Title, Text } = Typography
 const { TextArea } = Input
 const { useBreakpoint } = Grid
@@ -66,6 +68,7 @@ const filterOptions = [
 
 function UserBookingHistory() {
   const screens = useBreakpoint()
+  const navigate = useNavigate()
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [detailModal, setDetailModal] = useState({ visible: false, data: null })
   const [cancellingBookings, setCancellingBookings] = useState(new Set()) // Track cancelling bookings by ID
@@ -82,15 +85,161 @@ function UserBookingHistory() {
   })
   const [invoiceLoading, setInvoiceLoading] = useState(false)
   const {user} = useAuth()
-  // Load bookings from backend
+  const [pendingPayments, setPendingPayments] = useState([])
+
+  // Chuyển đổi pendingPayment thành format booking
+  const convertPendingPaymentToBooking = (pendingPayment) => {
+    if (!pendingPayment || !pendingPayment.bookingInfo) return null
+    
+    const { 
+      bookingInfo, 
+      bookingCode, 
+      amount, 
+      paymentUrl, 
+      orderCode, 
+      selectedServices,
+      tempBookingKey,
+      promoCode,
+      qrCode
+    } = pendingPayment
+    
+    return {
+      id: bookingCode || `PENDING-${Date.now()}`,
+      bookingId: null, // Chưa có booking_id vì chưa thanh toán
+      bookingCode: bookingCode || null,
+      hotelName: bookingInfo?.roomType?.hotel?.name || 'N/A',
+      roomType: bookingInfo?.roomType?.room_type_name || 'N/A',
+      checkInDate: bookingInfo?.checkIn,
+      checkOutDate: bookingInfo?.checkOut,
+      guests: bookingInfo?.guests?.adults || bookingInfo?.num_person || 1,
+      status: 'pending',
+      totalAmount: amount || 0,
+      amount: amount || 0,
+      bookingDate: new Date().toISOString(),
+      customerName: bookingInfo?.customerInfo?.fullName || user?.full_name || 'N/A',
+      phone: user?.phone || 'N/A',
+      email: bookingInfo?.customerInfo?.email || user?.email || 'N/A',
+      customerAddress: null,
+      citizenId: null,
+      note: null,
+      reviewLink: null,
+      paymentStatus: 'pending',
+      bookingType: 'online',
+      roomNum: null,
+      services: Array.isArray(selectedServices) ? selectedServices : [],
+      isPendingPayment: true, // Flag để nhận biết
+      paymentUrl: paymentUrl, // URL thanh toán PayOS
+      orderCode: orderCode,
+      tempBookingKey,
+      bookingInfo,
+      selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
+      promoCode: promoCode || null,
+      qrCode: qrCode || null
+    }
+  }
+
+  // load danh sách đặt phòng và thanh toán đang chờ
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getUserBookings({ limit: 100 })
-        console.log(user);
+        setLoading(true)
         
+        // Lấy tất cả temp bookings của user từ localStorage
+        const userId = user?.user_id || user?.id
+        let tempBookings = []
+        if (userId) {
+          tempBookings = getAllPendingPayments(userId)
+        }
+        
+        // Xử lý từng temp booking để tạo payment link nếu chưa có
+        const pendingBookings = []
+        const validTempBookings = []
+        
+        for (const tempBooking of tempBookings) {
+          try {
+            const { tempBookingKey, bookingInfo, selectedServices, promoCode, paymentUrl, bookingCode, amount, orderCode } = tempBooking
+            
+            // Nếu đã có paymentUrl, chuyển đổi trực tiếp
+            if (paymentUrl && bookingInfo) {
+              const booking = convertPendingPaymentToBooking({
+                tempBookingKey,
+                bookingInfo,
+                selectedServices: selectedServices || [],
+                promoCode: promoCode || null,
+                paymentUrl,
+                bookingCode,
+                amount,
+                orderCode
+              })
+              if (booking) {
+                pendingBookings.push(booking)
+                validTempBookings.push(tempBooking)
+              }
+            } 
+            // Nếu chưa có paymentUrl, tạo lại payment link
+            else if (tempBookingKey) {
+              try {
+                const { createPaymentLink } = await import('../../services/booking.service')
+                const paymentResponse = await createPaymentLink({
+                  temp_booking_key: tempBookingKey,
+                  promotion_code: promoCode || null
+                })
+                
+                // Cập nhật temp booking với paymentUrl
+                const updatedTempBooking = {
+                  ...tempBooking,
+                  paymentUrl: paymentResponse.payment_url,
+                  qrCode: paymentResponse.qr_code,
+                  orderCode: paymentResponse.order_code,
+                  bookingCode: paymentResponse.booking_code,
+                  amount: paymentResponse.amount
+                }
+                
+                // Lưu lại vào localStorage
+                const { savePendingPayment } = await import('../../utils/pendingPayment.util')
+                savePendingPayment(userId, updatedTempBooking, 30)
+                
+                // Chuyển đổi thành booking để hiển thị
+                const booking = convertPendingPaymentToBooking({
+                  tempBookingKey,
+                  bookingInfo: bookingInfo || null,
+                  selectedServices: selectedServices || [],
+                  promoCode: promoCode || null,
+                  paymentUrl: paymentResponse.payment_url,
+                  bookingCode: paymentResponse.booking_code,
+                  amount: paymentResponse.amount,
+                  orderCode: paymentResponse.order_code
+                })
+                
+                if (booking) {
+                  pendingBookings.push(booking)
+                  validTempBookings.push(updatedTempBooking)
+                }
+              } catch (error) {
+                console.error('Error recreating payment link for temp booking:', error)
+                // Nếu temp booking đã hết hạn (404), không thêm vào validTempBookings
+                if (error?.response?.status !== 404) {
+                  validTempBookings.push(tempBooking)
+                } else {
+                  // Xóa temp booking đã hết hạn
+                  if (userId) {
+                    removePendingPayment(userId, tempBookingKey)
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error processing temp booking:', error)
+          }
+        }
+        
+        setPendingPayments(pendingBookings)
+    
+        // Lấy danh sách bookings từ API
+        const res = await getUserBookings({ limit: 100 })
         if(res.statusCode === 200) {
           const list = Array.isArray(res.bookings) ? res.bookings : []
+          
           const mapped = list.map(b => ({
             id: b.booking_code || `BK-${b.booking_id}`,
             bookingId: b.booking_id,
@@ -113,7 +262,8 @@ function UserBookingHistory() {
             paymentStatus: b.payment_status || 'pending',
             bookingType: b.booking_type || 'online',
             roomNum: b.room_num || null,
-            services: Array.isArray(b.services) ? b.services : []
+            services: Array.isArray(b.services) ? b.services : [],
+            isPendingPayment: false
           }))
           setBookings(mapped)
         } else {
@@ -239,19 +389,43 @@ function UserBookingHistory() {
 
   // Filter bookings by status
   const filteredBookings = useMemo(() => {
-    if (selectedFilter === 'all') return bookings
-    return bookings.filter(booking => booking.status === selectedFilter)
-  }, [selectedFilter, bookings])
+    let result = bookings
+    
+    // Nếu chọn tab "Đang xử lý" (pending), thêm pendingPayments vào
+    if (selectedFilter === 'pending') {
+      result = [...pendingPayments, ...bookings.filter(booking => booking.status === 'pending' && !booking.isPendingPayment)]
+    } else if (selectedFilter === 'all') {
+      // Tab "Tất cả": hiển thị cả pendingPayments và bookings
+      result = [...pendingPayments, ...bookings]
+    } else {
+      // Các tab khác: chỉ hiển thị bookings
+      result = bookings.filter(booking => booking.status === selectedFilter)
+    }
+    
+    return result
+  }, [selectedFilter, bookings, pendingPayments])
 
   // Calculate counts for filters
   const filterOptionsWithCount = useMemo(() => {
-    return filterOptions.map(option => ({
+    return filterOptions.map(option => {
+      if (option.key === 'all') {
+        return {
       ...option,
-      count: option.key === 'all' 
-        ? bookings.length 
-        : bookings.filter(booking => booking.status === option.key).length
-    }))
-  }, [bookings])
+          count: bookings.length + pendingPayments.length
+        }
+      } else if (option.key === 'pending') {
+        return {
+          ...option,
+          count: bookings.filter(booking => booking.status === 'pending' && !booking.isPendingPayment).length + pendingPayments.length
+        }
+      } else {
+        return {
+          ...option,
+          count: bookings.filter(booking => booking.status === option.key).length
+        }
+      }
+    })
+  }, [bookings, pendingPayments])
 
   // Mở modal nhập lý do hủy
   const handleOpenCancelModal = (record) => {
@@ -508,11 +682,14 @@ function UserBookingHistory() {
       fixed: screens.xs ? 'right' : false,
       align: 'center',
       render: (_, record) => {
-        const { status, id } = record
+        const { status, id, isPendingPayment, paymentUrl } = record
         const isCancelling = cancellingBookings.has(id)
         
-        // Chỉ hiển thị nút Chi tiết ở ngoài bảng
-        const showViewButton = ['pending','confirmed', 'completed', 'cancelled', 'checked_out'].includes(status)
+        // Hiển thị nút Thanh toán cho pendingPayment (có paymentUrl)
+        const showPaymentButton = isPendingPayment && paymentUrl
+        
+        // Chỉ hiển thị nút Chi tiết cho các booking đã thanh toán (không phải pending payment)
+        const showViewButton = !isPendingPayment && ['pending','confirmed', 'completed', 'cancelled', 'checked_out'].includes(status)
         
         return (
           <Space 
@@ -520,6 +697,73 @@ function UserBookingHistory() {
             direction={screens.xs ? 'vertical' : 'horizontal'}
             wrap
           >
+            {showPaymentButton && (
+              screens.xs ? (
+                <Tooltip title="Thanh toán">
+                  <Button
+                    icon={<DollarOutlined />}
+                    size="small"
+                    onClick={() => {
+                      // Kiểm tra nếu ở localhost thì chuyển đến trang thanh toán
+                      const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === ''
+                      if (isLocalhost) {
+                        navigate('/payment', {
+                          state: {
+                            tempBookingKey: record.tempBookingKey,
+                            orderCode: record.orderCode,
+                            bookingCode: record.bookingCode
+                          }
+                        })
+                      } else {
+                        if (paymentUrl) {
+                          window.open(paymentUrl, '_blank')
+                        } else {
+                          message.error('Không tìm thấy link thanh toán')
+                        }
+                      }
+                    }}
+                    className="payment-btn"
+                    type="primary"
+                    danger
+                    shape="round"
+                  />
+                </Tooltip>
+              ) : (
+                <Button
+                  icon={<DollarOutlined />}
+                  size="middle"
+                  onClick={() => {
+                    // Kiểm tra nếu ở localhost thì chuyển đến trang thanh toán
+                    const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' ||
+                      window.location.hostname === ''
+                    if (isLocalhost) {
+                      navigate('/payment', {
+                        state: {
+                          tempBookingKey: record.tempBookingKey,
+                          orderCode: record.orderCode,
+                          bookingCode: record.bookingCode
+                        }
+                      })
+                    } else {
+                      if (paymentUrl) {
+                        window.open(paymentUrl, '_blank')
+                      } else {
+                        message.error('Không tìm thấy link thanh toán')
+                      }
+                    }
+                  }}
+                  className="payment-btn"
+                  type="primary"
+                  danger
+                  shape="round"
+                >
+                  Thanh toán
+                </Button>
+              )
+            )}
             {showViewButton && (
               screens.xs ? (
                 <Tooltip title="Chi tiết">
@@ -559,11 +803,14 @@ function UserBookingHistory() {
         <Card className="header-card">
           <Row align="middle" justify="space-between">
             <Col xs={24} sm={12}>
-              <Title level={2} className="page-title">
+              <Title level={2} className="page-title" >
                 Lịch sử đặt phòng của bạn
               </Title>
             </Col>
-            <Col xs={24} sm={12} style={{ textAlign: screens.xs ? 'left' : 'right' }}>
+        
+          </Row>
+          <Row>
+          <Col xs={24} sm={24} style={{ textAlign: screens.xs ? 'left' : 'right' }}>
               <Space wrap className="filter-buttons">
                 {filterOptionsWithCount.map(option => (
                   <Button

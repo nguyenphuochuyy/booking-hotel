@@ -13,24 +13,64 @@ import './Payment.css'
 import QRCode from 'antd/es/qr-code'
 const { Title, Text } = Typography
 import { calculateNights, checkPaymentStatus, formatDate } from '../../services/booking.service'
-import { savePendingPayment, getPendingPayment, clearPendingPayment, getRemainingTime } from '../../utils/pendingPayment.util'
+import {  getPendingPayment, clearPendingPayment, getRemainingTime, getPendingPaymentByIdentifier, removePendingPayment } from '../../utils/pendingPayment.util'
+import { useAuth } from '../../context/AuthContext'
 const Payment = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [paymentStatus, setPaymentStatus] = useState('pending')
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   
-  // Ưu tiên dữ liệu từ location.state, nếu không có thì lấy từ localStorage
-  const stateData = location.state
-  const storedData = getPendingPayment()
-  const bookingData = stateData || storedData
+  const stateData = location.state || {}
+
+  const storedUser = (() => {
+    try {
+      const raw = localStorage.getItem('user')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })()
+
+  const userId = user?.user_id || user?.id || storedUser?.user_id || storedUser?.id || storedUser?.userId || null
+
+  const bookingData = (() => {
+    let booking = null
+    const identifierCandidates = [
+      stateData?.tempBookingKey,
+      stateData?.orderCode,
+      stateData?.bookingCode,
+      stateData?.bookingData?.tempBookingKey,
+      stateData?.bookingData?.orderCode,
+      stateData?.bookingData?.bookingCode
+    ].filter(Boolean)
+
+    if (userId && identifierCandidates.length > 0) {
+      for (const identifier of identifierCandidates) {
+        booking = getPendingPaymentByIdentifier(userId, identifier)
+        if (booking) break
+      }
+    }
+
+    if (!booking && stateData?.bookingData) {
+      booking = stateData.bookingData
+    }
+
+    if (!booking && userId) {
+      booking = getPendingPayment(userId)
+    }
+
+    if (!booking) {
+      booking = getPendingPayment()
+    }
+
+    return booking
+  })()
   
   useEffect(() => {
-    console.log(bookingData);
-    
-    if (bookingData) {
+    if (bookingData && bookingData.bookingInfo) {
       // Lưu thông tin thanh toán vào localStorage để khôi phục khi quay lại site
-      savePendingPayment(bookingData, 30) // 30 phút
       
       // Thiết lập thời gian còn lại
       const initialRemain = getRemainingTime()
@@ -39,8 +79,21 @@ const Payment = () => {
       message.error('Thông tin thanh toán không hợp lệ')
       navigate('/')
     }
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Tự động gọi API sau 5 giây để chuyển trạng thái thanh toán thành công
+  useEffect(() => {
+    if (!bookingData || paymentStatus !== 'pending') return
+
+    const timer = setTimeout(() => {
+      handlePaymentSuccess()
+    }, 5000) // 5 giây
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingData, paymentStatus])
 
   // Lấy thông tin từ bookingData
   const {
@@ -48,38 +101,59 @@ const Payment = () => {
     paymentUrl,
     bookingCode,
     orderCode,
-    amount,
-    bookingInfo
-  } = bookingData
+    amount = 0,
+    bookingInfo,
+    tempBookingKey,
+    promoCode,
+    selectedServices = []
+  } = bookingData || {}
   
-  const nights = calculateNights(bookingInfo.checkIn, bookingInfo.checkOut)
+  const nights = bookingInfo ? calculateNights(bookingInfo.checkIn, bookingInfo.checkOut) : 0
   const roomSubtotal = bookingInfo?.roomType?.price_per_night * nights || 0
-  const selectedServices = Array.isArray(bookingData?.selectedServices) ? bookingData.selectedServices : []
   const servicesTotal = selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1), 0)
   const totalWithServices = roomSubtotal + servicesTotal
 
   // Xử lý thanh toán thành công
   const handlePaymentSuccess = async () => {
+    if (paymentStatus === 'success') return // Tránh gọi nhiều lần
+    
     try {
+      setPaymentStatus('success')
+      const buyerName = bookingInfo?.customerInfo?.fullName || ''
+      const buyerEmail = bookingInfo?.customerInfo?.email || ''
       const res = await checkPaymentStatus(
         {
           orderCode : orderCode,
           status : "PAID",
-          buyerName : bookingInfo.customerInfo.fullName,
-          buyerEmail : bookingInfo.customerInfo.email,
+          buyerName,
+          buyerEmail,
         }
       )
       const data = res?.data || res
       if (data?.status === 'success' || data?.statusCode === 200) {
         message.success('Thanh toán thành công!')
-        clearPendingPayment()
+        if (userId) {
+          if (tempBookingKey) {
+            removePendingPayment(userId, tempBookingKey)
+          }
+          if (orderCode) {
+            removePendingPayment(userId, orderCode)
+          }
+          if (bookingCode) {
+            removePendingPayment(userId, bookingCode)
+          }
+        } else {
+          clearPendingPayment()
+        }
         setTimeout(() => {
-          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo, selectedServices: selectedServices , roomNum: bookingInfo.numRooms } })
+          navigate('/booking-success', { state: { bookingCode, amount: totalWithServices, bookingInfo, selectedServices: selectedServices , roomNum: bookingInfo?.numRooms, promoCode } })
         }, 1000)
       } else {
+        setPaymentStatus('pending') // Reset về pending nếu không thành công
         message.error('Thanh toán chưa được xác nhận. Vui lòng thử lại.')
       }
     } catch (err) {
+      setPaymentStatus('pending') // Reset về pending nếu có lỗi
       message.error('Không thể xác nhận thanh toán. Vui lòng thử lại.')
     }
   }
