@@ -20,6 +20,7 @@ import {
 import httpClient from '../../services/httpClient'
 import { getPendingPayment, clearPendingPayment, removePendingPayment, getAllPendingPayments } from '../../utils/pendingPayment.util'
 import './PaymentSuccess.css'
+import { useAuth } from '../../context/AuthContext'
 
 const { Title, Text } = Typography
 
