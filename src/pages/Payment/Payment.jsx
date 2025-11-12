@@ -12,7 +12,7 @@ import formatPrice from '../../utils/formatPrice'
 import './Payment.css'
 import QRCode from 'antd/es/qr-code'
 const { Title, Text } = Typography
-import { calculateNights, checkPaymentStatus, formatDate } from '../../services/booking.service'
+import { calculateNights, checkPaymentStatus, findBookingByCode, formatDate } from '../../services/booking.service'
 import {  getPendingPayment, clearPendingPayment, getRemainingTime, getPendingPaymentByIdentifier, removePendingPayment } from '../../utils/pendingPayment.util'
 import { useAuth } from '../../context/AuthContext'
 const Payment = () => {
@@ -83,6 +83,7 @@ const Payment = () => {
   }, [])
 
 
+
   // Lấy thông tin từ bookingData
   const {
     qrCode,
@@ -100,13 +101,107 @@ const Payment = () => {
   const roomSubtotal = bookingInfo?.roomType?.price_per_night * nights || 0
   const servicesTotal = selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1), 0)
   const totalWithServices = roomSubtotal + servicesTotal
+  // Polling: Cứ mỗi 6 giây gọi API lấy booking theo bookingCode
+  useEffect(() => {
+    if (!bookingCode || paymentStatus === 'success') return
 
-  // Xử lý thanh toán thành công
+    const checkBookingStatus = async () => {
+      try {
+        const response = await findBookingByCode(bookingCode)
+        const booking = response?.booking || response?.data?.booking
+        
+        if (booking) {
+          // Tìm thấy booking, dừng polling và chuyển sang trang thành công
+          console.log('[Payment] Đã tìm thấy booking, chuyển sang trang thành công')
+          setPaymentStatus('success')
+          
+          // Xóa booking trong localStorage theo orderCode
+          if (userId) {
+            if (orderCode) {
+              removePendingPayment(userId, orderCode)
+            }
+            if (bookingCode) {
+              removePendingPayment(userId, bookingCode)
+            }
+            if (tempBookingKey) {
+              removePendingPayment(userId, tempBookingKey)
+            }
+          } else {
+            clearPendingPayment()
+          }
+          
+          // Chuyển sang trang thành công
+          setTimeout(() => {
+            const successUrl = `/payment/success?code=00&id=${encodeURIComponent(orderCode || bookingCode || tempBookingKey || '')}&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
+            navigate(successUrl, { replace: true })
+          }, 500)
+        }
+      } catch (error) {
+        // Nếu không tìm thấy booking (404), tiếp tục polling
+        // if (error?.status !== 404) {
+        //   console.error('[Payment] Error checking booking status:', error)
+        // }
+      }
+    }
+
+    // Gọi ngay lần đầu
+    checkBookingStatus()
+
+    // Thiết lập interval để gọi mỗi 6 giây
+    const intervalId = setInterval(checkBookingStatus, 1000)
+
+    // Cleanup: dừng polling khi component unmount hoặc khi paymentStatus thay đổi
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [bookingCode, paymentStatus, orderCode, tempBookingKey, userId])
+
+  // Xử lý thanh toán thành công (Test button)
   const handlePaymentSuccess = async () => {
     if (paymentStatus === 'success') return // Tránh gọi nhiều lần
     
     try {
-      setPaymentStatus('success')
+      // Khi click test, gọi API findBookingByCode để kiểm tra booking
+      if (bookingCode) {
+        try {
+          const response = await findBookingByCode(bookingCode)
+          const booking = response?.booking || response?.data?.booking
+          
+          if (booking) {
+            // Tìm thấy booking, xử lý như polling đã tìm thấy
+            console.log('[Payment] Test: Đã tìm thấy booking')
+            setPaymentStatus('success')
+            
+            // Xóa booking trong localStorage
+            if (userId) {
+              if (orderCode) {
+                removePendingPayment(userId, orderCode)
+              }
+              if (bookingCode) {
+                removePendingPayment(userId, bookingCode)
+              }
+              if (tempBookingKey) {
+                removePendingPayment(userId, tempBookingKey)
+              }
+            } else {
+              clearPendingPayment()
+            }
+            
+            // Chuyển sang trang thành công
+            // setTimeout(() => {
+            //   const successUrl = `/payment/success?code=00&id=${encodeURIComponent(orderCode || bookingCode || tempBookingKey || '')}&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
+            //   navigate(successUrl, { replace: true })
+            // }, 500)
+            return
+          }
+        } catch (error) {
+          console.log('[Payment] Test: Chưa tìm thấy booking, tiếp tục polling')
+          // Nếu chưa tìm thấy booking, để polling tiếp tục chạy
+          message.info('Chưa tìm thấy booking. Hệ thống sẽ tiếp tục kiểm tra...')
+        }
+      }
+      
+      // Fallback: Nếu không có bookingCode hoặc chưa tìm thấy, vẫn gọi checkPaymentStatus
       const buyerName = bookingInfo?.customerInfo?.fullName || ''
       const buyerEmail = bookingInfo?.customerInfo?.email || ''
       const res = await checkPaymentStatus(
@@ -139,17 +234,11 @@ const Payment = () => {
         } else {
           clearPendingPayment()
         }
-        setTimeout(() => {
-          // Điều hướng sang trang thành công với query params theo yêu cầu
-          const successUrl = `/payment/success?code=00&id=${encodeURIComponent(orderCode || bookingCode || tempBookingKey || '')}&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
-          navigate(successUrl, { replace: true })
-        }, 1000)
       } else {
-        setPaymentStatus('pending') // Reset về pending nếu không thành công
         message.error('Thanh toán chưa được xác nhận. Vui lòng thử lại.')
       }
     } catch (err) {
-      setPaymentStatus('pending') // Reset về pending nếu có lỗi
+      console.error('[Payment] Error in handlePaymentSuccess:', err)
       message.error('Không thể xác nhận thanh toán. Vui lòng thử lại.')
     }
   }

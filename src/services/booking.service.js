@@ -367,7 +367,16 @@ export const downloadInvoicePDF = async (bookingId) => {
     throw error
   }
 }
-// tạo user cho walk-in
+// Tìm booking theo bookingCode
+export const findBookingByCode = async (bookingCode) => {
+  try {
+    const response = await httpClient.get(`/bookings/code/${bookingCode}`)
+    return response
+  } catch (error) {
+    console.error('Error finding booking by code:', error)
+    throw error
+  }
+}
 export default {
   createTempBooking,
   addServiceToTempBooking,
@@ -394,5 +403,6 @@ export default {
   getAllBookings,
   addServicesToTempBooking,
   cancelBookingOnline,
-  downloadInvoicePDF
+  downloadInvoicePDF,
+  findBookingByCode
 }
