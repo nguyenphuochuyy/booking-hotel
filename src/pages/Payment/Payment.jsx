@@ -82,17 +82,6 @@ const Payment = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Tự động gọi API sau 5 giây để chuyển trạng thái thanh toán thành công
-  useEffect(() => {
-    if (!bookingData || paymentStatus !== 'pending') return
-
-    const timer = setTimeout(() => {
-      handlePaymentSuccess()
-    }, 5000) // 5 giây
-
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingData, paymentStatus])
 
   // Lấy thông tin từ bookingData
   const {
@@ -131,15 +120,21 @@ const Payment = () => {
       const data = res?.data || res
       if (data?.status === 'success' || data?.statusCode === 200) {
         message.success('Thanh toán thành công!')
+        // Xóa booking trong localStorage theo orderCode (ưu tiên) hoặc các identifier khác
         if (userId) {
-          if (tempBookingKey) {
-            removePendingPayment(userId, tempBookingKey)
-          }
+          // Ưu tiên xóa theo orderCode vì đây là identifier chính xác nhất
           if (orderCode) {
-            removePendingPayment(userId, orderCode)
+            const removed = removePendingPayment(userId, orderCode)
+            if (removed) {
+              console.log(`[Payment] Đã xóa booking có orderCode: ${orderCode}`)
+            }
           }
-          if (bookingCode) {
+          // Xóa theo các identifier khác để đảm bảo (nếu orderCode không tìm thấy)
+          if (bookingCode && !orderCode) {
             removePendingPayment(userId, bookingCode)
+          }
+          if (tempBookingKey && !orderCode && !bookingCode) {
+            removePendingPayment(userId, tempBookingKey)
           }
         } else {
           clearPendingPayment()
@@ -158,8 +153,6 @@ const Payment = () => {
       message.error('Không thể xác nhận thanh toán. Vui lòng thử lại.')
     }
   }
-
-
 
   return (
     <div className="payment-page-new">
@@ -229,7 +222,7 @@ const Payment = () => {
                 </div>
 
                 {/* Test Button (Remove in production) */}
-                {/* {paymentStatus === 'pending' && (
+                {paymentStatus === 'pending' && (
                   <div style={{ marginTop: '16px' }}>
                     <Button 
                       type="dashed" 
@@ -240,7 +233,7 @@ const Payment = () => {
                       Test: Đã thanh toán
                     </Button>
                   </div>
-                )} */}
+                )}
 
                 {/* Security Info */}
                 <div className="security-info" style={{ marginTop: '24px' }}>

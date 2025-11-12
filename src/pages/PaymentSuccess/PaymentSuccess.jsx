@@ -45,15 +45,75 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     fetchBookingData()
-  }, [orderCode])
+  }, [orderCode, code, status])
 
-  // Tìm booking theo orderCode
+  // Tìm booking theo orderCode từ webhook PayOS
   const fetchBookingData = async () => {
     try {
       setLoading(true)
       setError(null)
-      // Thử lấy booking_code từ localStorage (nếu có)
-      const pendingPayment = getPendingPayment()
+      
+      // Lấy userId từ user context hoặc localStorage
+      const storedUser = (() => {
+        try {
+          const raw = localStorage.getItem('user')
+          return raw ? JSON.parse(raw) : null
+        } catch {
+          return null
+        }
+      })()
+      const userId = user?.user_id || user?.id || storedUser?.user_id || storedUser?.id || storedUser?.userId || null
+      
+      // Ưu tiên: Nếu có orderCode từ query params (từ webhook PayOS), xóa booking trong localStorage ngay
+      if (orderCode && userId && isSuccess) {
+        console.log(`[PaymentSuccess] Xóa booking có orderCode từ webhook: ${orderCode}`)
+        const removed = removePendingPayment(userId, orderCode)
+        if (removed) {
+          console.log(`[PaymentSuccess] Đã xóa booking có orderCode: ${orderCode}`)
+        }
+        
+        // Xóa các temp booking cũ (tương thích ngược)
+        localStorage.removeItem('temp_booking_key')
+        localStorage.removeItem('temp_booking_info')
+      }
+      
+      // Tìm booking từ backend theo orderCode (thông qua payment transaction_id)
+      if (orderCode) {
+        try {
+          const response = await getUserBookings({ limit: 100 })
+          const bookings = response?.bookings || response?.data?.bookings || []
+          
+          // Tìm booking có payment với transaction_id = orderCode
+          for (const b of bookings) {
+            try {
+              const bookingDetail = await getBookingById(b.booking_id)
+              const payments = bookingDetail?.booking?.payments || []
+              const payment = payments.find(p => 
+                p.transaction_id === orderCode || 
+                p.transaction_id === orderCode?.toString() ||
+                p.order_code === orderCode ||
+                p.order_code === orderCode?.toString()
+              )
+              
+              if (payment) {
+                setBooking(bookingDetail?.booking || bookingDetail)
+                // Đảm bảo xóa booking trong localStorage (đã xóa ở trên nhưng xóa lại để chắc chắn)
+                if (userId && orderCode) {
+                  removePendingPayment(userId, orderCode)
+                }
+                return
+              }
+            } catch (err) {
+              console.error('Error checking booking:', err)
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching bookings by orderCode:', err)
+        }
+      }
+      
+      // Fallback: Thử lấy booking_code từ localStorage (nếu có)
+      const pendingPayment = getPendingPayment(userId)
       const bookingCode = pendingPayment?.bookingCode || null
 
       // Nếu có bookingCode, tìm booking theo code bằng API findBookingByCode
@@ -107,43 +167,8 @@ const PaymentSuccess = () => {
         }
       }
 
-      // Nếu không tìm thấy bằng bookingCode, thử lấy từ danh sách bookings và tìm theo payment transaction_id
-      try {
-        const response = await getUserBookings({ limit: 100 }) // Lấy nhiều bookings để tìm
-        const bookings = response?.bookings || response?.data?.bookings || []
-        
-        // Tìm booking có payment với transaction_id = orderCode
-        for (const b of bookings) {
-          try {
-            const bookingDetail = await getBookingById(b.booking_id)
-            const payments = bookingDetail?.booking?.payments || []
-            const payment = payments.find(p => p.transaction_id === orderCode || p.transaction_id === orderCode?.toString())
-            
-            if (payment) {
-              setBooking(bookingDetail?.booking || bookingDetail)
-              clearPendingPayment(user?.user_id)
-              
-              // Xóa temp booking từ danh sách theo userId và orderCode
-              const userId = user?.user_id || user?.id || null
-              if (userId && orderCode) {
-                removePendingPayment(userId, orderCode)
-              }
-              
-              // Xóa temp booking cũ (tương thích ngược)
-              localStorage.removeItem('temp_booking_key')
-              localStorage.removeItem('temp_booking_info')
-              return
-            }
-          } catch (err) {
-            console.error('Error checking booking:', err)
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching bookings:', err)
-      }
-
       // Nếu không tìm thấy booking, vẫn hiển thị thông tin thanh toán từ query params
-      // Không set error để vẫn hiển thị thông tin thanh toán
+      // (Đã xóa booking trong localStorage ở trên nếu có orderCode)
     } catch (err) {
       console.error('Error fetching booking data:', err)
       setError('Không thể tải thông tin đặt phòng. Vui lòng thử lại sau.')

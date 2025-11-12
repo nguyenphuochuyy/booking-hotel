@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import authenticationService from '../services/authentication.service'
 import { getUserProfile } from '../services/user.service'
 import { useNavigate } from 'react-router-dom'
+import { clearAllTempBookings } from '../utils/pendingPayment.util'
 
 const AuthContext = createContext(null)
 
@@ -22,15 +23,26 @@ export function AuthProvider({ children }) {
               setUser(data.user)
             }
           } catch (error) {
-            // Token không hợp lệ hoặc hết hạn, xóa đi
+            // Token không hợp lệ hoặc hết hạn, xóa tất cả dữ liệu liên quan
             localStorage.removeItem('accessToken')
+            localStorage.removeItem('user')
+            clearAllTempBookings()
             setAccessToken(null)
             setUser(null)
           }
+        } else {
+          // Không có token, xóa user và temp bookings nếu còn sót lại
+          const hasUser = localStorage.getItem('user')
+          if (hasUser) {
+            localStorage.removeItem('user')
+            clearAllTempBookings()
+          }
         }
       } catch (_err) {
-        // Nếu có lỗi, clear token
+        // Nếu có lỗi, clear tất cả dữ liệu
         localStorage.removeItem('accessToken')
+        localStorage.removeItem('user')
+        clearAllTempBookings()
         setAccessToken(null)
         setUser(null)
       } finally {
@@ -66,14 +78,29 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
-
     try {
-       localStorage.removeItem('accessToken') 
-       localStorage.removeItem('user')
-       localStorage.removeItem('pendingPaymentExpiry')
-       localStorage.removeItem('pendingPayment')
-       localStorage.removeItem('chatbot_session_id')
-    } catch (_err) {}
+      // Lấy userId trước khi xóa user để xóa temp bookings của user đó
+      const rawUser = localStorage.getItem('user')
+      let userId = null
+      if (rawUser) {
+        try {
+          const user = JSON.parse(rawUser)
+          userId = user?.user_id || user?.id || user?.userId
+        } catch (_e) {}
+      }
+      
+      // Xóa tất cả dữ liệu
+      localStorage.removeItem('accessToken') 
+      localStorage.removeItem('user')
+      localStorage.removeItem('pendingPaymentExpiry')
+      localStorage.removeItem('pendingPayment')
+      localStorage.removeItem('chatbot_session_id')
+      
+      // Xóa tất cả temp bookings (của user hiện tại và các user khác nếu có)
+      clearAllTempBookings()
+    } catch (_err) {
+      console.error('Error during logout:', _err)
+    }
     setAccessToken(null)
     setUser(null)
   }, [])

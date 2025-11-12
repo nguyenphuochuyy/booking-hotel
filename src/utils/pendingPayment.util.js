@@ -245,6 +245,33 @@ export const clearPendingPayment = (userId = null) => {
 }
 
 /**
+ * Xóa tất cả temp bookings keys khỏi localStorage (dùng khi logout hoặc clear all)
+ * @returns {boolean} - true nếu xóa thành công
+ */
+export const clearAllTempBookings = () => {
+  try {
+    // Xóa tất cả keys có pattern temp_bookings_*
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(`${TEMP_BOOKINGS_KEY}_`)) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+    
+    // Xóa key cũ (tương thích ngược)
+    localStorage.removeItem(PENDING_PAYMENT_KEY)
+    localStorage.removeItem(PENDING_PAYMENT_EXPIRY_KEY)
+    
+    return true
+  } catch (error) {
+    console.error('Error clearing all temp bookings:', error)
+    return false
+  }
+}
+
+/**
  * Kiểm tra xem có thanh toán đang chờ không
  * @returns {boolean} - true nếu có thanh toán đang chờ và chưa hết hạn
  */
@@ -339,6 +366,7 @@ export default {
   getPendingPaymentByIdentifier,
   removePendingPayment,
   clearPendingPayment,
+  clearAllTempBookings,
   hasPendingPayment,
   getRemainingTime,
   updatePendingPayment

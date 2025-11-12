@@ -876,20 +876,35 @@ function UserBookingHistory() {
                 Hủy phòng
               </Button>
             ),
-            detailModal.data && (detailModal.data.status === 'checked_out' || detailModal.data.status === 'completed') && (
-              <Button
-                key="download-invoice"
-                type="primary"
-                icon={<PrinterOutlined />}
-                onClick={() => handleDownloadInvoice(detailModal.data.bookingId, detailModal.data.id)}
-                loading={invoiceLoading}
-              >
-                Xuất hóa đơn
-              </Button>
+            detailModal.data && detailModal.data.status === 'checked_out' && (
+              <>
+                <Divider />
+                <Space>
+                  <Button 
+                    type="primary" 
+                    onClick={() => {
+                      setDetailModal({ visible: false, data: null })
+                      setReviewModal({
+                        visible: true,
+                        bookingId: detailModal.data.bookingId,
+                        bookingCode: detailModal.data.id
+                      })
+                      setReviewForm({
+                        rating: 5,
+                        comment: '',
+                        images: []
+                      })
+                    }}
+                  >
+                    Viết đánh giá
+                  </Button>
+                </Space>
+              </>
             ),
             <Button key="close" onClick={() => setDetailModal({ visible: false, data: null })}>Đóng</Button>
           ]}
           width={screens.xs ? 360 : 720}
+          centered
         >
           {detailModal.data && (
             <div>
@@ -1080,32 +1095,6 @@ function UserBookingHistory() {
                       })}
                     </Space>
                   </Card>
-                </>
-              )}
-
-              {detailModal.data && detailModal.data.status === 'checked_out' && (
-                <>
-                  <Divider />
-                  <Space>
-                    <Button 
-                      type="primary" 
-                      onClick={() => {
-                        setDetailModal({ visible: false, data: null })
-                        setReviewModal({
-                          visible: true,
-                          bookingId: detailModal.data.bookingId,
-                          bookingCode: detailModal.data.id
-                        })
-                        setReviewForm({
-                          rating: 5,
-                          comment: '',
-                          images: []
-                        })
-                      }}
-                    >
-                      Viết đánh giá
-                    </Button>
-                  </Space>
                 </>
               )}
             </div>

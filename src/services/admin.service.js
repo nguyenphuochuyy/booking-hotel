@@ -621,6 +621,16 @@ export async function getInfoRefundBooking(id) {
   return http.get(`/bookings/${id}`)
 }
 
+/**
+ * Thêm dịch vụ vào booking vĩnh viễn (Walk-in/Checked-in)
+ * @param {number|string} id - Booking ID
+ * @param {Array<{service_id:number, quantity:number}>} services
+ * @returns {Promise}
+ */
+export async function addServicesToBooking(id, services = []) {
+  return http.post(`/bookings/${id}/services`, { services })
+}
+
 export default {
   // Users
   getAllUsers,
@@ -691,6 +701,7 @@ export default {
   createWalkInUser,
   createWalkInBooking,
   getInfoRefundBooking,
-  markRefundCompleted
+  markRefundCompleted,
+  addServicesToBooking
 }
 

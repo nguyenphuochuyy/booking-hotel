@@ -8,7 +8,8 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   CalendarOutlined, ReloadOutlined, ExclamationCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
-  UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined
+  UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined,
+  CustomerServiceFilled
 } from '@ant-design/icons'
 import {
   getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
@@ -18,11 +19,14 @@ import {
   createWalkInBooking,
   getAvailableRoomsForType,
   generateInvoicePDF,
-  getInfoRefundBooking
+  viewInvoice,
+  getInfoRefundBooking,
+  getAllServices,
+  addServicesToBooking
 } from '../../../services/admin.service'
 import CheckInOut from '../../../components/CheckInOut/CheckInOut'
 import formatPrice from '../../../utils/formatPrice'
-
+import './BookingManagement.css'
 const { Title, Text } = Typography
 const { Option } = Select
 const { RangePicker } = DatePicker
@@ -71,6 +75,10 @@ const BookingManagement = () => {
   const [refundSubmitting, setRefundSubmitting] = useState(false)
   const [refundInfo, setRefundInfo] = useState(null) // Thông tin hoàn tiền
   const [loadingRefundInfo, setLoadingRefundInfo] = useState(false)
+  const [isAddServiceModalVisible, setIsAddServiceModalVisible] = useState(false)
+  const [servicesLoading, setServicesLoading] = useState(false)
+  const [servicesList, setServicesList] = useState([])
+  const [selectedServices, setSelectedServices] = useState({})
 
   const handleLoadAvailableRooms = async () => {
     try {
@@ -261,7 +269,7 @@ const BookingManagement = () => {
     return filtered
   }, [bookings, searchText, statusFilter, typeFilter, sortBy, sortOrder])
 
-  // Handle view booking details
+  // Handle xem chi tiết đặt phòng
   const handleViewDetails = async (bookingId) => {
     try {
       const response = await getBookingById(bookingId)
@@ -365,9 +373,7 @@ const BookingManagement = () => {
       window.URL.revokeObjectURL(url)
       message.success('Đã tải hóa đơn thành công!')
     } catch (error) {
-      console.error('Error generating invoice:', error)
-      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tạo hóa đơn!'
-      message.error(errorMessage)
+      message.error('Không thể tải hóa đơn!')
     } finally {
       setLoading(false)
     }
@@ -665,7 +671,7 @@ const BookingManagement = () => {
       title: 'Loại đặt',
       dataIndex: 'booking_type',
       key: 'booking_type',
-      width: 70,
+      width: 80,
       align: 'center',
       render: (type) => (
         <Tag color={type === 'online' ? 'blue' : 'green'}>
@@ -709,14 +715,13 @@ const BookingManagement = () => {
 
   return (
     <div className="booking-management"
-      style={{ padding: '24px' }}
+      style={{ padding: '20px' }}
     >
       {/* Header */}
       <div className="booking-header">
         <h2 className="page-title">
-          <CalendarOutlined /> Quản lý đặt phòng
+        Quản lý đặt phòng
         </h2>
-
       </div>
 
       {/* Statistics */}
@@ -841,6 +846,33 @@ const BookingManagement = () => {
           <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
             Đóng
           </Button>,
+          selectedBooking?.booking_status === 'checked_in' && (
+            <Button
+              key="addService"
+              icon={<CustomerServiceFilled/>}
+              onClick={async () => {
+                try {
+                  setIsAddServiceModalVisible(true)
+                  setServicesLoading(true)
+                  // Thử lọc theo khách sạn nếu có, nếu không sẽ lấy tất cả
+                  const hotelId =
+                    selectedBooking?.room_type?.hotel_id ||
+                    selectedBooking?.booking_rooms?.[0]?.room?.room_type?.hotel_id ||
+                    undefined
+                  const res = await getAllServices(hotelId ? { hotel_id: hotelId, limit: 100 } : { limit: 100 })
+                  const list = res?.services || res?.data?.services || res?.items || []
+                  setServicesList(Array.isArray(list) ? list : [])
+                  setSelectedServices({})
+                } catch (e) {
+                  setServicesList([])
+                } finally {
+                  setServicesLoading(false)
+                }
+              }}
+            >
+              Thêm dịch vụ
+            </Button>
+          ),
           // Nút hủy phòng (chỉ hiển thị nếu trạng thái là confirmed và chưa tới check-in)
           selectedBooking?.booking_status === 'confirmed' && canCancelBooking(selectedBooking) && (
             <Button
@@ -856,7 +888,6 @@ const BookingManagement = () => {
             </Button>
           ),
           selectedBooking?.booking_status === 'confirmed' && (() => {
-         
             return (
               <Tooltip title={"Click để check-in khách hàng" }>
                 <Button
@@ -995,7 +1026,7 @@ const BookingManagement = () => {
                   </div>
                   <div className="detail-item">
                     <Text strong>Phương thức:</Text>
-                    <Text>{selectedBooking.payment_status === 'paid' ? 'PayOS' : 'Chưa thanh toán'}</Text>
+                    <Text>{selectedBooking.payment_status === 'paid' ? 'PayOS' : selectedBooking.payment_status === 'partial_refunded' ? 'Chờ hoàn tiền từ admin' : 'Admin chuyển khoản'}</Text>
                   </div>
                   
                   {/* Hiển thị thông tin hoàn tiền khi booking đã hủy */}
@@ -1012,7 +1043,7 @@ const BookingManagement = () => {
                       ) : refundInfo ? (
                         <>
                           <div className="detail-item" style={{ marginTop: 8 }}>
-                            <Text strong>Số tiền khách sạn phải hoàn trả cho khách hàng:</Text>
+                            <Text strong>Số tiền khách được hoàn: </Text>
                             <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
                               {formatPrice(
                                 refundInfo.payment_summary?.total_refunded 
@@ -1051,11 +1082,14 @@ const BookingManagement = () => {
               {selectedBooking.check_in_time && (
                 <div className="detail-item">
                   <Text strong>Thời gian check-in: </Text>
-                  <Text> {new Date(selectedBooking.check_in_time).toLocaleString('vi-VN')} </Text>
+                  <Text> 
+                    {/* lấy thời gian lúc checkin có cả giờ phút lúc nhấn vào */}
+                    
+                  </Text>
                 </div>
               )}
               {selectedBooking.check_out_time && (
-                <div className="detail-item">
+                <div className="detail-item">   
                   <Text strong>Thời gian check-out:</Text>
                   <Text strong>{new Date(selectedBooking.check_out_time).toLocaleString('vi-VN')}</Text>
                 </div>
@@ -1074,6 +1108,7 @@ const BookingManagement = () => {
                 size="small"
                 style={{ marginTop: 16 }}
                 headStyle={{ backgroundColor: '#fff1f0', borderColor: '#ffccc7' }}
+                
               >
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   <div className="detail-item">
@@ -1122,7 +1157,7 @@ const BookingManagement = () => {
                       </div>
                     </>
                   )}
-
+                  
                   <div style={{ textAlign: 'center' }}>
                     <Button
                       type="primary"
@@ -1133,6 +1168,7 @@ const BookingManagement = () => {
                         backgroundColor: '#52c41a',
                         borderColor: '#52c41a'
                       }}
+                      disabled={selectedBooking.payment_status === 'refunded'}
                     >
                       Đánh dấu đã hoàn tiền
                     </Button>
@@ -1148,6 +1184,98 @@ const BookingManagement = () => {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Modal thêm dịch vụ cho booking đã check-in */}
+      <Modal
+        title="Thêm dịch vụ"
+        open={isAddServiceModalVisible}
+        onCancel={() => setIsAddServiceModalVisible(false)}
+        width={720}
+        footer={[
+          <Button key="cancel" onClick={() => setIsAddServiceModalVisible(false)}>
+            Đóng
+          </Button>,
+          <Button
+            key="ok"
+            type="primary"
+            onClick={async () => {
+              const picked = Object.entries(selectedServices)
+                .filter(([, val]) => (val || 0) > 0)
+                .map(([id, qty]) => ({ service_id: Number(id), quantity: Number(qty) }))
+              if (picked.length === 0) {
+                message.warning('Vui lòng chọn ít nhất 1 dịch vụ')
+                return
+              }
+              if (!selectedBooking?.booking_id) {
+                message.error('Không xác định được booking')
+                return
+              }
+              try {
+                // Chỉ handle khi là walkin và đã check_in
+                if (selectedBooking.booking_type === 'walkin' && selectedBooking.booking_status === 'checked_in') {
+                  const res = await addServicesToBooking(selectedBooking.booking_id, picked)
+                  if (res?.statusCode === 200 || res?.statusCode === 201 || res?.message) {
+                    message.success('Thêm dịch vụ thành công')
+                    setIsAddServiceModalVisible(false)
+                    setSelectedServices({})
+                    fetchBookings(pagination.current, pagination.pageSize)
+                  } else {
+                    message.error(res?.message || 'Không thể thêm dịch vụ')
+                  }
+                } else {
+                  message.warning('Chỉ hỗ trợ thêm dịch vụ cho booking Walk-in đã nhận phòng')
+                }
+              } catch (e) {
+                message.error(e?.response?.data?.message || 'Không thể thêm dịch vụ')
+              }
+            }}
+          >
+            Xác nhận
+          </Button>
+        ]}
+        destroyOnClose
+        centered
+      >
+        <Spin spinning={servicesLoading}>
+          {(!servicesList || servicesList.length === 0) ? (
+            <Empty description="Không có dịch vụ nào" />
+          ) : (
+            <div>
+              <div style={{ display: 'flex', fontWeight: 600, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                <div style={{ flex: 1 }}>Dịch vụ</div>
+                <div style={{ width: 140, textAlign: 'right' }}>Đơn giá</div>
+                <div style={{ width: 160, textAlign: 'right', paddingLeft: 12 }}>Số lượng</div>
+              </div>
+              {servicesList.map(svc => {
+                const qty = Number(selectedServices[svc.service_id]) || 0
+                return (
+                  <div key={svc.service_id} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <div style={{ flex: 1 }}>
+                      <Text>{svc.name}</Text>
+                    </div>
+                    <div style={{ width: 140, textAlign: 'right' }}>
+                      <Tag color="blue">{formatPrice(svc.price)}</Tag>
+                    </div>
+                    <div style={{ width: 160, textAlign: 'right', paddingLeft: 12 }}>
+                      <InputNumber
+                        min={0}
+                        value={qty}
+                        onChange={(val) => {
+                          const v = Number(val) || 0
+                          setSelectedServices(prev => ({
+                            ...prev,
+                            [svc.service_id]: v
+                          }))
+                        }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Spin>
       </Modal>
 
       {/* Walk-in Create Booking Modal */}

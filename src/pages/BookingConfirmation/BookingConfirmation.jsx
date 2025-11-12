@@ -123,7 +123,6 @@ const BookingConfirmation = () => {
         promotion_code: promoCode || null
       })
 
-       
       // 5. Lưu thông tin thanh toán vào localStorage (cho tương thích ngược)
       const paymentData = {
         tempBookingKey,
@@ -141,15 +140,7 @@ const BookingConfirmation = () => {
         }
       }
       savePendingPayment(user?.user_id, paymentData, 30) // Lưu 30 phút
-      
-      // 6. Kiểm tra môi trường và xử lý thanh toán
-      const isLocalhost = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.hostname === ''
-      
-      if (isLocalhost) {
-        // Ở localhost: chuyển đến trang Payment để test
-        message.success('Đang chuyển đến trang thanh toán...')
+        // chuyển đến trang Payment để test
         navigate('/payment', {
           state: {
             tempBookingKey,
@@ -167,17 +158,6 @@ const BookingConfirmation = () => {
             }
           }
         })
-      } else {
-        // Ở production: mở URL thanh toán trực tiếp
-        if (paymentResponse.payment_url) {
-          message.success('Đang chuyển đến trang thanh toán...')
-          // Mở trong tab mới để khách hàng có thể quay lại sau khi thanh toán
-          window.open(paymentResponse.payment_url, '_blank')
-        } else {
-          message.error('Không thể tạo link thanh toán')
-        }
-      }
-
     } catch (error) {
       console.error('có lỗi xảy ra khi tạo đặt phòng:', error)
       message.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo đặt phòng!')
