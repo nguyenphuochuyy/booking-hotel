@@ -16,7 +16,8 @@ import {
   Divider,
   Rate,
   Input,
-  Upload
+  Upload,
+  Alert
 } from 'antd'
 import {
   EyeOutlined,
@@ -31,7 +32,7 @@ import {
   PrinterOutlined
 } from '@ant-design/icons'
 import './userBookingHistory.css'
-import { getUserBookings, cancelBooking, downloadInvoicePDF } from '../../services/booking.service'
+import { getUserBookings, cancelBooking, downloadInvoicePDF, formatDate } from '../../services/booking.service'
 import { useAuth } from '../../context/AuthContext'
 import { cancelBookingOnline } from '../../services/booking.service'
 import { getBookingStatusText, getBookingStatusColor, getPaymentStatusText, getPaymentStatusColor } from '../../services/booking.service'
@@ -57,17 +58,23 @@ const mapStatus = (backend) => {
 }
 
 // Trạng thái hiển thị dạng text thuần
-
 const filterOptions = [
   { key: 'all', label: 'Tất cả', count: 0 },
   { key: 'pending', label: 'Đang xử lý', count: 0 },
   { key: 'confirmed', label: 'Đã xác nhận', count: 0 },
-  { key: 'completed', label: 'Hoàn thành', count: 0 },
+  { key: 'checked_out', label: 'Hoàn thành', count: 0 },
   { key: 'cancelled', label: 'Đã hủy', count: 0 }
 ]
 
 function UserBookingHistory() {
   const screens = useBreakpoint()
+  const modalWidth = useMemo(() => {
+    if (screens?.xl) return 700
+    if (screens?.lg) return 680
+    if (screens?.md) return 640
+    if (screens?.sm) return 560
+    return 340
+  }, [screens])
   const navigate = useNavigate()
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [detailModal, setDetailModal] = useState({ visible: false, data: null })
@@ -103,6 +110,13 @@ function UserBookingHistory() {
       qrCode
     } = pendingPayment
     
+    const createdAt =
+      pendingPayment.createdAt ||
+      pendingPayment.bookingDate ||
+      bookingInfo?.createdAt ||
+      bookingInfo?.created_at ||
+      new Date().toISOString()
+
     return {
       id: bookingCode || `PENDING-${Date.now()}`,
       bookingId: null, // Chưa có booking_id vì chưa thanh toán
@@ -115,14 +129,16 @@ function UserBookingHistory() {
       status: 'pending',
       totalAmount: amount || 0,
       amount: amount || 0,
-      bookingDate: new Date().toISOString(),
+      bookingDate: new Date(createdAt).toISOString(),
       customerName: bookingInfo?.customerInfo?.fullName || user?.full_name || 'N/A',
       phone: user?.phone || 'N/A',
       email: bookingInfo?.customerInfo?.email || user?.email || 'N/A',
       customerAddress: null,
       citizenId: null,
       note: null,
-      reviewLink: null,
+    reviewLink: null,
+    hasReview: false,
+    canReview: false,
       paymentStatus: 'pending',
       bookingType: 'online',
       roomNum: null,
@@ -239,7 +255,23 @@ function UserBookingHistory() {
         if(res.statusCode === 200) {
           const list = Array.isArray(res.bookings) ? res.bookings : []
           
-          const mapped = list.map(b => ({
+          const mapped = list.map(b => {
+            const createdAt =
+              b.created_at ||
+              b.createdAt ||
+              b.booking_date ||
+              b.created_on ||
+              b.updated_at
+
+            let bookingDate = null
+            if (createdAt) {
+              const parsed = new Date(createdAt)
+              bookingDate = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
+            } else {
+              bookingDate = new Date().toISOString()
+            }
+
+            return {
             id: b.booking_code || `BK-${b.booking_id}`,
             bookingId: b.booking_id,
             bookingCode: b.booking_code || null,
@@ -250,7 +282,7 @@ function UserBookingHistory() {
             guests: b.num_person || 1,
             status: b.booking_status || 'pending',
             totalAmount: b.final_price ?? b.total_price ?? 0,
-            bookingDate: b.created_at,
+            bookingDate,
             customerName: b.customer_name || b.guest_name || b.user?.full_name || 'N/A',
             phone: b.customer_phone || b.guest_phone || b.user?.phone || 'N/A',
             email: b.customer_email || b.user?.email || 'N/A',
@@ -258,12 +290,14 @@ function UserBookingHistory() {
             citizenId: b.identity_number || b.citizen_id || null,
             note: b.note || b.customer_note || null,
             reviewLink: b.review_link || null,
+            hasReview: Boolean(b.has_review),
+            canReview: Boolean(b.can_review),
             paymentStatus: b.payment_status || 'pending',
             bookingType: b.booking_type || 'online',
             roomNum: b.room_num || null,
             services: Array.isArray(b.services) ? b.services : [],
             isPendingPayment: false
-          }))
+          }})
           setBookings(mapped)
         } else {
           message.error(res.message)
@@ -386,10 +420,9 @@ function UserBookingHistory() {
     }
   }
 
-  // Filter bookings by status
+  // Filter đặt phòng theo trạng thái
   const filteredBookings = useMemo(() => {
     let result = bookings
-    
     // Nếu chọn tab "Đang xử lý" (pending), thêm pendingPayments vào
     if (selectedFilter === 'pending') {
       result = [...pendingPayments, ...bookings.filter(booking => booking.status === 'pending' && !booking.isPendingPayment)]
@@ -470,60 +503,15 @@ function UserBookingHistory() {
     }
   }
 
-  // Handle view details
+  // Xem chi tiết đánh giá
   const handleViewDetails = (booking) => {
     setDetailModal({ visible: true, data: booking })
     console.log(booking);
     
   }
-  
-  // Handle download invoice
-  const handleDownloadInvoice = async (bookingId, bookingCode) => {
-    if (!bookingId) {
-      message.error('Không tìm thấy thông tin đặt phòng!')
-      return
-    }
 
-    try {
-      setInvoiceLoading(true)
-      // Gọi API để tạo PDF
-      const blob = await downloadInvoicePDF(bookingId)
-      
-      // Tạo URL từ blob
-      const url = window.URL.createObjectURL(blob)
-      
-      // Tạo link tải xuống
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `invoice-${bookingCode || bookingId}.pdf`
-      
-      // Trigger download
-      document.body.appendChild(link)
-      link.click()
-      
-      // Cleanup
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-      
-      message.success('Đã tải hóa đơn thành công!')
-    } catch (error) {
-      console.error('Error downloading invoice:', error)
-      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể tải hóa đơn!'
-      
-      // Xử lý lỗi cụ thể
-      if (error?.response?.status === 403) {
-        message.error('Bạn không có quyền xem hóa đơn này hoặc booking chưa được check-out!')
-      } else if (error?.response?.status === 404) {
-        message.error('Không tìm thấy thông tin đặt phòng!')
-      } else {
-        message.error(errorMessage)
-      }
-    } finally {
-      setInvoiceLoading(false)
-    }
-  }
 
-  // Handle submit review
+  // Gửi đánh giá
   const handleSubmitReview = async () => {
     if (!reviewModal.bookingId) {
       message.error('Không xác định được booking cần đánh giá')
@@ -562,7 +550,23 @@ function UserBookingHistory() {
         const res = await getUserBookings({ limit: 100 })
         if (res.statusCode === 200) {
           const list = Array.isArray(res.bookings) ? res.bookings : []
-          const mapped = list.map(b => ({
+          const mapped = list.map(b => {
+            const createdAt =
+              b.created_at ||
+              b.createdAt ||
+              b.booking_date ||
+              b.created_on ||
+              b.updated_at
+
+            let bookingDate = null
+            if (createdAt) {
+              const parsed = new Date(createdAt)
+              bookingDate = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
+            } else {
+              bookingDate = new Date().toISOString()
+            }
+
+            return {
             id: b.booking_code || `BK-${b.booking_id}`,
             bookingId: b.booking_id,
             bookingCode: b.booking_code || null,
@@ -573,7 +577,7 @@ function UserBookingHistory() {
             guests: b.num_person || 1,
             status: b.booking_status || 'pending',
             totalAmount: b.final_price ?? b.total_price ?? 0,
-            bookingDate: b.created_at,
+            bookingDate,
             customerName: b.customer_name || b.guest_name || b.user?.full_name || 'N/A',
             phone: b.customer_phone || b.guest_phone || b.user?.phone || 'N/A',
             email: b.customer_email || b.user?.email || 'N/A',
@@ -581,11 +585,13 @@ function UserBookingHistory() {
             citizenId: b.identity_number || b.citizen_id || null,
             note: b.note || b.customer_note || null,
             reviewLink: b.review_link || null,
+            hasReview: Boolean(b.has_review),
+            canReview: Boolean(b.can_review),
             paymentStatus: b.payment_status || 'pending',
             bookingType: b.booking_type || 'online',
             roomNum: b.room_num || null,
             services: Array.isArray(b.services) ? b.services : []
-          }))
+          }})
           setBookings(mapped)
         }
       }
@@ -598,13 +604,13 @@ function UserBookingHistory() {
     }
   }
 
-  // Table columns
+  // Cột bảng lịch sử đặt phòng
   const columns = [
     {
-      title: 'Booking ID',
+      title: 'Booking Code',
       dataIndex: 'id',
       key: 'id',
-      width: screens.xs ? 100 : 120,
+      width: screens.xs ? 70 : 90,
       fixed: screens.xs ? 'left' : false,
       render: (text) => <Text strong className="booking-id">{text}</Text>
     },
@@ -613,7 +619,8 @@ function UserBookingHistory() {
       dataIndex: 'roomType',
       key: 'roomType',
       width: screens.xs ? 120 : 150,
-      render: (text) => <Text className="room-type">{text}</Text>
+      render: (text) => <Text className="room-type">{text}</Text>,
+      sorter: (a, b) => a.roomType.localeCompare(b.roomType)
     },
     {
       title: 'Check-in',
@@ -622,20 +629,19 @@ function UserBookingHistory() {
       width: screens.xs ? 100 : 120,
       render: (date) => (
         <div className="date-cell">
-          <CalendarOutlined />
-          <Text>{formatDateWithTime(date, 14, 0)}</Text>
+          <Text>{formatDate(date)}</Text>
         </div>
-      )
+      ),
+      sorter: (a, b) => new Date(a.checkInDate) - new Date(b.checkInDate)
     },
     {
       title: 'Check-out',
       dataIndex: 'checkOutDate',
       key: 'checkOutDate',
-      width: screens.xs ? 100 : 120,
+      width: screens.xs ? 70 : 90,
       render: (date) => (
         <div className="date-cell">
-          <CalendarOutlined />
-          <Text>{formatDateWithTime(date, 12, 0)}</Text>
+          <Text>{formatDate(date)}</Text>
         </div>
       )
     },
@@ -643,11 +649,10 @@ function UserBookingHistory() {
       title: 'Số khách',
       dataIndex: 'guests',
       key: 'guests',
-      width: screens.xs ? 80 : 100,
+      width: screens.xs ? 50 : 70,
       align: 'center',
       render: (guests) => (
         <div className="guests-cell">
-          <UserOutlined />
           <Text>{guests}</Text>
         </div>
       )
@@ -672,7 +677,8 @@ function UserBookingHistory() {
         <div className="amount-cell">
           <Text strong className="amount-text">{formatCurrency(amount)}</Text>
         </div>
-      )
+      ),
+      sorter: (a, b) => a.totalAmount - b.totalAmount
     },
     {
       title: 'Hành động',
@@ -684,7 +690,7 @@ function UserBookingHistory() {
         const { status, id, isPendingPayment, paymentUrl } = record
         const isCancelling = cancellingBookings.has(id)
         
-        // Hiển thị nút Thanh toán cho pendingPayment (có paymentUrl)
+        // Hiển thị nút Thanh toán cho pendingPayment (có paymentUrl) và đã thanh toán
         const showPaymentButton = isPendingPayment && paymentUrl
         
         // Chỉ hiển thị nút Chi tiết cho các booking đã thanh toán (không phải pending payment)
@@ -799,15 +805,16 @@ function UserBookingHistory() {
     <div className="user-booking-history-page">
       <div className="booking-history-container">
         {/* Header */}
-        <Card className="header-card">
-          <Row align="middle" justify="space-between">
+        <Card className="header-card" align="center" title = {"Lịch sử đặt phòng của bạn"}>
+
+          {/* <Row align="middle" justify="space-between">
             <Col xs={24} sm={12}>
               <Title level={2} className="page-title" >
                 Lịch sử đặt phòng của bạn
               </Title>
             </Col>
         
-          </Row>
+          </Row> */}
           <Row>
           <Col xs={24} sm={24} style={{ textAlign: screens.xs ? 'left' : 'right' }}>
               <Space wrap className="filter-buttons">
@@ -837,10 +844,10 @@ function UserBookingHistory() {
             pagination={{
               total: filteredBookings.length,
               pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} của ${total} booking`,
+              // showSizeChanger: true,
+              // showQuickJumper: true,
+              // showTotal: (total, range) => 
+              //   `${range[0]}-${range[1]} của ${total} booking`,
               responsive: true
             }}
             className="booking-table"
@@ -860,6 +867,7 @@ function UserBookingHistory() {
             ) : 'Chi tiết booking'
           }
           onCancel={() => setDetailModal({ visible: false, data: null })}
+          className="detail-modal"
           footer={[
             detailModal.data && detailModal.data.status === 'confirmed' && (
               <Button
@@ -875,225 +883,190 @@ function UserBookingHistory() {
                 Hủy phòng
               </Button>
             ),
-            detailModal.data && detailModal.data.status === 'checked_out' && (
+            // đã đánh giá thì ko đánh giá nữa
+            detailModal.data && ['checked_out', 'completed'].includes(detailModal.data.status) && (
               <>
                 <Divider />
                 <Space>
-                  <Button 
-                    type="primary" 
-                    onClick={() => {
-                      setDetailModal({ visible: false, data: null })
-                      setReviewModal({
-                        visible: true,
-                        bookingId: detailModal.data.bookingId,
-                        bookingCode: detailModal.data.id
-                      })
-                      setReviewForm({
-                        rating: 5,
-                        comment: '',
-                        images: []
-                      })
-                    }}
-                  >
-                    Viết đánh giá
-                  </Button>
+                  {detailModal.data.hasReview ? (
+                    <Tooltip title="Bạn đã đánh giá cho loại phòng này">
+                      <span>
+                        <Button type="primary" disabled>
+                          Viết đánh giá
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <Button 
+                      type="primary" 
+                      onClick={() => {
+                        if (detailModal.data.hasReview) return
+                        setDetailModal({ visible: false, data: null })
+                        setReviewModal({
+                          visible: true,
+                          bookingId: detailModal.data.bookingId,
+                          bookingCode: detailModal.data.id
+                        })
+                        setReviewForm({
+                          rating: 5,
+                          comment: '',
+                          images: []
+                        })
+                      }}
+                    >
+                      Viết đánh giá
+                    </Button>
+                  )}
                 </Space>
               </>
             ),
             <Button key="close" onClick={() => setDetailModal({ visible: false, data: null })}>Đóng</Button>
           ]}
-          width={screens.xs ? 360 : 720}
+          width={modalWidth}
           centered
         >
           {detailModal.data && (
-            <div>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Card size="small" bordered>
+            <div className="detail-modal-body">
+              {/* Hàng 1: 2 card */}
+              <div className="detail-grid-row">
+                <div className="detail-card">
+                  <div className="detail-card-header">
                     <Space align="center" size="small">
                       <Text strong>Trạng thái:</Text>
                       <Tag color={getBookingStatusColor(detailModal.data.status)}>
                         {getBookingStatusText(detailModal.data.status)}
                       </Tag>
                     </Space>
-                    <Divider style={{ margin: '12px 0' }} />
-                    <Descriptions size="small" column={1} colon>
-                      <Descriptions.Item label="Khách sạn">
-                        {detailModal.data.hotelName}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Loại phòng">
-                        {detailModal.data.roomType}
-                      </Descriptions.Item>
-                      {detailModal.data.roomNum && (
-                        <Descriptions.Item label="Số phòng">
-                          {detailModal.data.roomNum}
-                        </Descriptions.Item>
-                      )}
-                    </Descriptions>
-                  </Card>
-                </Col>
+                  </div>
+                  <div className="detail-card-divider"></div>
+                  <div className="detail-card-content">
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Khách sạn:</span>
+                      <span className="detail-info-value">{detailModal.data.hotelName}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Loại phòng:</span>
+                      <span className="detail-info-value">{detailModal.data.roomType}</span>
+                    </div>
+                    {detailModal.data.roomNum && (
+                      <div className="detail-info-item">
+                        <span className="detail-info-label">Số phòng:</span>
+                        <span className="detail-info-value">{detailModal.data.roomNum}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                <Col xs={24} md={12}>
-                  <Card size="small" bordered>
-                    <Descriptions size="small" column={1} colon>
-                      <Descriptions.Item label="Tổng tiền">
-                        <Text strong>{formatCurrency(detailModal.data.totalAmount)}</Text>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Thanh toán">
+                <div className="detail-card">
+                  <div className="detail-card-content">
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Tổng tiền:</span>
+                      <span className="detail-info-value strong">{formatCurrency(detailModal.data.totalAmount)}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Thanh toán:</span>
+                      <span className="detail-info-value">
                         <Tag color={getPaymentStatusColor(detailModal.data.paymentStatus)}>
                           {getPaymentStatusText(detailModal.data.paymentStatus)}
                         </Tag>
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Ngày đặt">
-                        {new Date(detailModal.data.bookingDate).toLocaleString('vi-VN')}
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </Card>
-                </Col>
-              </Row>
+                      </span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Ngày đặt:</span>
+                      <span className="detail-info-value">{new Date(detailModal.data.bookingDate).toLocaleString('vi-VN')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Hiển thị thông tin hoàn tiền nếu booking chưa hủy và đã thanh toán */}
               {detailModal.data && 
-               detailModal.data.status !== 'cancelled' && 
-               detailModal.data.paymentStatus === 'paid' && (
+               detailModal.data.status === 'confirmed' &&
+               detailModal.data.paymentStatus !== 'paid' && (
                 <>
-                  <Divider />
-                  <Card size="small" title="Chính sách hủy phòng và hoàn tiền" bordered>
-                    {(() => {
-                      const refundInfo = computeRefundInfo(
-                        detailModal.data.checkInDate, 
-                        detailModal.data.totalAmount,
-                        detailModal.data.bookingDate
-                      )
-                      if (!refundInfo) return <Text type="secondary">Không thể tính toán chính sách hoàn tiền</Text>
-                      
-                      return (
-                        <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                          <div>
-                            <Text strong>Thời gian đến check-in: </Text>
-                            <Text>{refundInfo.hoursUntilCheckIn !== null ? `${refundInfo.hoursUntilCheckIn} giờ` : 'N/A'}</Text>
-                          </div>
-                          {refundInfo.hoursSinceBooking !== null && (
-                            <div>
-                              <Text strong>Thời gian từ lúc đặt: </Text>
-                              <Text>{refundInfo.hoursSinceBooking} giờ</Text>
-                            </div>
-                          )}
-                          <Divider style={{ margin: '8px 0' }} />
-                          <div>
-                            <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                              Chính sách áp dụng:
-                            </Text>
-                            <Text type={refundInfo.eligible ? 'success' : 'danger'}>
-                              {refundInfo.policy}
-                            </Text>
-                          </div>
-                          <div>
-                            <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                              Số tiền được hoàn:
-                            </Text>
-                            <Text 
-                              strong 
-                              style={{ 
-                                fontSize: 16, 
-                                color: refundInfo.eligible ? '#52c41a' : '#ff4d4f' 
-                              }}
-                            >
-                              {formatCurrency(refundInfo.refundable)}
-                            </Text>
-                            {refundInfo.eligible && (
-                              <Text type="secondary" style={{ marginLeft: 8 }}>
-                                ({Math.round((refundInfo.refundable / detailModal.data.totalAmount) * 100)}%)
-                              </Text>
-                            )}
-                          </div>
-                          {refundInfo.eligible && (
-                            <div>
-                              <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                                Phí hủy:
-                              </Text>
-                              <Text type="secondary">
-                                {formatCurrency(refundInfo.nonRefundable)}
-                                <Text type="secondary" style={{ marginLeft: 8 }}>
-                                  ({Math.round((refundInfo.nonRefundable / detailModal.data.totalAmount) * 100)}%)
-                                </Text>
-                              </Text>
-                            </div>
-                          )}
-                        </Space>
-                      )
-                    })()}
-                  </Card>
+                  <div className="detail-divider"></div>
+                  <Alert
+                    type="info"
+                    showIcon
+                    className="detail-alert"
+                    message="Chính sách hủy áp dụng sau khi bạn hoàn tất thanh toán"
+                    description="Vui lòng thanh toán đầy đủ để kích hoạt các quyền lợi hoàn tiền theo chính sách của khách sạn."
+                  />
                 </>
               )}
 
-              <Divider />
+              {/* Hàng 2: 2 card */}
+              <div className="detail-divider"></div>
+              <div className="detail-grid-row">
+                <div className="detail-card">
+                  <div className="detail-card-title">Thông tin khách hàng</div>
+                  <div className="detail-card-content">
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Họ tên:</span>
+                      <span className="detail-info-value">{user?.full_name}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Số điện thoại:</span>
+                      <span className="detail-info-value">{user?.phone || 'Chưa cập nhật'}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Email:</span>
+                      <span className="detail-info-value">{user?.email}</span>
+                    </div>
+                    {detailModal.data.note && (
+                      <div className="detail-info-item">
+                        <span className="detail-info-label">Ghi chú:</span>
+                        <span className="detail-info-value">{detailModal.data.note}</span>
+                      </div>
+                    )}
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Số khách:</span>
+                      <span className="detail-info-value">{detailModal.data.guests}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Card size="small" title="Thông tin khách hàng" bordered>
-                    <Descriptions size="small" column={1} colon>
-                      <Descriptions.Item label="Họ tên">
-                        {user?.full_name}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Số điện thoại">
-                        {user?.phone || 'Chưa cập nhật'}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Email">
-                        {user?.email}
-                      </Descriptions.Item>
-                      {/* {detailModal.data.citizenId && (
-                        <Descriptions.Item label="CCCD/CMND">
-                          {detailModal.data.citizenId}
-                        </Descriptions.Item>
-                      )} */}
-                      {detailModal.data.note && (
-                        <Descriptions.Item label="Ghi chú">
-                          {detailModal.data.note}
-                        </Descriptions.Item>
-                      )}
-                      <Descriptions.Item label="Số khách">
-                        {detailModal.data.guests}
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </Card>
-                </Col>
+                <div className="detail-card">
+                  <div className="detail-card-title">Thời gian lưu trú</div>
+                  <div className="detail-card-content">
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Check-in:</span>
+                      <span className="detail-info-value">{formatDateWithTime(detailModal.data.checkInDate, 14, 0)}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Check-out:</span>
+                      <span className="detail-info-value">{formatDateWithTime(detailModal.data.checkOutDate, 12, 0)}</span>
+                    </div>
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Hình thức đặt:</span>
+                      <span className="detail-info-value">{detailModal.data.bookingType}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                <Col xs={24} md={12}>
-                  <Card size="small" title="Thời gian lưu trú" bordered>
-                    <Descriptions size="small" column={1} colon>
-                      <Descriptions.Item label="Check-in">
-                        {formatDateWithTime(detailModal.data.checkInDate, 14, 0)}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Check-out">
-                        {formatDateWithTime(detailModal.data.checkOutDate, 12, 0)}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Hình thức đặt">
-                        {detailModal.data.bookingType}
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </Card>
-                </Col>
-              </Row>
-
+              {/* Dịch vụ kèm theo */}
               {Array.isArray(detailModal.data.services) && detailModal.data.services.length > 0 && (
                 <>
-                  <Divider />
-                  <Card size="small" title="Dịch vụ kèm theo" bordered>
-                    <Space wrap>
-                      {detailModal.data.services.map((sv, idx) => {
-                        const isObject = sv && typeof sv === 'object'
-                        const name = isObject ? (sv.service_name || sv.name || 'Dịch vụ') : String(sv)
-                        const quantity = isObject && sv.quantity ? ` x${sv.quantity}` : ''
-                        const priceValue = isObject ? (sv.total_price ?? sv.unit_price) : undefined
-                        const price = typeof priceValue === 'number' ? ` - ${formatCurrency(priceValue)}` : ''
-                        const label = `${name}${quantity}${price}`
-                        return (
-                          <Tag key={idx} color="processing">{label}</Tag>
-                        )
-                      })}
-                    </Space>
-                  </Card>
+                  <div className="detail-divider"></div>
+                  <div className="detail-card detail-card-full">
+                    <div className="detail-card-title">Dịch vụ kèm theo</div>
+                    <div className="detail-card-content">
+                      <div className="detail-services-list">
+                        {detailModal.data.services.map((sv, idx) => {
+                          const isObject = sv && typeof sv === 'object'
+                          const name = isObject ? (sv.service_name || sv.name || 'Dịch vụ') : String(sv)
+                          const quantity = isObject && sv.quantity ? ` x${sv.quantity}` : ''
+                          const priceValue = isObject ? (sv.total_price ?? sv.unit_price) : undefined
+                          const price = typeof priceValue === 'number' ? ` - ${formatCurrency(priceValue)}` : ''
+                          const label = `${name}${quantity}${price}`
+                          return (
+                            <Tag key={idx} color="processing">{label}</Tag>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
