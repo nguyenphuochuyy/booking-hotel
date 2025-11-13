@@ -143,7 +143,6 @@ function UserBookingHistory() {
     const load = async () => {
       try {
         setLoading(true)
-        
         // Lấy tất cả temp bookings của user từ localStorage
         const userId = user?.user_id || user?.id
         let tempBookings = []

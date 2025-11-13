@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Table,
   Button,
@@ -23,7 +23,8 @@ import {
   AppstoreOutlined,
   UploadOutlined,
   ExclamationCircleOutlined,
-  EyeOutlined
+  EyeOutlined,
+  TagsOutlined
 } from '@ant-design/icons'
 import {
   getAllRoomTypes,
@@ -32,8 +33,13 @@ import {
   deleteRoomType
 } from '../../../services/admin.service'
 import './roomType.css'
-import { useRoomTypes } from '../../../hooks/roomtype'
 import { getAmenitiesFromLocal, addAmenity, removeAmenity } from '../../../constants/amenities'
+import {
+  getRoomCategoriesFromLocal,
+  addRoomCategory,
+  removeRoomCategory,
+  mergeRoomCategories
+} from '../../../constants/roomCategories'
 
 const { Title, Text } = Typography
 const { Search } = Input
@@ -41,16 +47,6 @@ const { TextArea } = Input
 
 // Lấy danh sách tiện nghi
 let AMENITIES_OPTIONS = getAmenitiesFromLocal()
-
-// Danh sách danh mục loại phòng
-const CATEGORY_OPTIONS = [
-  { label: 'Đơn', value: 'don' },
-  { label: 'Đôi', value: 'doi' },
-  { label: 'Vip', value: 'vip' },
-  { label: 'Gia đình', value: 'gia-dinh' },
-  { label: 'Suite', value: 'suite' },
-  { label: 'Presidential', value: 'presidential' }
-]
 
 function RoomTypes() {
   const [loading, setLoading] = useState(false)
@@ -72,6 +68,14 @@ function RoomTypes() {
   const [isManageAmenitiesModalVisible, setIsManageAmenitiesModalVisible] = useState(false)
   const [newAmenity, setNewAmenity] = useState('')
   const [amenitiesList, setAmenitiesList] = useState(() => getAmenitiesFromLocal())
+  const [categoryList, setCategoryList] = useState(() => getRoomCategoriesFromLocal())
+  const categoryOptions = useMemo(
+    () => categoryList.map(name => ({ label: name, value: name })),
+    [categoryList]
+  )
+  const [isManageCategoriesModalVisible, setIsManageCategoriesModalVisible] = useState(false)
+  const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
   const [originalValues, setOriginalValues] = useState(null) // Lưu giá trị ban đầu khi edit
 
   // Chuẩn hóa danh sách ảnh từ API về dạng mảng URL
@@ -148,6 +152,16 @@ function RoomTypes() {
       
       // Update amenities list
       setAmenitiesList(combinedAmenities)
+
+      const categoriesFromDB = new Set()
+      roomTypesData.forEach(roomType => {
+        if (roomType.category) {
+          categoriesFromDB.add(String(roomType.category))
+        }
+      })
+
+      const mergedCategories = mergeRoomCategories(Array.from(categoriesFromDB))
+      setCategoryList(mergedCategories)
 
     } catch (error) {
       console.error('Error fetching room types:', error)
@@ -285,11 +299,12 @@ function RoomTypes() {
       key: 'category',
       width: 110,
       render: (category) => {
-        const categoryOption = CATEGORY_OPTIONS.find(opt => opt.value === category)
-        return categoryOption ? (
-          <Tag color="blue">{categoryOption.label}</Tag>
-        ) : (
-          <Tag color="default">{category || '-'}</Tag>
+        const isExisting = categoryList.includes(category)
+        const displayLabel = category || '-'
+        return (
+          <Tag color={isExisting ? 'blue' : 'default'}>
+            {displayLabel}
+          </Tag>
         )
       },
       sorter: (a, b) => {
@@ -787,6 +802,95 @@ function RoomTypes() {
     setNewAmenity('')
   }
 
+  const resetCategoryForm = () => {
+    setNewCategoryName('')
+  }
+
+  const handleManageCategories = () => {
+    setIsManageCategoriesModalVisible(true)
+  }
+
+  const handleAddCategory = () => {
+    resetCategoryForm()
+    setIsAddCategoryModalVisible(true)
+  }
+
+  const handleCategoryModalOk = () => {
+    const label = newCategoryName.trim()
+    if (!label) {
+      message.warning('Vui lòng nhập tên danh mục!')
+      return
+    }
+
+    if (categoryList.some(item => item.toLowerCase() === label.toLowerCase())) {
+      message.warning('Danh mục này đã tồn tại!')
+      return
+    }
+
+    const updated = addRoomCategory(label)
+    setCategoryList(updated)
+    message.success(`Đã thêm danh mục "${label}"`)
+    setIsAddCategoryModalVisible(false)
+    resetCategoryForm()
+  }
+
+  const handleCategoryModalCancel = () => {
+    setIsAddCategoryModalVisible(false)
+    resetCategoryForm()
+  }
+
+  const handleDeleteCategoryFromManage = (categoryName) => {
+    if (!categoryName) return
+
+    Modal.confirm({
+      title: 'Xác nhận xóa danh mục',
+      icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
+      content: (
+        <div>
+          <p>
+            Bạn có chắc chắn muốn xóa danh mục{' '}
+            <strong>"{categoryName}"</strong>?
+          </p>
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              background: '#fffbe6',
+              borderRadius: 4,
+              border: '1px solid #ffe58f',
+            }}
+          >
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Lưu ý: Các loại phòng đang dùng danh mục này sẽ hiển thị slug
+              thô. Bạn nên cập nhật lại danh mục cho các phòng liên quan sau khi
+              xóa.
+            </Text>
+          </div>
+        </div>
+      ),
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: () => {
+        const updated = removeRoomCategory(categoryName)
+        setCategoryList(updated)
+        message.success(`Đã xóa danh mục "${categoryName}"`)
+      },
+    })
+  }
+
+  const handleSaveCategoriesToDB = async () => {
+    try {
+      await fetchRoomTypes()
+      message.success('Đã cập nhật danh mục phòng!')
+      setIsManageCategoriesModalVisible(false)
+    } catch (error) {
+      console.error('Error saving categories:', error)
+      message.error('Không thể lưu danh mục phòng!')
+    }
+  }
+
   const handleDeleteAmenity = (amenity) => {
     Modal.confirm({
       title: 'Xác nhận xóa tiện nghi',
@@ -960,6 +1064,14 @@ function RoomTypes() {
         <Space>
           <Button
             type="default"
+            icon={<TagsOutlined />}
+            size="large"
+            onClick={handleManageCategories}
+          >
+            Thêm danh mục phòng
+          </Button>
+          <Button
+            type="default"
             icon={<AppstoreOutlined />}
             size="large"
             onClick={handleManageAmenities}
@@ -1040,7 +1152,7 @@ function RoomTypes() {
               <Select
                 placeholder="Chọn danh mục"
                 size="large"
-                options={CATEGORY_OPTIONS}
+                options={categoryOptions}
               />
             </Form.Item>
 
@@ -1222,6 +1334,116 @@ function RoomTypes() {
               ))}
             </div>
           </Image.PreviewGroup>
+        </div>
+      </Modal>
+
+      {/* Add Room Category Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PlusOutlined />
+            <span>Thêm danh mục phòng</span>
+          </div>
+        }
+        open={isAddCategoryModalVisible}
+        onOk={handleCategoryModalOk}
+        onCancel={handleCategoryModalCancel}
+        okText="Thêm"
+        cancelText="Hủy"
+        centered
+        destroyOnClose
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label="Tên danh mục"
+            required
+            tooltip="Tên hiển thị cho người dùng"
+          >
+            <Input
+              placeholder="VD: Phòng tiêu chuẩn, Phòng cao cấp..."
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onPressEnter={handleCategoryModalOk}
+              size="large"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Manage Room Categories Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <TagsOutlined />
+            <span>Quản lý danh mục phòng</span>
+          </div>
+        }
+        open={isManageCategoriesModalVisible}
+        onOk={handleSaveCategoriesToDB}
+        onCancel={() => setIsManageCategoriesModalVisible(false)}
+        okText="Lưu"
+        cancelText="Đóng"
+        width={700}
+        centered
+        destroyOnClose
+      >
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text strong style={{ fontSize: 16 }}>Danh sách danh mục ({categoryList.length})</Text>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleAddCategory}
+              size="small"
+            >
+              Thêm mới
+            </Button>
+          </div>
+          
+          <div style={{ 
+            maxHeight: '400px', 
+            overflowY: 'auto',
+            border: '1px solid #d9d9d9',
+            borderRadius: 6,
+            padding: 16
+          }}>
+            {categoryList.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {categoryList.map((categoryName) => (
+                  <Tag 
+                    key={categoryName} 
+                    color="magenta" 
+                    closable 
+                    onClose={(e) => {
+                      e.preventDefault()
+                      handleDeleteCategoryFromManage(categoryName)
+                    }}
+                    style={{ marginBottom: 4, fontSize: 14, padding: '4px 12px' }}
+                  >
+                    {categoryName}
+                  </Tag>
+                ))}
+              </div>
+            ) : (
+              <Empty description="Chưa có danh mục nào" />
+            )}
+          </div>
+        </div>
+
+        <div style={{ 
+          padding: 16, 
+          background: '#f6ffed', 
+          borderRadius: 6,
+          border: '1px solid #b7eb8f'
+        }}>
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>
+            <ExclamationCircleOutlined style={{ color: '#52c41a', marginRight: 4 }} />
+            Lưu ý
+          </Text>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            Khi thêm danh mục mới, bạn cần cập nhật danh mục tương ứng cho các loại phòng mong muốn.
+            Các danh mục này được lưu vào localStorage để có thể tái sử dụng nhanh chóng trong tương lai.
+          </Text>
         </div>
       </Modal>
 

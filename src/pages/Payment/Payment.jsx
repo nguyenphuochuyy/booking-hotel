@@ -104,7 +104,6 @@ const Payment = () => {
   // Polling: Cứ mỗi 6 giây gọi API lấy booking theo bookingCode
   useEffect(() => {
     if (!bookingCode || paymentStatus === 'success') return
-
     const checkBookingStatus = async () => {
       try {
         const response = await findBookingByCode(bookingCode)
@@ -148,7 +147,7 @@ const Payment = () => {
     checkBookingStatus()
 
     // Thiết lập interval để gọi mỗi 6 giây
-    const intervalId = setInterval(checkBookingStatus, 1000)
+    const intervalId = setInterval(checkBookingStatus, 5000)
 
     // Cleanup: dừng polling khi component unmount hoặc khi paymentStatus thay đổi
     return () => {
@@ -195,9 +194,7 @@ const Payment = () => {
             return
           }
         } catch (error) {
-          console.log('[Payment] Test: Chưa tìm thấy booking, tiếp tục polling')
-          // Nếu chưa tìm thấy booking, để polling tiếp tục chạy
-          message.info('Chưa tìm thấy booking. Hệ thống sẽ tiếp tục kiểm tra...')
+          // Nếu chưa tìm thấy booking, để polling tiếp tục chạ
         }
       }
       
