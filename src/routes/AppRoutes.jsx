@@ -4,7 +4,6 @@ import Loading from '../components/Loading'
 import Home from '../pages/Home'
 import Hotels from '../pages/Hotels'
 import About from '../pages/About'
-import Booking from '../pages/Booking'
 import News from '../pages/News'
 import NewsDetail from '../pages/NewsDetail'
 import Contact from '../pages/Contact'
@@ -95,7 +94,6 @@ function AppRoutes() {
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/booking-success" element={<BookingSuccess />} />
         <Route path="/about" element={<About />} />
-        {/* <Route path="/booking" element={<Booking />} /> */}
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/contact" element={<Contact />} />
