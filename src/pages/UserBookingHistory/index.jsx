@@ -32,7 +32,8 @@ import {
   PrinterOutlined
 } from '@ant-design/icons'
 import './userBookingHistory.css'
-import { getUserBookings, cancelBooking, downloadInvoicePDF, formatDate } from '../../services/booking.service'
+import { getUserBookings, cancelBooking, downloadInvoicePDF, formatDate, formatDateTime as formatDateTimeService } from '../../services/booking.service'
+import formatDateTime from '../../utils/formatDateTime'
 import { useAuth } from '../../context/AuthContext'
 import { cancelBookingOnline } from '../../services/booking.service'
 import { getBookingStatusText, getBookingStatusColor, getPaymentStatusText, getPaymentStatusColor } from '../../services/booking.service'
@@ -342,7 +343,7 @@ function UserBookingHistory() {
     return d
   }
 
-  // Tính chính sách hoàn tiền dựa trên các mốc thời gian (48h và 12h)
+  // Tính chính sách hoàn tiền dựa trên các mốc thời gian (48h và 1h)
   const computeRefundInfo = (checkInDate, totalAmount, bookingDate) => {
     if (!checkInDate || typeof totalAmount !== 'number') return null
     const checkIn = getCheckInDateTime(checkInDate)
@@ -377,8 +378,8 @@ function UserBookingHistory() {
     
     // Mốc 2: Nếu ≥ 48h trước check-in, xét thời gian từ lúc đặt
     if (hoursSinceBooking !== null) {
-      // Nếu hủy ≤ 12h từ lúc đặt: hoàn 85%, phí 15%
-      if (hoursSinceBooking <= 12) {
+      // Nếu hủy ≤ 1h từ lúc đặt: hoàn 85%, phí 15%
+      if (hoursSinceBooking <= 1) {
         const refundable = Math.round(totalAmount * 0.85)
         const nonRefundable = totalAmount - refundable
         return {
@@ -387,12 +388,12 @@ function UserBookingHistory() {
           nonRefundable,
           hoursUntilCheckIn,
           hoursSinceBooking,
-          policy: 'Hủy trước 48 giờ và trong vòng 12 giờ từ lúc đặt - hoàn 85%, phí 15%',
+          policy: 'Hủy trước 48 giờ và trong vòng 1 giờ từ lúc đặt - hoàn 85%, phí 15%',
           message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (85%). Khách sạn giữ ${formatCurrency(nonRefundable)} (15%).`
         }
       }
       
-      // Nếu hủy > 12h từ lúc đặt: hoàn 70%, phí 30%
+      // Nếu hủy > 1h từ lúc đặt: hoàn 70%, phí 30%
       const refundable = Math.round(totalAmount * 0.7)
       const nonRefundable = totalAmount - refundable
       return {
@@ -401,7 +402,7 @@ function UserBookingHistory() {
         nonRefundable,
         hoursUntilCheckIn,
         hoursSinceBooking,
-        policy: 'Hủy trước 48 giờ và sau 12 giờ từ lúc đặt - hoàn 70%, phí 30%',
+        policy: 'Hủy trước 48 giờ và sau 1 giờ từ lúc đặt - hoàn 70%, phí 30%',
         message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (70%). Khách sạn giữ ${formatCurrency(nonRefundable)} (30%).`
       }
     }
@@ -506,8 +507,6 @@ function UserBookingHistory() {
   // Xem chi tiết đánh giá
   const handleViewDetails = (booking) => {
     setDetailModal({ visible: true, data: booking })
-    console.log(booking);
-    
   }
 
 
@@ -973,7 +972,7 @@ function UserBookingHistory() {
                     </div>
                     <div className="detail-info-item">
                       <span className="detail-info-label">Ngày đặt:</span>
-                      <span className="detail-info-value">{new Date(detailModal.data.bookingDate).toLocaleString('vi-VN')}</span>
+                      <span className="detail-info-value">{formatDateTime(detailModal.data.bookingDate)}</span>
                     </div>
                   </div>
                 </div>
@@ -1113,11 +1112,6 @@ function UserBookingHistory() {
                         {info.hoursUntilCheckIn !== null && (
                           <Text type="secondary">
                             Còn {info.hoursUntilCheckIn} giờ đến giờ check-in
-                          </Text>
-                        )}
-                        {info.hoursSinceBooking !== null && (
-                          <Text type="secondary">
-                            Đã đặt {info.hoursSinceBooking} giờ trước
                           </Text>
                         )}
                         <Divider style={{ margin: '8px 0' }} />

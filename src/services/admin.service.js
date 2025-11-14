@@ -622,13 +622,15 @@ export async function getInfoRefundBooking(id) {
 }
 
 /**
- * Thêm dịch vụ vào booking vĩnh viễn (Walk-in/Checked-in)
+ * Thêm dịch vụ vào booking đã tồn tại (Admin/Staff)
  * @param {number|string} id - Booking ID
- * @param {Array<{service_id:number, quantity:number}>} services
+ * @param {number} service_id - Service ID
+ * @param {number} quantity - Số lượng
+ * @param {string} payment_type - 'postpaid' (mặc định) hoặc 'prepaid'
  * @returns {Promise}
  */
-export async function addServicesToBooking(id, services = []) {
-  return http.post(`/bookings/${id}/services`, { services })
+export async function addServiceToBooking(id, service_id, quantity = 1, payment_type = 'postpaid') {
+  return http.post(`/bookings/${id}/add-service`, { service_id, quantity, payment_type })
 }
 
 export default {
@@ -702,6 +704,6 @@ export default {
   createWalkInBooking,
   getInfoRefundBooking,
   markRefundCompleted,
-  addServicesToBooking
+  addServiceToBooking
 }
 

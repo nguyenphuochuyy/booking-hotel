@@ -150,7 +150,7 @@ export const calculateNights = (checkIn, checkOut) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
 
-// Format date time
+// Format date time to Vietnamese format
 export const formatDateTime = (dateTime) => {
   if (!dateTime) return ''
   return new Date(dateTime).toLocaleString('vi-VN', {

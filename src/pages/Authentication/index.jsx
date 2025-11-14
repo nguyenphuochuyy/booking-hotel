@@ -145,7 +145,12 @@ const Authentication = () => {
         }
     }
     } catch (error) {
-      message.error('Tài khoản hoặc mật khẩu không chính xác , vui lòng thử lại')
+      const errorCode = error?.status || error?.data?.statusCode || error?.data?.code
+      if (errorCode === 403) {
+        message.error('Tài khoản chưa xác thực ! Vui lòng xác thực tài khoản để đăng nhập')
+      } else {
+        message.error('Tài khoản hoặc mật khẩu không chính xác , vui lòng thử lại')
+      }
     } finally {
       setLoading(false)
     }

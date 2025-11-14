@@ -22,10 +22,11 @@ import {
   viewInvoice,
   getInfoRefundBooking,
   getAllServices,
-  addServicesToBooking
+  addServiceToBooking
 } from '../../../services/admin.service'
 import CheckInOut from '../../../components/CheckInOut/CheckInOut'
 import formatPrice from '../../../utils/formatPrice'
+import formatDateTime from '../../../utils/formatDateTime'
 import './BookingManagement.css'
 const { Title, Text } = Typography
 const { Option } = Select
@@ -79,6 +80,8 @@ const BookingManagement = () => {
   const [servicesLoading, setServicesLoading] = useState(false)
   const [servicesList, setServicesList] = useState([])
   const [selectedServices, setSelectedServices] = useState({})
+  const [paymentType, setPaymentType] = useState('postpaid') // 'postpaid' hoặc 'prepaid'
+  const [addingServices, setAddingServices] = useState(false)
 
   const handleLoadAvailableRooms = async () => {
     try {
@@ -157,8 +160,6 @@ const BookingManagement = () => {
       }
 
       const response = await getAllBookings(params)
-      console.log(response);
-
       setBookings(response.bookings || [])
       setPagination({
         current: page,
@@ -282,6 +283,7 @@ const BookingManagement = () => {
         setLoadingRefundInfo(true)
         try {
           const refundResponse = await getInfoRefundBooking(bookingId)
+          console.log(refundResponse);
           // Giả định API trả về refund info trong response.booking hoặc response
           setRefundInfo(refundResponse?.booking || refundResponse || null)
         } catch (refundError) {
@@ -469,8 +471,14 @@ const BookingManagement = () => {
   }
   // handle refresh
   const handleRefresh = () => {
-
-
+    setSearchText('')
+    setStatusFilter(null)
+    setTypeFilter(null)
+    setSortBy(null)
+    setSortOrder('asc')
+    setDateRange(null)
+    fetchBookings(1, pagination.pageSize)
+    message.success('Đã làm mới danh sách đặt phòng')
   }
   // Get status tag
   const getStatusTag = (status) => {
@@ -509,8 +517,10 @@ const BookingManagement = () => {
   const statistics = useMemo(() => {
     const stats = {
       total: bookings.length,
-      pending: bookings.filter(b => b.booking_status === 'pending').length,
       confirmed: bookings.filter(b => b.booking_status === 'confirmed').length,
+      checkedIn: bookings.filter(b => b.booking_status === 'checked_in').length,
+      checkedOut: bookings.filter(b => b.booking_status === 'checked_out').length,
+      cancelled: bookings.filter(b => b.booking_status === 'cancelled').length,
       totalRevenue: bookings
         .filter(b => b.payment_status === 'paid')
         .reduce((sum, b) => sum + (parseFloat(b.final_price) || 0), 0)
@@ -726,27 +736,17 @@ const BookingManagement = () => {
 
       {/* Statistics */}
       <Row gutter={[16, 16]} className="statistics-row">
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6} lg={4}>
           <Card className="stat-card">
             <Statistic
               title="Tổng đặt phòng"
               value={statistics.total}
               prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#722ed1' }}
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="Chờ xác nhận"
-              value={statistics.pending}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6} lg={4}>
           <Card className="stat-card">
             <Statistic
               title="Đã xác nhận"
@@ -756,13 +756,43 @@ const BookingManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6} lg={4}>
+          <Card className="stat-card">
+            <Statistic
+              title="Đã nhận phòng"
+              value={statistics.checkedIn}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: '#13c2c2' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={6} lg={4}>
+          <Card className="stat-card">
+            <Statistic
+              title="Đã trả phòng"
+              value={statistics.checkedOut}
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={6} lg={4}>
+          <Card className="stat-card">
+            <Statistic
+              title="Đã hủy"
+              value={statistics.cancelled}
+              prefix={<CloseCircleOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={6} lg={4}>
           <Card className="stat-card">
             <Statistic
               title="Tổng doanh thu"
               value={formatPrice(statistics.totalRevenue)}
               prefix={<CreditCardOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
@@ -846,7 +876,8 @@ const BookingManagement = () => {
           <Button key="close" onClick={() => setIsDetailModalVisible(false)}>
             Đóng
           </Button>,
-          selectedBooking?.booking_status === 'checked_in' && (
+          // Cho phép thêm dịch vụ khi booking_status là confirmed hoặc checked_in
+          (selectedBooking?.booking_status === 'confirmed' || selectedBooking?.booking_status === 'checked_in') && (
             <Button
               key="addService"
               icon={<CustomerServiceFilled/>}
@@ -854,6 +885,8 @@ const BookingManagement = () => {
                 try {
                   setIsAddServiceModalVisible(true)
                   setServicesLoading(true)
+                  setSelectedServices({})
+                  setPaymentType('postpaid')
                   // Thử lọc theo khách sạn nếu có, nếu không sẽ lấy tất cả
                   const hotelId =
                     selectedBooking?.room_type?.hotel_id ||
@@ -862,9 +895,9 @@ const BookingManagement = () => {
                   const res = await getAllServices(hotelId ? { hotel_id: hotelId, limit: 100 } : { limit: 100 })
                   const list = res?.services || res?.data?.services || res?.items || []
                   setServicesList(Array.isArray(list) ? list : [])
-                  setSelectedServices({})
                 } catch (e) {
                   setServicesList([])
+                  message.error('Không thể tải danh sách dịch vụ')
                 } finally {
                   setServicesLoading(false)
                 }
@@ -920,15 +953,17 @@ const BookingManagement = () => {
             </Button>
           ),
 
-          <Button
-            key="print"
-            type="primary"
-            icon={<PrinterOutlined />}
-            onClick={() => handlePrintInvoice(selectedBooking?.booking_id)}
-            loading={loading}
-          >
-            In hóa đơn
-          </Button>
+          selectedBooking?.booking_status === 'checked_out' && (
+            <Button
+              key="print"
+              type="primary"
+              icon={<PrinterOutlined />}
+              onClick={() => handlePrintInvoice(selectedBooking?.booking_id)}
+              loading={loading}
+            >
+              In hóa đơn
+            </Button>
+          )
         ]}
         destroyOnClose
         centered
@@ -954,7 +989,7 @@ const BookingManagement = () => {
                   </div>
                   <div className="detail-item">
                     <Text strong>Ngày tạo:</Text>
-                    <Text>{formatDate(selectedBooking.created_at)}</Text>
+                    <Text>{formatDateTime(selectedBooking.created_at)}</Text>
                   </div>
                 </Card>
               </Col>
@@ -1045,9 +1080,7 @@ const BookingManagement = () => {
                           <div className="detail-item" style={{ marginTop: 8 }}>
                             <Text strong>Số tiền khách được hoàn: </Text>
                             <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
-                              {formatPrice(
-                                refundInfo.payment_summary?.total_refunded 
-                              )}
+                              {formatPrice(refundInfo.payment_summary?.total_refunded)}
                             </Text>
                           </div>
                         </>
@@ -1058,9 +1091,7 @@ const BookingManagement = () => {
                       )}
                     </>
                   )}
-                  
-                  {/* Hiển thị số tiền được hoàn và nút đánh dấu đã hoàn tiền nếu payment_status là partial_refunded */}
-                  
+                
                 </Card>
               </Col>
             </Row>
@@ -1082,10 +1113,7 @@ const BookingManagement = () => {
               {selectedBooking.check_in_time && (
                 <div className="detail-item">
                   <Text strong>Thời gian check-in: </Text>
-                  <Text> 
-                    {/* lấy thời gian lúc checkin có cả giờ phút lúc nhấn vào */}
-                    
-                  </Text>
+                  <Text>{new Date(selectedBooking.check_in_time).toLocaleString('vi-VN')}</Text>
                 </div>
               )}
               {selectedBooking.check_out_time && (
@@ -1095,6 +1123,100 @@ const BookingManagement = () => {
                 </div>
               )}
             </Card>
+
+            {/* Hiển thị danh sách dịch vụ nếu có */}
+            {selectedBooking.booking_services && selectedBooking.booking_services.length > 0 && (
+              <Card 
+                title={
+                  <Space>
+                    <CustomerServiceFilled />
+                    <span>Dịch vụ đã sử dụng</span>
+                  </Space>
+                }
+                size="small" 
+                style={{ marginTop: 16 }}
+              >
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', fontWeight: 600, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <div style={{ flex: 1 }}>Tên dịch vụ</div>
+                    <div style={{ width: 100, textAlign: 'center' }}>Số lượng</div>
+                    <div style={{ width: 120, textAlign: 'right' }}>Đơn giá</div>
+                    <div style={{ width: 120, textAlign: 'right' }}>Thành tiền</div>
+                    <div style={{ width: 100, textAlign: 'center' }}>Loại thanh toán</div>
+                  </div>
+                  {(() => {
+                    const activeServices = selectedBooking.booking_services.filter(bs => bs.status !== 'cancelled')
+                    return activeServices.map((bookingService, index) => {
+                      const service = bookingService.service || {}
+                      const unitPrice = parseFloat(bookingService.unit_price || bookingService.service?.price || 0)
+                      const quantity = Number(bookingService.quantity || 1)
+                      const totalPrice = parseFloat(bookingService.total_price || unitPrice * quantity)
+                      
+                      return (
+                        <div 
+                          key={bookingService.booking_service_id || index} 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            padding: '10px 0', 
+                            borderBottom: index < activeServices.length - 1 ? '1px solid #f5f5f5' : 'none'
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <Text>{service.name || 'Dịch vụ không xác định'}</Text>
+                          </div>
+                          <div style={{ width: 100, textAlign: 'center' }}>
+                            <Text>{quantity}</Text>
+                          </div>
+                          <div style={{ width: 120, textAlign: 'right' }}>
+                            <Text>{formatPrice(unitPrice)}</Text>
+                          </div>
+                          <div style={{ width: 120, textAlign: 'right' }}>
+                            <Text strong style={{ color: '#52c41a' }}>
+                              {formatPrice(totalPrice)}
+                            </Text>
+                          </div>
+                          <div style={{ width: 100, textAlign: 'center' }}>
+                            <Tag color={bookingService.payment_type === 'prepaid' ? 'blue' : 'green'}>
+                              {bookingService.payment_type === 'prepaid' ? 'Trả trước' : 'Trả sau'}
+                            </Tag>
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                  
+                  {/* Tổng tiền dịch vụ */}
+                  {(() => {
+                    const totalServicesPrice = selectedBooking.booking_services
+                      .filter(bs => bs.status !== 'cancelled')
+                      .reduce((sum, bs) => {
+                        const price = parseFloat(bs.total_price || 0)
+                        return sum + price
+                      }, 0)
+                    
+                    if (totalServicesPrice > 0) {
+                      return (
+                        <div style={{ 
+                          marginTop: 12, 
+                          paddingTop: 12, 
+                          borderTop: '2px solid #f0f0f0',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <Text strong style={{ fontSize: 14 }}>Tổng tiền dịch vụ:</Text>
+                          <Text strong style={{ fontSize: 16, color: '#52c41a' }}>
+                            {formatPrice(totalServicesPrice)}
+                          </Text>
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+              </Card>
+            )}
 
             {/* Thông tin hủy phòng - chỉ hiển thị khi booking_status là cancelled */}
             {selectedBooking.booking_status === 'cancelled' && (
@@ -1190,44 +1312,96 @@ const BookingManagement = () => {
       <Modal
         title="Thêm dịch vụ"
         open={isAddServiceModalVisible}
-        onCancel={() => setIsAddServiceModalVisible(false)}
+        onCancel={() => {
+          setIsAddServiceModalVisible(false)
+          setSelectedServices({})
+          setPaymentType('postpaid')
+        }}
         width={720}
         footer={[
-          <Button key="cancel" onClick={() => setIsAddServiceModalVisible(false)}>
+          <Button 
+            key="cancel" 
+            onClick={() => {
+              setIsAddServiceModalVisible(false)
+              setSelectedServices({})
+              setPaymentType('postpaid')
+            }}
+          >
             Đóng
           </Button>,
           <Button
             key="ok"
             type="primary"
+            loading={addingServices}
             onClick={async () => {
               const picked = Object.entries(selectedServices)
                 .filter(([, val]) => (val || 0) > 0)
                 .map(([id, qty]) => ({ service_id: Number(id), quantity: Number(qty) }))
+              
               if (picked.length === 0) {
                 message.warning('Vui lòng chọn ít nhất 1 dịch vụ')
                 return
               }
+              
               if (!selectedBooking?.booking_id) {
                 message.error('Không xác định được booking')
                 return
               }
+
+              // Kiểm tra booking status
+              if (selectedBooking.booking_status !== 'confirmed' && selectedBooking.booking_status !== 'checked_in') {
+                message.warning('Chỉ có thể thêm dịch vụ khi booking đang confirmed hoặc checked_in')
+                return
+              }
+
+              setAddingServices(true)
               try {
-                // Chỉ handle khi là walkin và đã check_in
-                if (selectedBooking.booking_type === 'walkin' && selectedBooking.booking_status === 'checked_in') {
-                  const res = await addServicesToBooking(selectedBooking.booking_id, picked)
-                  if (res?.statusCode === 200 || res?.statusCode === 201 || res?.message) {
-                    message.success('Thêm dịch vụ thành công')
-                    setIsAddServiceModalVisible(false)
-                    setSelectedServices({})
-                    fetchBookings(pagination.current, pagination.pageSize)
-                  } else {
-                    message.error(res?.message || 'Không thể thêm dịch vụ')
+                // Gửi từng dịch vụ một (API chỉ hỗ trợ thêm từng dịch vụ)
+                const results = []
+                for (const service of picked) {
+                  try {
+                    const res = await addServiceToBooking(
+                      selectedBooking.booking_id,
+                      service.service_id,
+                      service.quantity,
+                      paymentType
+                    )
+                    results.push({ success: true, service_id: service.service_id, data: res })
+                  } catch (error) {
+                    results.push({ 
+                      success: false, 
+                      service_id: service.service_id, 
+                      error: error?.response?.data?.message || error?.message || 'Lỗi không xác định'
+                    })
                   }
-                } else {
-                  message.warning('Chỉ hỗ trợ thêm dịch vụ cho booking Walk-in đã nhận phòng')
+                }
+
+                // Kiểm tra kết quả
+                const successCount = results.filter(r => r.success).length
+                const failCount = results.filter(r => !r.success).length
+
+                if (successCount > 0) {
+                  message.success(`Đã thêm thành công ${successCount} dịch vụ${successCount > 1 ? '' : ''}`)
+                }
+                
+                if (failCount > 0) {
+                  message.warning(`${failCount} dịch vụ thêm thất bại`)
+                }
+
+                // Refresh booking details và danh sách
+                if (successCount > 0) {
+                  setIsAddServiceModalVisible(false)
+                  setSelectedServices({})
+                  // Refresh booking details
+                  await handleViewDetails(selectedBooking.booking_id)
+                  // Refresh danh sách bookings
+                  fetchBookings(pagination.current, pagination.pageSize)
                 }
               } catch (e) {
+                console.error('Error adding services:', e)
                 message.error(e?.response?.data?.message || 'Không thể thêm dịch vụ')
+              } finally {
+                setAddingServices(false)
               }
             }}
           >
@@ -1242,6 +1416,26 @@ const BookingManagement = () => {
             <Empty description="Không có dịch vụ nào" />
           ) : (
             <div>
+              {/* Payment type selector */}
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ marginRight: 8 }}>Loại thanh toán:</Text>
+                <Select
+                  value={paymentType}
+                  onChange={setPaymentType}
+                  style={{ width: 200 }}
+                >
+                  <Option value="postpaid">Thanh toán sau (Postpaid)</Option>
+                  <Option value="prepaid">Thanh toán trước (Prepaid)</Option>
+                </Select>
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {paymentType === 'postpaid' 
+                      ? 'Dịch vụ sẽ được thanh toán khi check-out'
+                      : 'Dịch vụ sẽ được cộng vào tổng tiền booking ngay lập tức'}
+                  </Text>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', fontWeight: 600, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                 <div style={{ flex: 1 }}>Dịch vụ</div>
                 <div style={{ width: 140, textAlign: 'right' }}>Đơn giá</div>

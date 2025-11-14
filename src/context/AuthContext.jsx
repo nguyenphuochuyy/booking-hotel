@@ -56,6 +56,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     const data = await authenticationService.login(credentials)
+    console.log("data", data);
+    
     const token = data?.accessToken || data?.token
     if (token) {
       try { localStorage.setItem('accessToken', token) } catch (_err) {}
@@ -69,7 +71,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         console.error('Failed to fetch user profile:', error)
         // Nếu API trả về thông tin user trong response login, dùng nó
-        if (data?.user) {
+        if (data?.user) { 
           setUser(data.user)
         }
       }
