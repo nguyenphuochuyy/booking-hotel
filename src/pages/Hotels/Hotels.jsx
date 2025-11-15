@@ -724,14 +724,9 @@ function Hotels() {
                             <div className="rate-info" style={{ marginBottom: '16px' }}>
                               <Text strong style={{ fontSize: '15px' }}>Giá tiêu chuẩn</Text>
                               <div style={{ marginTop: '8px' }}>
-                                <Space direction="vertical" size={4}>
-                                  <Text className="rate-policy-text">
-                                    <CheckCircleOutlined /> Hủy miễn phí!
-                                  </Text>
-                                  <Text className="rate-policy-text">
-                                    <CheckCircleOutlined /> Đặt ngay, trả sau
-                                    _</Text>
-                                </Space>
+                                <Text className="rate-policy-text">
+                                  <CheckCircleOutlined /> Áp dụng phí hủy
+                                </Text>
                               </div>
                             </div>
 
@@ -812,7 +807,7 @@ function Hotels() {
                             </Text>
                           </div>
                           <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Text style={{ color: '#059669', fontSize: '14px' }}>Hủy miễn phí!</Text>
+                            <Text style={{ color: '#059669', fontSize: '14px' }}>Áp dụng phí hủy</Text>
 
                             {/* Số lượng phòng với nút tăng/giảm - nhỏ và nằm trong cột thông tin */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>

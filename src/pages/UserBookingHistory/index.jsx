@@ -344,6 +344,7 @@ function UserBookingHistory() {
   }
 
   // Tính chính sách hoàn tiền dựa trên các mốc thời gian (48h và 1h)
+  // Theo chính sách: Ngoại lệ 1 tiếng có ưu tiên cao nhất, áp dụng bất kể còn bao nhiêu giờ trước check-in
   const computeRefundInfo = (checkInDate, totalAmount, bookingDate) => {
     if (!checkInDate || typeof totalAmount !== 'number') return null
     const checkIn = getCheckInDateTime(checkInDate)
@@ -363,37 +364,38 @@ function UserBookingHistory() {
       hoursSinceBooking = Math.floor((nowTime - bookingTime) / (1000 * 60 * 60))
     }
     
-    // Mốc 1: Nếu < 48h trước check-in: mất 100% (hoàn 0%)
-    if (hoursUntilCheckIn < 48) {
+    // 🎯 ƯU TIÊN 1: Ngoại lệ 1 tiếng (Ưu tiên cao nhất)
+    // Áp dụng bất kể còn bao nhiêu giờ trước check-in
+    if (hoursSinceBooking !== null && hoursSinceBooking <= 1) {
+      const refundable = Math.round(totalAmount * 0.85)
+      const nonRefundable = totalAmount - refundable
       return {
-        eligible: false,
-        refundable: 0,
-        nonRefundable: totalAmount,
+        eligible: true,
+        refundable,
+        nonRefundable,
         hoursUntilCheckIn,
         hoursSinceBooking,
-        policy: 'Hủy trong vòng 48 giờ trước giờ check-in - mất 100%',
-        message: `Không thể hoàn tiền do hủy trong vòng 48 giờ trước giờ check-in (còn ${hoursUntilCheckIn} giờ). Tổng tiền không hoàn: ${formatCurrency(totalAmount)}.`
+        policy: 'Ngoại lệ: Hủy trong vòng 1 giờ từ lúc đặt - hoàn 85%, phí 15%',
+        message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (85%). Khách sạn giữ ${formatCurrency(nonRefundable)} (15%). Áp dụng bất kể còn bao nhiêu giờ trước check-in.`
       }
     }
     
-    // Mốc 2: Nếu ≥ 48h trước check-in, xét thời gian từ lúc đặt
-    if (hoursSinceBooking !== null) {
-      // Nếu hủy ≤ 1h từ lúc đặt: hoàn 85%, phí 15%
-      if (hoursSinceBooking <= 1) {
-        const refundable = Math.round(totalAmount * 0.85)
-        const nonRefundable = totalAmount - refundable
+    // 🎯 ƯU TIÊN 2: Xét thời gian trước check-in (chỉ khi đã qua > 1h từ lúc đặt)
+    if (hoursSinceBooking === null || hoursSinceBooking > 1) {
+      // Trường hợp 1: Hủy < 48h trước check-in → Mất 100%
+      if (hoursUntilCheckIn < 48) {
         return {
-          eligible: true,
-          refundable,
-          nonRefundable,
+          eligible: false,
+          refundable: 0,
+          nonRefundable: totalAmount,
           hoursUntilCheckIn,
           hoursSinceBooking,
-          policy: 'Hủy trước 48 giờ và trong vòng 1 giờ từ lúc đặt - hoàn 85%, phí 15%',
-          message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (85%). Khách sạn giữ ${formatCurrency(nonRefundable)} (15%).`
+          policy: 'Hủy trong vòng 48 giờ trước giờ check-in - mất 100%',
+          message: `Không thể hoàn tiền do hủy trong vòng 48 giờ trước giờ check-in (còn ${hoursUntilCheckIn} giờ). Tổng tiền không hoàn: ${formatCurrency(totalAmount)}.`
         }
       }
       
-      // Nếu hủy > 1h từ lúc đặt: hoàn 70%, phí 30%
+      // Trường hợp 2: Hủy ≥ 48h trước check-in → Hoàn 70%, phí 30%
       const refundable = Math.round(totalAmount * 0.7)
       const nonRefundable = totalAmount - refundable
       return {
@@ -402,12 +404,12 @@ function UserBookingHistory() {
         nonRefundable,
         hoursUntilCheckIn,
         hoursSinceBooking,
-        policy: 'Hủy trước 48 giờ và sau 1 giờ từ lúc đặt - hoàn 70%, phí 30%',
+        policy: 'Hủy ≥ 48 giờ trước giờ check-in - hoàn 70%, phí 30%',
         message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (70%). Khách sạn giữ ${formatCurrency(nonRefundable)} (30%).`
       }
     }
     
-    // Nếu không có bookingDate, mặc định hoàn 70% (trường hợp cũ)
+    // Fallback: Nếu không có bookingDate, mặc định hoàn 70% (trường hợp cũ)
     const refundable = Math.round(totalAmount * 0.7)
     const nonRefundable = totalAmount - refundable
     return {

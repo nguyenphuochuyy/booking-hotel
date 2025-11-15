@@ -20,7 +20,7 @@ const Payment = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [paymentStatus, setPaymentStatus] = useState('pending')
-  const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [remainingSeconds, setRemainingSeconds] = useState(1800) // 30 phút = 1800 giây
   
   const stateData = location.state || {}
 
@@ -68,12 +68,41 @@ const Payment = () => {
     return booking
   })()
   
+  // Đồng hồ đếm ngược 30 phút từ lúc đặt phòng
   useEffect(() => {
     if (bookingData && bookingData.bookingInfo) {
-      // Lưu thông tin thanh toán vào localStorage để khôi phục khi quay lại site
-      // Thiết lập thời gian còn lại
+      // Ưu tiên lấy thời gian còn lại từ bookingData.expiresAt
+      if (bookingData.expiresAt) {
+        const now = Date.now()
+        const expiry = typeof bookingData.expiresAt === 'string' 
+          ? new Date(bookingData.expiresAt).getTime() 
+          : bookingData.expiresAt
+        const remaining = Math.max(Math.floor((expiry - now) / 1000), 0)
+        if (remaining > 0) {
+          setRemainingSeconds(remaining)
+          return
+        }
+      }
+      
+      // Nếu không có expiresAt, thử lấy từ localStorage
       const initialRemain = getRemainingTime()
-      setRemainingSeconds(initialRemain)
+      if (initialRemain > 0) {
+        setRemainingSeconds(initialRemain)
+      } else {
+        // Nếu không có trong localStorage, tính từ thời gian tạo (createdAt) hoặc mặc định 30 phút
+        if (bookingData.createdAt) {
+          const createdAt = typeof bookingData.createdAt === 'string'
+            ? new Date(bookingData.createdAt).getTime()
+            : bookingData.createdAt
+          const now = Date.now()
+          const elapsed = Math.floor((now - createdAt) / 1000) // Thời gian đã trôi qua (giây)
+          const remaining = Math.max(1800 - elapsed, 0) // 30 phút - thời gian đã trôi qua
+          setRemainingSeconds(remaining)
+        } else {
+          // Mặc định 30 phút nếu không có thông tin thời gian
+          setRemainingSeconds(1800) // 30 phút = 1800 giây
+        }
+      }
     } else {
       message.error('Thông tin thanh toán không hợp lệ')
       navigate('/')
@@ -81,6 +110,35 @@ const Payment = () => {
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Cập nhật đồng hồ đếm ngược mỗi giây
+  useEffect(() => {
+    if (remainingSeconds <= 0 || paymentStatus !== 'pending') {
+      if (remainingSeconds <= 0 && paymentStatus === 'pending') {
+        setPaymentStatus('expired')
+      }
+      return
+    }
+
+    const timer = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          setPaymentStatus('expired')
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [remainingSeconds, paymentStatus])
+
+  // Format thời gian đếm ngược: MM:SS
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
 
 
 
@@ -275,6 +333,40 @@ const Payment = () => {
                     <Text type="secondary" style={{ display: 'block', marginTop: '16px' }}>
                       {paymentStatus === 'expired' ? 'Mã QR đã hết hạn. Vui lòng tạo lại đơn thanh toán.' : 'Đang tải mã QR...'}
                     </Text>
+                  </div>
+                )}
+
+                {/* Đồng hồ đếm ngược */}
+                {qrCode && paymentStatus === 'pending' && remainingSeconds > 0 && (
+                  <div 
+                    className={`countdown-timer ${remainingSeconds <= 300 ? 'urgent' : ''}`}
+                    style={{ 
+                      marginTop: '24px', 
+                      padding: '16px',
+                      background: remainingSeconds <= 300 ? '#fff1f0' : '#f6ffed', // Đỏ nhạt khi còn < 5 phút
+                      borderRadius: '8px',
+                      border: `2px solid ${remainingSeconds <= 300 ? '#ffccc7' : '#b7eb8f'}`
+                    }}
+                  >
+                    <Space direction="vertical" size={8} style={{ width: '100%', textAlign: 'center' }}>
+                      <ClockCircleOutlined style={{ 
+                        fontSize: '24px', 
+                        color: remainingSeconds <= 300 ? '#ff4d4f' : '#52c41a' 
+                      }} />
+                      <Text strong style={{ 
+                        fontSize: '24px', 
+                        color: remainingSeconds <= 300 ? '#ff4d4f' : '#52c41a',
+                        fontFamily: 'monospace',
+                        letterSpacing: '2px'
+                      }}>
+                        {formatCountdown(remainingSeconds)}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: '13px' }}>
+                        {remainingSeconds <= 300 
+                          ? 'Thời gian thanh toán sắp hết hạn!' 
+                          : 'Thời gian còn lại để hoàn tất thanh toán'}
+                      </Text>
+                    </Space>
                   </div>
                 )}
                 {/* Status Indicator */}
