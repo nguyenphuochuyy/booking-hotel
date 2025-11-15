@@ -442,16 +442,60 @@ const BookingManagement = () => {
       message.error('Không xác định được booking')
       return
     }
+   const totalRefunded = refundInfo.payment_summary.total_refunded
+
     setRefundSubmitting(true)
     try {
-      // Gọi API với method và note mặc định (nếu có pending refund thì không cần amount)
-      await markRefundCompleted(bookingId, refundInfo.payment_summary.total_refunded, 'banking', 'Hoàn theo STK khách cung cấp')
+      // Gọi API đánh dấu hoàn tiền
+      // Backend sẽ tự kiểm tra và validate số tiền theo chính sách (1h, 48h, etc.)
+      const response = await markRefundCompleted(
+        bookingId, 
+        totalRefunded, 
+        'banking', 
+        ''
+      )
+      // Hiển thị thông báo thành công từ response
       message.success('Đã đánh dấu hoàn tiền thành công!')
+      
+      // Reload lại booking details để cập nhật trạng thái
+      const updatedResponse = await getBookingById(bookingId)
+      const updatedBooking = updatedResponse.booking
+      setSelectedBooking(updatedBooking)
+      
+      // Reload lại refund info nếu booking vẫn là cancelled
+      if (updatedBooking.booking_status === 'cancelled') {
+        try {
+          const refundResponse = await getInfoRefundBooking(bookingId)
+          setRefundInfo(refundResponse?.booking || refundResponse || null)
+        } catch (refundError) {
+          console.error('Error fetching refund info:', refundError)
+          setRefundInfo(null)
+        }
+      } else {
+        setRefundInfo(null)
+      }
+      
+      // Reload lại danh sách bookings để cập nhật payment_status
       await fetchBookings(pagination.current, pagination.pageSize)
-      setIsDetailModalVisible(false)
     } catch (error) {
       console.error('Error marking refund completed:', error)
-      message.error(error?.response?.data?.message || 'Không thể đánh dấu hoàn tiền!')
+      
+      // Xử lý lỗi chi tiết từ backend
+      const errorResponse = error?.response?.data
+      if (errorResponse) {
+        const errorMessage = errorResponse.message || 'Không thể đánh dấu hoàn tiền!'
+        
+        // Nếu có thông tin về số tiền hoàn tối đa cho phép, hiển thị
+        if (errorResponse.allowed_max_refund !== undefined) {
+          message.error(
+            `${errorMessage}\nSố tiền hoàn tối đa cho phép: ${formatPrice(errorResponse.allowed_max_refund)}`
+          )
+        } else {
+          message.error(errorMessage)
+        }
+      } else {
+        message.error(error?.message || 'Không thể đánh dấu hoàn tiền!')
+      }
     } finally {
       setRefundSubmitting(false)
     }
@@ -1280,26 +1324,48 @@ const BookingManagement = () => {
                     </>
                   )}
                   
-                  <div style={{ textAlign: 'center' }}>
-                    <Button
-                      type="primary"
-                      icon={<CheckCircleOutlined />}
-                      loading={refundSubmitting}
-                      onClick={() => handleMarkRefundCompleted(selectedBooking.booking_id)}
-                      style={{
-                        backgroundColor: '#52c41a',
-                        borderColor: '#52c41a'
-                      }}
-                      disabled={selectedBooking.payment_status === 'refunded'}
-                    >
-                      Đánh dấu đã hoàn tiền
-                    </Button>
-                    <div style={{ marginTop: 8 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Click để đánh dấu đã hoàn tiền thủ công cho khách hàng
-                      </Text>
+                  {/* Chỉ hiển thị nút đánh dấu hoàn tiền khi booking đã hủy và chưa hoàn tiền đầy đủ */}
+                  {(selectedBooking.payment_status === 'paid' || selectedBooking.payment_status === 'partial_refunded') && (
+                    <div style={{ textAlign: 'center' }}>
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        loading={refundSubmitting}
+                        onClick={() => handleMarkRefundCompleted(selectedBooking.booking_id)}
+                        style={{
+                          backgroundColor: '#52c41a',
+                          borderColor: '#52c41a'
+                        }}
+                        disabled={selectedBooking.payment_status === 'refunded'}
+                      >
+                        {selectedBooking.payment_status === 'partial_refunded' 
+                          ? 'Đánh dấu đã hoàn tiền đầy đủ' 
+                          : 'Đánh dấu đã hoàn tiền'}
+                      </Button>
+                      <div style={{ marginTop: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {selectedBooking.payment_status === 'partial_refunded'
+                            ? 'Click để đánh dấu đã hoàn tiền đầy đủ cho khách hàng'
+                            : 'Click để đánh dấu đã hoàn tiền thủ công cho khách hàng'}
+                        </Text>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* Hiển thị thông báo khi đã hoàn tiền đầy đủ */}
+                  {selectedBooking.payment_status === 'refunded' && (
+                    <div style={{ textAlign: 'center', padding: '16px' }}>
+                      <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a', marginBottom: 8 }} />
+                      <div>
+                        <Text type="success" strong>Đã hoàn tiền đầy đủ</Text>
+                      </div>
+                      <div style={{ marginTop: 4 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Booking này đã được đánh dấu hoàn tiền đầy đủ
+                        </Text>
+                      </div>
+                    </div>
+                  )}
 
                 </Space>
               </Card>

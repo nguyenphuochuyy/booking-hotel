@@ -50,7 +50,7 @@ export const hotelService = {
   // Lấy hotels cho dropdown
   getHotelsForSelect: async () => {
     try {
-      const response = await getAllHotels({ limit: 1000 }) // Lấy tối đa 1000 hotels
+      const response = await getAllHotels({ limit: 100 }) // Lấy tối đa 100 hotels
       return response?.hotels || []
     } catch (error) {
       console.error('Error fetching hotels for select:', error)

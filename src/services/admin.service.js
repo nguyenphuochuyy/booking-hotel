@@ -508,13 +508,16 @@ export async function cancelBookingAdmin(id, reason = '', refund_manually = fals
 /**
  * Admin đánh dấu đã hoàn tiền cho booking
  * @param {number|string} id - Booking ID
- * @param {number} amount - Số tiền đã hoàn (optional, nếu không có pending refund)
- * @param {string} method - Phương thức hoàn tiền: 'banking' | 'cash' | 'payos'
- * @param {string} note - Ghi chú
- * @returns {Promise}
+ * @param {number} amount - Số tiền cần hoàn (bắt buộc, backend sẽ validate theo chính sách)
+ * @param {string} method - Phương thức hoàn tiền: 'banking' | 'cash' | 'payos' (default: 'banking')
+ * @param {string} note - Ghi chú (optional)
+ * @returns {Promise} Response từ backend với thông tin refund_payment và payment_status
  */
-export async function markRefundCompleted(id, amount = null, method = 'banking', note = '') {
-  const payload = { method, amount, note }
+export async function markRefundCompleted(id, amount, method = 'banking', note = '') {
+  if (!amount || amount <= 0) {
+    throw new Error('Số tiền hoàn phải lớn hơn 0')
+  }
+  const payload = { amount: Number(amount), method, note }
   return http.post(`/bookings/${id}/refund-admin`, payload)
 }
 

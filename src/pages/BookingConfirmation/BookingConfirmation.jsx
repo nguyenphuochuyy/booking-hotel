@@ -204,7 +204,9 @@ const BookingConfirmation = () => {
                     <Text>Không hút thuốc</Text>
                   </Space>
                   <div style={{ marginTop: '12px' }}>
-                    <Text style={{ color: '#059669' }}>✓ Áp dụng phí hủy</Text>
+                    <Text style={{ color: '#059669' }}>✓ Hủy miễn phí!</Text>
+                    <span style={{ margin: '0 8px' }}>|</span>
+                    <Text style={{ color: '#059669' }}>Đặt ngay, trả sau</Text>
                   </div>
                 </Space>
                 <Divider style={{ margin: '16px 0' }} />

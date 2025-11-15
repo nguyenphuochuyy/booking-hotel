@@ -5,6 +5,7 @@ export * from './roomprice.service'
 export * from './post.service'
 export * from './category.service'
 export * from './hotel.service'
+export * from './report.service'
 export * from './httpClient'
 
 // Re-export các services chính để dễ sử dụng

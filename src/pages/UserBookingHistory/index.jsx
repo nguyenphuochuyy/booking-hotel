@@ -29,7 +29,8 @@ import {
   UploadOutlined,
   PlusOutlined,
   DeleteOutlined,
-  PrinterOutlined
+  PrinterOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons'
 import './userBookingHistory.css'
 import { getUserBookings, cancelBooking, downloadInvoicePDF, formatDate, formatDateTime as formatDateTimeService } from '../../services/booking.service'
@@ -967,9 +968,25 @@ function UserBookingHistory() {
                     <div className="detail-info-item">
                       <span className="detail-info-label">Thanh toán:</span>
                       <span className="detail-info-value">
-                        <Tag color={getPaymentStatusColor(detailModal.data.paymentStatus)}>
-                          {getPaymentStatusText(detailModal.data.paymentStatus)}
-                        </Tag>
+                        <Space size={4}>
+                          <Tag color={getPaymentStatusColor(detailModal.data.paymentStatus)}>
+                            {getPaymentStatusText(detailModal.data.paymentStatus)}
+                          </Tag>
+                          {detailModal.data.paymentStatus === 'partial_refunded' && (
+                            <Tooltip
+                              title="Yêu cầu hoàn tiền của bạn đang được xử lý. Vui lòng kiểm tra email hoặc liên hệ khách sạn để biết thêm chi tiết."
+                              placement="top"
+                            >
+                              <InfoCircleOutlined 
+                                style={{ 
+                                  color: '#faad14', 
+                                  cursor: 'pointer',
+                                  fontSize: '16px'
+                                }} 
+                              />
+                            </Tooltip>
+                          )}
+                        </Space>
                       </span>
                     </div>
                     <div className="detail-info-item">
@@ -980,10 +997,10 @@ function UserBookingHistory() {
                 </div>
               </div>
 
-              {/* Hiển thị thông tin hoàn tiền nếu booking chưa hủy và đã thanh toán */}
+              {/* Hiển thị thông tin chính sách hủy nếu booking chưa thanh toán */}
               {detailModal.data && 
                detailModal.data.status === 'confirmed' &&
-               detailModal.data.paymentStatus !== 'paid' && (
+               detailModal.data.paymentStatus === 'pending' && (
                 <>
                   <div className="detail-divider"></div>
                   <Alert

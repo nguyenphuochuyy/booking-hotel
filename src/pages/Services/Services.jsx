@@ -75,7 +75,7 @@ function Services() {
   const fetchServices = async () => {
     try {
       setLoading(true)
-      const response = await serviceService.getServices({ limit: 1000 }) // Lấy tất cả services
+      const response = await serviceService.getServices({ limit: 100 }) // Lấy tất cả services
       if (response && response.services) {
         // Map dữ liệu từ API sang format cần thiết
         const mappedServices = response.services

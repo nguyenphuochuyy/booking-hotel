@@ -50,7 +50,7 @@ const RoomPriceManagement = () => {
   // Fetch room types for dropdown
   const fetchRoomTypes = async () => {
     try {
-      const response = await getAllRoomTypes({ limit: 1000 })
+      const response = await getAllRoomTypes({ limit: 100 })
       setRoomTypes(response.roomTypes || [])
     } catch (error) {
       console.error('Error fetching room types:', error)

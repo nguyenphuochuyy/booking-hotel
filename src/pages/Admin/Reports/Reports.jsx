@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statistic, Select } from 'antd'
 import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined } from '@ant-design/icons'
-import httpClient, { getBaseUrl } from '../../../services/httpClient'
+import httpClient from '../../../services/httpClient'
 import { getAllRoomTypes } from '../../../services/admin.service'
+import { exportRevenueReportExcel, exportRevenueReportPDF, downloadBlob } from '../../../services/report.service'
 
 const { RangePicker } = DatePicker
 const { Text } = Typography
@@ -10,28 +11,52 @@ const { Option } = Select
 
 function Reports() {
   const [loading, setLoading] = useState(false)
-  // Sử dụng helper function từ httpClient để đảm bảo nhất quán
-  const apiBaseUrl = getBaseUrl()
 
-  const downloadFile = async (url, filename, headers = {}) => {
+  // Hàm xuất báo cáo Excel
+  const handleExportExcel = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('accessToken')
-      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}`, ...headers } })
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || 'Tải file thất bại')
+      
+      if (!range || range.length !== 2) {
+        message.warning('Vui lòng chọn khoảng thời gian để xuất báo cáo Excel')
+        return
       }
-      const blob = await res.blob()
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(link.href)
-    } catch (e) {
-      message.error(e.message || 'Có lỗi xảy ra khi tải file')
+      
+      const [s, e] = range
+      const start_date = s.format('YYYY-MM-DD')
+      const end_date = e.format('YYYY-MM-DD')
+      
+      const blob = await exportRevenueReportExcel(start_date, end_date)
+      downloadBlob(blob, `bao-cao-doanh-thu-${start_date}-${end_date}.xlsx`)
+      message.success('Đã xuất báo cáo Excel thành công!')
+    } catch (error) {
+      console.error('Error exporting Excel:', error)
+      message.error(error.message || 'Có lỗi xảy ra khi xuất báo cáo Excel')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Hàm xuất báo cáo PDF
+  const handleExportPDF = async () => {
+    try {
+      setLoading(true)
+      
+      if (!range || range.length !== 2) {
+        message.warning('Vui lòng chọn khoảng thời gian để xuất báo cáo PDF')
+        return
+      }
+      
+      const [s, e] = range
+      const start_date = s.format('YYYY-MM-DD')
+      const end_date = e.format('YYYY-MM-DD')
+      
+      const blob = await exportRevenueReportPDF(start_date, end_date)
+      downloadBlob(blob, `bao-cao-doanh-thu-${start_date}-${end_date}.pdf`)
+      message.success('Đã xuất báo cáo PDF thành công!')
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      message.error(error.message || 'Có lỗi xảy ra khi xuất báo cáo PDF')
     } finally {
       setLoading(false)
     }
@@ -173,18 +198,23 @@ function Reports() {
               <Text strong style={{ fontSize: 20 }}>BÁO CÁO DOANH THU</Text>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <Button style={{ marginRight: 14 }} type="primary" icon={<FileExcelOutlined />} onClick={() => {
-                if (!range || range.length !== 2) {
-                  // Nếu không có range, xuất toàn bộ (không có tham số date)
-                  downloadFile(`${apiBaseUrl}/reports/revenue`, `bao-cao-doanh-thu-toan-bo.xlsx`)
-                  return
-                }
-                const [s, e] = range
-                const start_date = s.format('YYYY-MM-DD')
-                const end_date = e.format('YYYY-MM-DD')
-                downloadFile(`${apiBaseUrl}/reports/revenue?start_date=${start_date}&end_date=${end_date}`, `bao-cao-doanh-thu-${start_date}-${end_date}.xlsx`)
-              }}>Xuất Excel</Button>
-              <Button style={{ marginRight: 14 }} icon={<FilePdfOutlined />} onClick={() => message.info('Báo cáo Doanh thu hiện chỉ hỗ trợ Excel')}>Xuất PDF</Button>
+              <Button 
+                style={{ marginRight: 14 }} 
+                type="primary" 
+                icon={<FileExcelOutlined />} 
+                loading={loading}
+                onClick={handleExportExcel}
+              >
+                Xuất Excel
+              </Button>
+              <Button 
+                style={{ marginRight: 14 }} 
+                icon={<FilePdfOutlined />} 
+                loading={loading}
+                onClick={handleExportPDF}
+              >
+                Xuất PDF
+              </Button>
               <Button icon={<ReloadOutlined />} loading={calcLoading || loading} onClick={async () => {
                 // Reset tất cả filter
                 setRange(null)
