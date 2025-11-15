@@ -60,6 +60,17 @@ const formatDate = (dateString) => {
   return `${day}/${month}/${year}`
 }
 
+// Lấy 2 câu đầu từ description
+const getFirstTwoSentences = (text) => {
+  if (!text || typeof text !== 'string') return ''
+  // Tách theo dấu chấm, chấm hỏi, chấm than, hoặc xuống dòng
+  const sentences = text.split(/[.!?。！？\n]+/).filter(s => s.trim().length > 0)
+  if (sentences.length === 0) return ''
+  if (sentences.length === 1) return sentences[0].trim()
+  // Lấy 2 câu đầu và nối lại
+  return sentences.slice(0, 2).map(s => s.trim()).join('. ') + '.'
+}
+
 function Hotels() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -265,6 +276,7 @@ function Hotels() {
         const area = item.area ?? details.area
         const category = item.category ?? details.category ?? null // Thêm category từ cache
         const amenities = (Array.isArray(item.amenities) && item.amenities.length > 0) ? item.amenities : (details.amenities || [])
+        const description = item.description ?? details.description ?? null // Thêm description từ cache
 
         // lấy price từ nhiều khả năng: price_per_night, prices[], min_price
         let price = item.price_per_night ?? details.price_per_night
@@ -279,7 +291,7 @@ function Hotels() {
           price = details.min_price
         }
 
-        return { ...item, images, capacity, area, category, amenities, price_per_night: price }
+        return { ...item, images, capacity, area, category, amenities, description, price_per_night: price }
       }
       return item
     })
@@ -312,6 +324,7 @@ function Hotels() {
       images: room.images,
       amenities: room.amenities,
       area: room.area,
+      description: room.description || null, // Thêm description từ roomTypes
       price_per_night: room.price_per_night,
       room_type: {
         room_type_id: room.room_type_id,
@@ -715,6 +728,19 @@ function Hotels() {
                             >
                               Xem chi tiết & tiện nghi
                             </Button>
+
+                            {/* Hiển thị 2 câu description */}
+                            {(() => {
+                              const roomDescription = room.description || roomTypeDetailsCache[room.room_type_id]?.description || ''
+                              const firstTwoSentences = getFirstTwoSentences(roomDescription)
+                              return firstTwoSentences ? (
+                                <div style={{ marginTop: '12px' }}>
+                                  <Text style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', display: 'block' }}>
+                                    {firstTwoSentences}
+                                  </Text>
+                                </div>
+                              ) : null
+                            })()}
 
                           </div>
 
