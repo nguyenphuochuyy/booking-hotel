@@ -176,6 +176,7 @@ function Hotels() {
           area: summary?.area,
           amenities: Array.isArray(summary?.amenities) ? summary.amenities : [],
           price_per_night: summary?.price_per_night,
+          category: summary?.category || null,
           rooms: [], // Sẽ được fill từ searchResults
           // Thông tin từ summary (ưu tiên)
           available_rooms: summary?.available_rooms ?? 0,
@@ -214,6 +215,10 @@ function Hotels() {
               : Array.isArray(room?.amenities) ? room.amenities
                 : []
           }
+          // Cập nhật category từ room nếu chưa có
+          if (!existing.category && (room?.room_type?.category || room?.category)) {
+            existing.category = room?.room_type?.category ?? room?.category ?? null
+          }
           // Cập nhật giá: lấy giá thấp nhất từ rooms
           if (roomPrice && (!existing.price_per_night || roomPrice < existing.price_per_night)) {
             existing.price_per_night = roomPrice
@@ -232,6 +237,7 @@ function Hotels() {
             amenities: Array.isArray(room?.room_type?.amenities) ? room.room_type.amenities
               : Array.isArray(room?.amenities) ? room.amenities
                 : [],
+            category: room?.room_type?.category ?? room?.category ?? null,
             price_per_night: roomPrice,
             rooms: [room],
             // Nếu không có trong summary, mặc định available_rooms = số rooms tìm được
@@ -272,7 +278,8 @@ function Hotels() {
           price = details.min_price
         }
 
-        return { ...item, images, capacity, area, amenities, price_per_night: price }
+        const category = item.category ?? details.category ?? null
+        return { ...item, images, capacity, area, amenities, category, price_per_night: price }
       }
       return item
     })
@@ -299,8 +306,10 @@ function Hotels() {
         capacity: room.capacity,
         images: room.images,
         amenities: room.amenities,
-        area: room.area
+        area: room.area,
+        category: room.category
       },
+      category: room.category,
       prices: room.price_per_night ? [{ price_per_night: room.price_per_night }] : []
     }))
 
@@ -320,11 +329,15 @@ function Hotels() {
       return price >= priceRange[0] && price <= priceRange[1]
     })
 
-    // Lọc theo loại phòng (category)
+    // Lọc theo loại phòng (category) - case-insensitive và trim whitespace
     if (selectedRoomType !== 'all') {
       filtered = filtered.filter(room => {
         const categoryValue = room.room_type?.category || room.category
-        return categoryValue === selectedRoomType
+        if (!categoryValue) return false
+        // So sánh không phân biệt chữ hoa/thường và trim whitespace
+        const normalizedCategory = String(categoryValue).trim().toLowerCase()
+        const normalizedSelected = String(selectedRoomType).trim().toLowerCase()
+        return normalizedCategory === normalizedSelected
       })
     }
 

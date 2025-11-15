@@ -2,7 +2,7 @@ const ROOM_CATEGORY_STORAGE_KEY = 'room_categories'
 
 export const DEFAULT_ROOM_CATEGORIES = [
   'Standard',
-  'Deluxe ',
+  'Deluxe',
   'Superior',
   'Suite',
 ]

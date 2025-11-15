@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Row, Col, Typography, Button, Image } from 'antd'
-import { CloseOutlined, GiftOutlined, CalendarOutlined } from '@ant-design/icons'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { CloseOutlined, GiftOutlined } from '@ant-design/icons'
+import { useLocation } from 'react-router-dom'
 import khuyenmai from "../../assets/images/khuyenmai1.jpg"
 import './PopupAdvertisement.css'
 
 const { Title, Paragraph } = Typography
 
 function PopupAdvertisement() {
-  const navigate = useNavigate()
   const location = useLocation()
   const [visible, setVisible] = useState(false)
 
@@ -40,10 +39,6 @@ function PopupAdvertisement() {
     setVisible(false)
   }
 
-  const handleBookNow = () => {
-    setVisible(false)
-    navigate('/hotels')
-  }
 
   const handleOverlayClick = (e) => {
     // Ngăn đóng popup khi click vào overlay
@@ -66,6 +61,7 @@ function PopupAdvertisement() {
       closable={false}
       className="advertisement-popup"
       destroyOnClose={false}
+      style={{ top: '5vh' }}
     >
       <div className="popup-content" onClick={handleOverlayClick}>
         {/* Close button */}
@@ -100,10 +96,10 @@ function PopupAdvertisement() {
             <div className="popup-text-content">
               <div className="popup-header">
                 <Title level={2} className="popup-title">
-                  Ưu đãi khi đặt phòng lần đầu
+                  Khuyến mãi đặt online giảm 10%
                 </Title>
                 <Paragraph className="popup-subtitle">
-                  Chào mừng bạn đến với Bean Hotel!
+                  Đặt phòng trực tuyến ngay hôm nay!
                 </Paragraph>
               </div>
 
@@ -113,32 +109,20 @@ function PopupAdvertisement() {
                     Nhập mã ưu đãi:
                   </Title>
                   <div className="promo-code-box">
-                    <span className="promo-code">FIRST10</span>
+                    <span className="promo-code">ONLINE10</span>
                   </div>
                   <Paragraph className="promo-description">
-                    Áp dụng cho lần đặt phòng đầu tiên  
+                    Áp dụng cho tất cả đặt phòng online
                   </Paragraph>
                 </div>
               </div>
 
               <div className="popup-benefits">
                 <ul className="benefits-list">
-                  <li>Giảm giá 10% cho lần đặt phòng đầu tiên</li>
-                  <li>Miễn phí bữa sáng cho 2 người</li>
-                  <li>Hỗ trợ 24/7 trong suốt chuyến đi</li>
+                  <li>Giảm giá 10% khi đặt phòng online</li>
+                  <li>Thanh toán nhanh chóng và an toàn</li>
+                  <li>Xác nhận đặt phòng ngay lập tức</li>
                 </ul>
-              </div>
-
-              <div className="popup-actions">
-                <Button
-                  type="primary"
-                  size="middle"
-                  className="book-now-btn"
-                  onClick={handleBookNow}
-                  block
-                >
-                  Đặt phòng ngay
-                </Button>
               </div>
             </div>
           </Col>
