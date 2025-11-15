@@ -252,7 +252,7 @@ function UserBookingHistory() {
         setPendingPayments(pendingBookings)
     
         // Lấy danh sách bookings từ API
-        const res = await getUserBookings({ limit: 100 })
+        const res = await getUserBookings({ limit: 1000 })
         if(res.statusCode === 200) {
           const list = Array.isArray(res.bookings) ? res.bookings : []
           
@@ -546,7 +546,7 @@ function UserBookingHistory() {
         setReviewForm({ rating: 5, comment: '', images: [] })
         
         // Reload bookings để cập nhật (có thể cập nhật reviewLink nếu có)
-        const res = await getUserBookings({ limit: 100 })
+        const res = await getUserBookings({ limit: 1000 })
         if (res.statusCode === 200) {
           const list = Array.isArray(res.bookings) ? res.bookings : []
           const mapped = list.map(b => {

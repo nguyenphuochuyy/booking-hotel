@@ -177,7 +177,7 @@ const BookingManagement = () => {
   // Fetch hotels for dropdown
   const fetchHotels = async () => {
     try {
-      const response = await getAllHotels({ limit: 100 })
+      const response = await getAllHotels({ limit: 1000 })
       setHotels(response.hotels || [])
     } catch (error) {
       console.error('Error fetching hotels:', error)
@@ -187,7 +187,7 @@ const BookingManagement = () => {
   // Fetch room types for dropdown
   const fetchRoomTypes = async () => {
     try {
-      const response = await getAllRoomTypes({ limit: 100 })
+      const response = await getAllRoomTypes({ limit: 1000 })
       setRoomTypes(response.roomTypes || [])
     } catch (error) {
       console.error('Error fetching room types:', error)
@@ -197,7 +197,7 @@ const BookingManagement = () => {
   // Fetch users for dropdown
   const fetchUsers = async () => {
     try {
-      const response = await getAllUsers({ limit: 100 })
+      const response = await getAllUsers({ limit: 1000 })
       setUsers(response.users || [])
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -892,7 +892,7 @@ const BookingManagement = () => {
                     selectedBooking?.room_type?.hotel_id ||
                     selectedBooking?.booking_rooms?.[0]?.room?.room_type?.hotel_id ||
                     undefined
-                  const res = await getAllServices(hotelId ? { hotel_id: hotelId, limit: 100 } : { limit: 100 })
+                  const res = await getAllServices(hotelId ? { hotel_id: hotelId, limit: 1000 } : { limit: 1000 })
                   const list = res?.services || res?.data?.services || res?.items || []
                   setServicesList(Array.isArray(list) ? list : [])
                 } catch (e) {

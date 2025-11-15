@@ -123,7 +123,7 @@ const PostManagement = () => {
   // Fetch categories for dropdown
   const fetchCategories = async () => {
     try {
-      const response = await getAllCategories({ limit: 100 })
+      const response = await getAllCategories({ limit: 1000 })
       setCategories(response.categories || [])
     } catch (error) {
       console.error('Error fetching categories:', error)

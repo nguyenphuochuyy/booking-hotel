@@ -22,6 +22,7 @@ const { Option } = Select
 
 const RoomManagement = () => {
   const [rooms, setRooms] = useState([])
+  const [allRoomsForStats, setAllRoomsForStats] = useState([]) // Lưu tất cả phòng để tính statistics
   const [hotels, setHotels] = useState([])
   const [roomTypes, setRoomTypes] = useState([])
   const [loading, setLoading] = useState(false)
@@ -69,6 +70,24 @@ const RoomManagement = () => {
     }
   }
 
+  // Fetch all rooms for statistics (không phân trang)
+  const fetchAllRoomsForStats = async (hotelId = null) => {
+    try {
+      const params = {
+        page: 1,
+        limit: 1000 // Lấy tối đa 1000 phòng để tính statistics
+      }
+      if (hotelId) {
+        params.hotel_id = hotelId
+      }
+      const response = await getAllRooms(params)
+      setAllRoomsForStats(response.rooms || [])
+    } catch (error) {
+      console.error('Error fetching all rooms for stats:', error)
+      // Không hiển thị error để không làm phiền user
+    }
+  }
+
   // Load services for selected room's hotel
   const loadServices = async (room) => {
     if (!room?.hotel_id) {
@@ -77,7 +96,7 @@ const RoomManagement = () => {
     }
     setServicesLoading(true)
     try {
-      const res = await getAllServices({ hotel_id: room.hotel_id, limit: 100 })
+      const res = await getAllServices({ hotel_id: room.hotel_id, limit: 1000 })
       setServicesList(res?.services || [])
     } catch (e) {
       setServicesList([])
@@ -112,7 +131,7 @@ const RoomManagement = () => {
   // Fetch hotels for dropdown
   const fetchHotels = async () => {
     try {
-      const response = await getAllHotels({ limit: 100 })
+      const response = await getAllHotels({ limit: 1000 })
       setHotels(response.hotels || [])
     } catch (error) {
       console.error('Error fetching hotels:', error)
@@ -123,7 +142,7 @@ const RoomManagement = () => {
   // Fetch room types for dropdown
   const fetchRoomTypes = async () => {
     try {
-      const response = await getAllRoomTypes({ limit: 100 })
+      const response = await getAllRoomTypes({ limit: 1000 })
       setRoomTypes(response.roomTypes || [])
     } catch (error) {
       console.error('Error fetching room types:', error)
@@ -133,6 +152,7 @@ const RoomManagement = () => {
 
   useEffect(() => {
     fetchRooms()
+    fetchAllRoomsForStats() // Lấy tất cả phòng để tính statistics
     fetchHotels()
     fetchRoomTypes()
   }, [])
@@ -176,6 +196,7 @@ const RoomManagement = () => {
       setEditingRoom(null)
       form.resetFields()
       fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
+      fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi tạo/sửa phòng
     } catch (error) {
       const errMsg = error?.message || (editingRoom ? 'Không thể cập nhật phòng!' : 'Không thể tạo phòng!')
       message.error(errMsg)
@@ -207,6 +228,7 @@ const RoomManagement = () => {
       await deleteRoom(roomId)
       message.success('Xóa phòng thành công!')
       fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
+      fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi xóa phòng
     } catch (error) {
       console.error('Error deleting room:', error)
       message.error('Không thể xóa phòng!')
@@ -222,6 +244,7 @@ const RoomManagement = () => {
   const handleHotelFilterChange = (hotelId) => {
     setSelectedHotel(hotelId)
     fetchRooms(1, pagination.pageSize, hotelId)
+    fetchAllRoomsForStats(hotelId) // Cập nhật statistics khi filter theo hotel
   }
 
   // Handle booking modal
@@ -291,7 +314,9 @@ const RoomManagement = () => {
           message.success('Đặt phòng thành công!')
           setIsBookingModalVisible(false)
           bookingForm.resetFields()
+          setSelectedServices({})
           fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
+          fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi đặt phòng
         } else {
           message.error('Tạo đặt phòng thất bại, vui lòng thử lại!')
         }
@@ -326,16 +351,19 @@ const RoomManagement = () => {
     )
   }
 
-  // Calculate statistics
+  // Calculate statistics từ tất cả phòng (không chỉ trang hiện tại)
   const statistics = useMemo(() => {
+    const allRooms = allRoomsForStats.length > 0 ? allRoomsForStats : rooms
     const stats = {
-      total: rooms.length,
-      available: rooms.filter(r => r.status === 'available').length,
-      booked: rooms.filter(r => r.status === 'booked').length,
-      cleaning: rooms.filter(r => r.status === 'cleaning').length
+      total: pagination.total > 0 ? pagination.total : allRooms.length, // Ưu tiên dùng total từ pagination
+      available: allRooms.filter(r => r.status === 'available').length,
+      booked: allRooms.filter(r => r.status === 'booked').length,
+      cleaning: allRooms.filter(r => r.status === 'cleaning').length,
+      in_use: allRooms.filter(r => r.status === 'in_use').length,
+      checked_out: allRooms.filter(r => r.status === 'checked_out').length
     }
     return stats
-  }, [rooms])
+  }, [allRoomsForStats, rooms, pagination.total])
 
   // Table columns
   const columns = [
@@ -479,7 +507,10 @@ const RoomManagement = () => {
         <Space>
           <Button
             icon={<ReloadOutlined />}
-            onClick={() => fetchRooms(pagination.current, pagination.pageSize, selectedHotel)}
+            onClick={() => {
+              fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
+              fetchAllRoomsForStats(selectedHotel) // Làm mới statistics
+            }}
             loading={loading}
           >
             Làm mới

@@ -64,7 +64,7 @@ function Hotels() {
   const navigate = useNavigate()
   const location = useLocation()
   const { roomTypes, loading: roomTypesLoading, error, search, setSearch, category, setCategory } = useRoomTypes({
-    limit: 50 // Lấy nhiều room types để hiển thị
+    limit: 1000 // Lấy tất cả room types để hiển thị
   })
 
   // State cho search results from API

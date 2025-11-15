@@ -80,7 +80,7 @@ const PaymentSuccess = () => {
       // Tìm booking từ backend theo orderCode (thông qua payment transaction_id)
       if (orderCode) {
         try {
-          const response = await getUserBookings({ limit: 100 })
+          const response = await getUserBookings({ limit: 1000 })
           const bookings = response?.bookings || response?.data?.bookings || []
           
           // Tìm booking có payment với transaction_id = orderCode
