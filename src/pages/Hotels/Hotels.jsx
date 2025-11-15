@@ -171,6 +171,7 @@ function Hotels() {
         map.set(typeId, {
           room_type_id: typeId,
           room_type_name: summary?.room_type_name || '',
+          category: summary?.category || null, // Thêm category từ summary
           images: Array.isArray(summary?.images) ? summary.images : [],
           capacity: summary?.capacity,
           area: summary?.area,
@@ -200,6 +201,10 @@ function Hotels() {
           if (!existing.room_type_name && (room?.room_type?.room_type_name || room?.room_type_name)) {
             existing.room_type_name = room?.room_type?.room_type_name ?? room?.room_type_name
           }
+          // Cập nhật category từ room nếu chưa có
+          if (!existing.category && (room?.room_type?.category || room?.category)) {
+            existing.category = room?.room_type?.category ?? room?.category
+          }
           if ((!existing.images || existing.images.length === 0) && (room?.room_type?.images || room?.images)) {
             existing.images = room?.room_type?.images ?? room?.images ?? []
           }
@@ -226,6 +231,7 @@ function Hotels() {
           map.set(typeId, {
             room_type_id: typeId,
             room_type_name: typeName || '',
+            category: room?.room_type?.category || room?.category || null, // Thêm category từ room
             images: room?.room_type?.images ?? room?.images ?? [],
             capacity: room?.room_type?.capacity ?? room?.capacity,
             area: room?.room_type?.area ?? room?.area,
@@ -257,6 +263,7 @@ function Hotels() {
 
         const capacity = item.capacity ?? details.capacity
         const area = item.area ?? details.area
+        const category = item.category ?? details.category ?? null // Thêm category từ cache
         const amenities = (Array.isArray(item.amenities) && item.amenities.length > 0) ? item.amenities : (details.amenities || [])
 
         // lấy price từ nhiều khả năng: price_per_night, prices[], min_price
@@ -272,7 +279,7 @@ function Hotels() {
           price = details.min_price
         }
 
-        return { ...item, images, capacity, area, amenities, price_per_night: price }
+        return { ...item, images, capacity, area, category, amenities, price_per_night: price }
       }
       return item
     })
@@ -284,10 +291,23 @@ function Hotels() {
 
   // Determine data source: grouped search results if any, else room types catalog
   const dataSource = (checkIn && checkOut)
-    ? groupedAvailableRoomTypes
+    ? groupedAvailableRoomTypes.map(room => ({
+      ...room,
+      // Đảm bảo có room_type object với category để filter hoạt động đúng
+      room_type: {
+        room_type_id: room.room_type_id,
+        room_type_name: room.room_type_name,
+        category: room.category || null,
+        capacity: room.capacity,
+        images: room.images,
+        amenities: room.amenities,
+        area: room.area
+      }
+    }))
     : roomTypes.map(room => ({
       room_type_id: room.room_type_id,
       room_type_name: room.room_type_name,
+      category: room.category || null,
       capacity: room.capacity,
       images: room.images,
       amenities: room.amenities,
@@ -296,6 +316,7 @@ function Hotels() {
       room_type: {
         room_type_id: room.room_type_id,
         room_type_name: room.room_type_name,
+        category: room.category || null,
         capacity: room.capacity,
         images: room.images,
         amenities: room.amenities,
@@ -314,12 +335,17 @@ function Hotels() {
       const price = room.room_type?.prices?.[0]?.price_per_night ||
         room.prices?.[0]?.price_per_night ||
         room.price_per_night
-      // Nếu sold_out và không có giá (do không có phòng khả dụng), vẫn giữ lại để hiển thị "Tạm hết phòng"
+      // Nếu sold_out hoặc không có phòng khả dụng và không có giá, vẫn giữ lại để hiển thị "Tạm hết phòng"
       if ((room.sold_out || room.available_rooms === 0) && (price == null)) return true
-      if (price == null) return false
-      return price >= priceRange[0] && price <= priceRange[1]
+      // Nếu có phòng khả dụng nhưng không có giá, vẫn giữ lại (có thể giá sẽ được load sau)
+      if (price == null && (room.available_rooms > 0 || !room.sold_out)) return true
+      // Nếu có giá, kiểm tra xem có nằm trong khoảng giá không
+      if (price != null) {
+        return price >= priceRange[0] && price <= priceRange[1]
+      }
+      return false
     })
-
+    
     // Lọc theo loại phòng (category)
     // Normalize để tránh lỗi do khoảng trắng hoặc case sensitivity
     if (selectedRoomType !== 'all') {
