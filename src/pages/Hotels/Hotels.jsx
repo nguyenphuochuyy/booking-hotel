@@ -93,7 +93,7 @@ function Hotels() {
             guests: guests,
             sort: 'price_asc',
             page: 1,
-            limit: 50
+            limit: 1000 // Tăng limit để lấy tất cả phòng trống, đảm bảo summary_by_room_type chứa đầy đủ tất cả loại phòng
           }
           const response = await searchAvailableRooms(params)
           const rooms = response?.rooms || []
