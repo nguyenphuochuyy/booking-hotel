@@ -32,10 +32,19 @@ const { Search } = Input
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return ''
   const day = String(date.getDate()).padStart(2, '0')
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const year = date.getFullYear()
   return `${day}/${month}/${year}`
+}
+
+// Format date string để binding vào input type="date"
+const formatDateForInput = (dateString) => {
+  if (!dateString) return undefined
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString().slice(0, 10)
 }
 
 function Users() {
@@ -124,17 +133,17 @@ function Users() {
       dataIndex: 'user_id',
       key: 'user_id',
       width: 70,
+      sorter: (a, b) => a.user_id - b.user_id,
+      defaultSortOrder: 'ascend',
     },
     {
       title: 'Họ và tên',
       dataIndex: 'full_name',
       key: 'full_name',
       render: (text) => (
-        <Space>
-          <UserOutlined />
           <span>{text}</span>
-        </Space>
       ),
+      sorter: (a, b) => a.full_name.localeCompare(b.full_name),
     },
     {
       title: 'Email',
@@ -145,6 +154,16 @@ function Users() {
       title: 'Số điện thoại',
       dataIndex: 'phone',
       key: 'phone',
+      render: (text) => (
+        <span>
+          {text? text : 'chưa cập nhật'}
+          </span>
+      ),
+    },
+    {
+      title: 'CCCD/CMND',
+      dataIndex: 'cccd',
+      key: 'cccd',
     },
     {
       title: 'Vai trò',
@@ -183,7 +202,6 @@ function Users() {
             size="small"
             onClick={() => handleEdit(record)}
           >
-            Sửa
           </Button>
           <Button 
             danger 
@@ -191,7 +209,7 @@ function Users() {
             size="small"
             onClick={() => handleDelete(record)}
           >
-            Xóa
+        
           </Button>
         </Space>
       ),
@@ -204,6 +222,7 @@ function Users() {
       full_name: record.full_name,
       email: record.email,
       phone: record.phone,
+      date_of_birth: record.date_of_birth,
       role: record.role,
       is_verified: record.is_verified,
     })
@@ -217,6 +236,9 @@ function Users() {
       okText: 'Xóa',
       okType: 'danger',
       cancelText: 'Hủy',
+      style:{
+        padding: 24,
+      },
       onOk: async () => {
         try {
           await deleteUser(record.user_id)
@@ -237,34 +259,28 @@ function Users() {
   }
 
   const handleModalOk = async () => {
+    setLoading(true)
     try {
       const values = await form.validateFields()
-      console.log(values);
-      
       if (editingUser) {
         // Cập nhật user
         await updateUser(editingUser.user_id, values)
-        message.success('Cập nhật người dùng thành công')
+        message.success('Cập nhật thông tin người dùng thành công')
       } else {
         // Tạo user mới
-        const response = await createUser(values)
-        if (response.status === 201) {
-          message.success('Tạo người dùng thành công')
-        } else {
-          message.error(response.message || 'Có lỗi xảy ra')
-        }
-        
-      }
-      
+        const response = await createUser(values)    
+        message.success('Tạo người dùng thành công')
+      } 
       setIsModalVisible(false)
       fetchUsers() // Reload danh sách
     } catch (error) {
       if (error.errorFields) {
-        // Validation error
         return
       }
       console.error('Error saving user:', error)
       message.error(error.message || 'Có lỗi xảy ra')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -308,7 +324,7 @@ function Users() {
           allowClear
           enterButton={<SearchOutlined />}
           size="large"
-          onSearch={handleSearch}
+          onChange={(e) => setSearchText(e.target.value)}
           style={{ maxWidth: 400 }}
         />
       </div>
@@ -316,14 +332,15 @@ function Users() {
       <Table 
         columns={columns} 
         dataSource={filteredUsers}
-        loading={loading}
+        // loading={loading}
         pagination={{
           ...pagination,
           showSizeChanger: true,
           showTotal: (total) => `Tổng ${total} người dùng`,
         }}
         onChange={handleTableChange}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 'max-content' }}
+        bordered
       />
 
       <Modal
