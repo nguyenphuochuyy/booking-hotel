@@ -54,13 +54,23 @@ function Dashboard() {
       ) : (
         <>
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} lg={4}>
+           <Col xs={24} sm={12} lg={5}>
               <Card>
                 <Statistic
-                  title="Tổng người dùng"
-                  value={stats.totalUsers}
-                  prefix={<UserOutlined />}
-                  valueStyle={{ color: '#3f8600' }}
+                  title="Doanh thu"
+                  value={formatPrice(stats.totalRevenue)}
+                  // prefix={<DollarOutlined />}
+                  valueStyle={{ color: 'green' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={5}>
+              <Card>
+                <Statistic
+                  title="Tổng đặt phòng"
+                  value={stats.totalBookings}
+                  prefix={<CalendarOutlined />}
+                  valueStyle={{ color: '#722ed1' }}
                 />
               </Card>
             </Col>
@@ -84,26 +94,8 @@ function Dashboard() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={5}>
-              <Card>
-                <Statistic
-                  title="Doanh thu"
-                  value={formatPrice(stats.totalRevenue)}
-                  prefix={<DollarOutlined />}
-                  valueStyle={{ color: '#cf1322' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={5}>
-              <Card>
-                <Statistic
-                  title="Tổng đặt phòng"
-                  value={stats.totalBookings}
-                  prefix={<CalendarOutlined />}
-                  valueStyle={{ color: '#722ed1' }}
-                />
-              </Card>
-            </Col>
+      
+         
           </Row>
 
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>

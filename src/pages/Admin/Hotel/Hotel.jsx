@@ -59,10 +59,9 @@ function Hotels() {
         page: 1,
         limit: 1000,
       }
-
       const response = await getAllHotels(params)
       const hotelsData = response?.hotels || []
-
+      console.log(hotelsData);
       // Map data để thêm key cho Table
       const hotelsWithKey = hotelsData.map(hotel => ({
         ...hotel,
@@ -234,7 +233,6 @@ function Hotels() {
     {
       title: 'Thao tác',
       key: 'action',
-      width: 180,
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
@@ -244,7 +242,7 @@ function Hotels() {
             size="small"
             onClick={() => handleEdit(record)}
           >
-            Sửa
+    
           </Button>
           <Button 
             danger 
@@ -252,7 +250,6 @@ function Hotels() {
             size="small"
             onClick={() => handleDelete(record)}
           >
-            Xóa
           </Button>
         </Space>
       ),
@@ -601,7 +598,7 @@ function Hotels() {
           allowClear
           enterButton={<SearchOutlined />}
           size="large"
-          onSearch={handleSearch}
+          onChange={(e) => setSearchText(e.target.value)}
         />
       </div>
 
