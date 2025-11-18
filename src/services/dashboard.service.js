@@ -298,71 +298,57 @@ export const getRevenueByDay = async () => {
  * Lấy thống kê trạng thái phòng
  * @returns {Promise} Array chứa số lượng phòng theo từng trạng thái
  */
-export const getRoomStatusStats = async () => {
+export const getBookingStatusStats = async () => {
   try {
-    const response = await httpClient.get('/rooms', { 
-      params: { page: 1, limit: 1000 } 
+    const response = await httpClient.get('/bookings', {
+      params: { page: 1, limit: 1000 },
     })
     
-    const rooms = response?.rooms || []
-    
-    // Đếm số lượng phòng theo từng trạng thái
+    const bookings = response?.bookings || []
+
     const stats = {
-      available: 0,      // Phòng trống
-      in_use: 0,         // Đang có khách
-      booked: 0,         // Đã đặt (Sắp đến)
-      cleaning: 0,       // Đang dọn dẹp
-      checked_out: 0,    // Đã trả phòng
-      cancelled: 0,      // Đã hủy
-      total: rooms.length
+      pending: 0,
+      confirmed: 0,
+      checked_in: 0,
+      checked_out: 0,
+      cancelled: 0,
+      total: bookings.length,
     }
     
-    rooms.forEach(room => {
-      const status = room.status
-      if (status === 'available') {
-        stats.available++
-      } else if (status === 'in_use') {
-        stats.in_use++
-      } else if (status === 'booked') {
-        stats.booked++
-      } else if (status === 'cleaning') {
-        stats.cleaning++
-      } else if (status === 'checked_out') {
-        stats.checked_out++
-      } else if (status === 'cancelled') {
-        stats.cancelled++
+    bookings.forEach((booking) => {
+      const status = booking.booking_status
+      if (status && typeof stats[status] === 'number') {
+        stats[status]++
       }
     })
     
-    // Chuyển đổi thành format cho biểu đồ Pie
     const pieData = [
-      { type: 'Đang có khách', value: stats.in_use },
-      { type: 'Phòng trống', value: stats.available },
-      { type: 'Đã đặt (Sắp đến)', value: stats.booked },
-      { type: 'Đang dọn dẹp', value: stats.cleaning },
+      { type: 'Chờ xác nhận', value: stats.pending },
+      { type: 'Đã xác nhận', value: stats.confirmed },
+      { type: 'Đang ở', value: stats.checked_in },
+      { type: 'Đã trả phòng', value: stats.checked_out },
       { type: 'Đã hủy', value: stats.cancelled },
-    ].filter(item => item.value > 0) // Chỉ hiển thị các trạng thái có phòng
+    ].filter((item) => item.value > 0)
     
     return {
       stats,
       pieData,
-      total: stats.total
+      total: stats.total,
     }
   } catch (error) {
-    console.error('Error getting room status stats:', error)
+    console.error('Error getting booking status stats:', error)
     return {
       stats: {
-        available: 0,
-        in_use: 0,
-        booked: 0,
-        cleaning: 0,
+        pending: 0,
+        confirmed: 0,
+        checked_in: 0,
         checked_out: 0,
         cancelled: 0,
-        total: 0
+        total: 0,
 
       },
       pieData: [],
-      total: 0
+      total: 0,
     }
   }
 }
@@ -376,7 +362,7 @@ export default {
   getAllDashboardStats,
   getRecentBookings,
   getRevenueByDay,
-  getRoomStatusStats,
+  getBookingStatusStats,
   getBookingStatusColor,
   getBookingStatusText,
   formatDate

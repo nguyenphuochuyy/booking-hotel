@@ -29,7 +29,7 @@ import {
   getBookingStatusText,
   formatDate,
   getRevenueByDay,
-  getRoomStatusStats
+  getBookingStatusStats
 } from '../../services/dashboard.service'
 import { getBookingById } from '../../services/admin.service'
 import formatPrice from '../../utils/formatPrice'
@@ -48,9 +48,9 @@ function Dashboard() {
     recentBookings: []
   })
   const [revenueByDay, setRevenueByDay] = useState([])
-  const [roomStatusData, setRoomStatusData] = useState([])
-  const [roomStatusTotal, setRoomStatusTotal] = useState(0)
-  const [roomStatusLoading, setRoomStatusLoading] = useState(true)
+  const [bookingStatusData, setBookingStatusData] = useState([])
+  const [bookingStatusTotal, setBookingStatusTotal] = useState(0)
+  const [bookingStatusLoading, setBookingStatusLoading] = useState(true)
   const [detailModal, setDetailModal] = useState({
     visible: false,
     loading: false,
@@ -203,23 +203,23 @@ function Dashboard() {
 
     // Tải dữ liệu trạng thái phòng
   useEffect(() => {
-      const loadRoomStatusStats = async () => {
-        try {
-          setRoomStatusLoading(true)
-          const data = await getRoomStatusStats()
-            setRoomStatusData(data.pieData || [])
-            setRoomStatusTotal(data.total || 0)
-        } catch (error) {
-          console.error('Error loading room status stats:', error)
-          setRoomStatusData([])
-          setRoomStatusTotal(0)
-        } finally {
-          setRoomStatusLoading(false)
-        }
+    const loadBookingStatusStats = async () => {
+      try {
+        setBookingStatusLoading(true)
+        const data = await getBookingStatusStats()
+        setBookingStatusData(data.pieData || [])
+        setBookingStatusTotal(data.total || 0)
+      } catch (error) {
+        console.error('Error loading booking status stats:', error)
+        setBookingStatusData([])
+        setBookingStatusTotal(0)
+      } finally {
+        setBookingStatusLoading(false)
       }
+    }
 
-      loadRoomStatusStats()
-    }, [])
+    loadBookingStatusStats()
+  }, [])
   // Config cho Biểu đồ Cột (Doanh thu)
   const columnConfig = {
     data: revenueByDay,
@@ -257,10 +257,6 @@ function Dashboard() {
     <>
     <div style={{ padding: 24 }}>
       <Title align='center' level={2}>Trang quản trị</Title>
-      <p style={{ color: '#666', marginBottom: 32 }}>
-        Chào mừng đến với bảng điều khiển quản trị Bean Hotel
-      </p>
-      
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <Spin size="large" />
@@ -277,6 +273,24 @@ function Dashboard() {
                   value={stats.totalBookings}
                   // prefix={<CalendarOutlined />}
                   valueStyle={{ color: '#000' }}
+                />
+              </Card>
+            </Col>
+             <Col xs={24} sm={12} lg={5}>
+              <Card>
+                <Statistic
+                  title="Công suất phòng"
+                  value={
+                    stats.totalRooms > 0
+                      ? (
+                          (bookingStatusData.find(item => item.type === 'Đang ở')?.value || 0) /
+                          stats.totalRooms *
+                          100
+                        ).toFixed(1)
+                      : 0
+                  }
+                  suffix="%"
+                  valueStyle={{ color: '#c08a19' }}
                 />
               </Card>
             </Col>
@@ -318,29 +332,30 @@ function Dashboard() {
             </Col>
             <Col xs={24} lg={12}>
                <Card
-                 title="Thống kê trạng thái phòng"
+                 title="Thống kê trạng thái booking"
                  bordered={false}
                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                  bodyStyle={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                >
-                 {roomStatusLoading ? (
+                 {bookingStatusLoading ? (
                    <div style={{ textAlign: 'center', padding: '60px 0' }}>
                      <Spin size="large" />
                      <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
                    </div>
-                 ) : roomStatusData.length > 0 ? (
+                 ) : bookingStatusData.length > 0 ? (
                    <Pie
-                     appendPadding={10}
-                     data={roomStatusData}
-                     angleField="value"
-                     colorField="type"
-                     radius={0.8}
-                     innerRadius={0.6}
-                     color={({ type }) => {
-                       if (type === 'Phòng trống') return '#52c41a'
-                       if (type === 'Đang có khách') return '#f5222d'
-                       if (type === 'Đã đặt (Sắp đến)') return '#faad14'
-                       return '#1890ff'
+                    appendPadding={10}
+                    data={bookingStatusData}
+                    angleField="value"
+                    colorField="type"
+                    radius={0.8}
+                    innerRadius={0.5}
+                    color={({ type }) => {
+                      if (type === 'Đang ở') return '#f5222d'
+                      if (type === 'Đã xác nhận') return '#1890fa'
+                      if (type === 'Chờ xác nhận') return '#faad14'
+                      if (type === 'Đã trả phòng') return '#52c41a'
+                      return '#8c8c8c'
                      }}
                      label={{
                       text : 'value',
@@ -362,25 +377,26 @@ function Dashboard() {
                     statistic={{
                       title: {
                         customHtml: () => (
-                          `<div style="font-size:14px;color:#8c8c8c;">Tổng phòng</div>`
+                          `<div style="font-size:14px;color:#8c8c8c;">Tổng booking</div>`
                         ),
                       },
                       content: {
                         customHtml: () => (
-                          `<div style="font-size:18px;font-weight:bold;">${roomStatusTotal || 0}</div>`
+                          `<div style="font-size:18px;font-weight:bold;">${bookingStatusTotal || 0}</div>`
                         ),
                       },
                     }}
                     tooltip={{
                       formatter: (datum) => {
-                        const percent = ((datum.value / roomStatusTotal) * 100).toFixed(1);
-                        return { name: datum.type, value: `${datum.value} phòng (${percent}%)` };
+                        console.log(datum);
+                        
+                        return datum
                       },
                     }}
                     
                    />
                  ) : (
-                   <Empty description="Chưa có dữ liệu phòng" />
+                  <Empty description="Chưa có dữ liệu booking" />
                  )}
                </Card>
             </Col>
