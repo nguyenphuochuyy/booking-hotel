@@ -1,3 +1,28 @@
+  const handleQuickCheckOut = async () => {
+    if (selectedCheckOutRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một booking để check-out')
+      return
+    }
+
+    try {
+      setQuickCheckOutLoading(true)
+      await Promise.all(
+        selectedCheckOutRowKeys.map((bookingId) =>
+          checkOutGuest(bookingId, { auto_release_room: true })
+        )
+      )
+      message.success('Đã check-out thành công cho các booking đã chọn')
+      const data = await getTodayCheckSchedules()
+      setTodayCheckIns(data.checkIns || [])
+      setTodayCheckOuts(data.checkOuts || [])
+      setSelectedCheckOutRowKeys([])
+    } catch (error) {
+      console.error('Error during quick check-out:', error)
+      message.error('Không thể check-out tự động cho các booking đã chọn')
+    } finally {
+      setQuickCheckOutLoading(false)
+    }
+  }
 import React, { useState, useEffect } from 'react'
 import {
   Row,
@@ -29,9 +54,10 @@ import {
   getBookingStatusText,
   formatDate,
   getRevenueByDay,
-  getBookingStatusStats
+  getBookingStatusStats,
+  getTodayCheckSchedules
 } from '../../services/dashboard.service'
-import { getBookingById } from '../../services/admin.service'
+import { getBookingById, checkInGuest, checkOutGuest } from '../../services/admin.service'
 import formatPrice from '../../utils/formatPrice'
 
 const { Title, Text } = Typography
@@ -51,6 +77,13 @@ function Dashboard() {
   const [bookingStatusData, setBookingStatusData] = useState([])
   const [bookingStatusTotal, setBookingStatusTotal] = useState(0)
   const [bookingStatusLoading, setBookingStatusLoading] = useState(true)
+  const [scheduleLoading, setScheduleLoading] = useState(true)
+  const [todayCheckIns, setTodayCheckIns] = useState([])
+  const [todayCheckOuts, setTodayCheckOuts] = useState([])
+  const [selectedCheckInRowKeys, setSelectedCheckInRowKeys] = useState([])
+  const [selectedCheckOutRowKeys, setSelectedCheckOutRowKeys] = useState([])
+  const [quickCheckInLoading, setQuickCheckInLoading] = useState(false)
+  const [quickCheckOutLoading, setQuickCheckOutLoading] = useState(false)
   const [detailModal, setDetailModal] = useState({
     visible: false,
     loading: false,
@@ -115,6 +148,32 @@ function Dashboard() {
     }
   }
 
+  const handleQuickCheckIn = async () => {
+    if (selectedCheckInRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một booking để check-in')
+      return
+    }
+
+    try {
+      setQuickCheckInLoading(true)
+      await Promise.all(
+        selectedCheckInRowKeys.map((bookingId) =>
+          checkInGuest(bookingId, { auto_assign_room: true })
+        )
+      )
+      message.success('Đã check-in thành công cho các booking đã chọn')
+      const data = await getTodayCheckSchedules()
+      setTodayCheckIns(data.checkIns || [])
+      setTodayCheckOuts(data.checkOuts || [])
+      setSelectedCheckInRowKeys([])
+    } catch (error) {
+      console.error('Error during quick check-in:', error)
+      message.error('Không thể check-in tự động cho các booking đã chọn')
+    } finally {
+      setQuickCheckInLoading(false)
+    }
+  }
+
   const recentBookingColumns = [
     {
       title: 'Mã booking',
@@ -148,12 +207,51 @@ function Dashboard() {
       ),
     },
     {
-      title: 'Action',
+      title: 'Hành động',
       key: 'action',
       render: (_, record) => (
         <Button size="small" type="link" onClick={() => handleViewBooking(record.booking_id)}>
           Xem
         </Button>
+      ),
+    },
+  ]
+
+  const scheduleColumns = [
+    {
+      title: 'Mã booking',
+      dataIndex: 'booking_code',
+      key: 'booking_code',
+      responsive: ['xs', 'sm', 'md', 'lg'],
+    },
+    {
+      title: 'Khách hàng',
+      dataIndex: 'customer_name',
+      key: 'customer_name',
+      responsive: ['sm', 'md', 'lg'],
+    },
+    {
+      title: 'Loại phòng',
+      dataIndex: 'room_type',
+      key: 'room_type',
+      responsive: ['md', 'lg'],
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'check_time',
+      key: 'check_time',
+      responsive: ['md', 'lg'],
+      render: (date) => formatDate(date),
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'booking_status',
+      key: 'booking_status',
+      responsive: ['xs', 'sm', 'md', 'lg'],
+      render: (status) => (
+        <Tag color={getBookingStatusColor(status)}>
+          {getBookingStatusText(status)}
+        </Tag>
       ),
     },
   ]
@@ -173,7 +271,7 @@ function Dashboard() {
 
     loadStats()
   }, [])
- 
+
   // tải dữ liệu doanh thu theo ngày
   useEffect(() => {
     const loadRevenueByDay = async () => {
@@ -219,6 +317,25 @@ function Dashboard() {
     }
 
     loadBookingStatusStats()
+  }, [])
+
+  useEffect(() => {
+    const loadSchedules = async () => {
+      try {
+        setScheduleLoading(true)
+        const data = await getTodayCheckSchedules()
+        setTodayCheckIns(data.checkIns || [])
+        setTodayCheckOuts(data.checkOuts || [])
+      } catch (error) {
+        console.error('Error loading today schedules:', error)
+        setTodayCheckIns([])
+        setTodayCheckOuts([])
+      } finally {
+        setScheduleLoading(false)
+      }
+    }
+
+    loadSchedules()
   }, [])
   // Config cho Biểu đồ Cột (Doanh thu)
   const columnConfig = {
@@ -303,7 +420,7 @@ function Dashboard() {
                   valueStyle={{ color: 'green' }}
                 />
               </Card>
-            </Col>   
+            </Col>
           </Row>
 
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
@@ -318,7 +435,7 @@ function Dashboard() {
                   <div style={{ textAlign: 'center', padding: '60px 0' }}>
                     <Spin size="large" />
                     <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu biểu đồ...</p>
-                  </div>
+                          </div>
                 ) : revenueByDay.length > 0 ? (
        
                   <div style={{ width: '100%' }}>
@@ -334,14 +451,14 @@ function Dashboard() {
                <Card
                  title="Thống kê trạng thái booking"
                  bordered={false}
-                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                 style={{ height: '100%', display: 'flex', flexDirection: 'column' , width : '100%'}}
                  bodyStyle={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                >
                  {bookingStatusLoading ? (
                    <div style={{ textAlign: 'center', padding: '60px 0' }}>
                      <Spin size="large" />
                      <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
-                   </div>
+                  </div>
                  ) : bookingStatusData.length > 0 ? (
                    <Pie
                     appendPadding={10}
@@ -388,9 +505,11 @@ function Dashboard() {
                     }}
                     tooltip={{
                       formatter: (datum) => {
-                        console.log(datum);
-                        
-                        return datum
+                        const percent = ((datum.value / (bookingStatusTotal || 1)) * 100).toFixed(1)
+                        return {
+                          name: datum.type,
+                          value: `${datum.value} booking (${percent}%)`,
+                        }
                       },
                     }}
                     
@@ -401,8 +520,70 @@ function Dashboard() {
                </Card>
             </Col>
           </Row>
-
-
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+            <Col xs={24} md={12}>
+              <Card
+                title="Check-in hôm nay"
+                bordered={false}
+                extra={
+                  <Button
+                    type="primary"
+                    size="small"
+                    disabled={selectedCheckInRowKeys.length === 0}
+                    loading={quickCheckInLoading}
+                    onClick={handleQuickCheckIn}
+                  >
+                    Check-in nhanh
+                  </Button>
+                }
+              >
+                <Table
+                  columns={scheduleColumns}
+                  dataSource={todayCheckIns.map((item) => ({ ...item, key: item.booking_id }))}
+                  pagination={false}
+                  size="small"
+                  loading={scheduleLoading}
+                  scroll={{ x: true }}
+                  rowSelection={{
+                    selectedRowKeys: selectedCheckInRowKeys,
+                    onChange: setSelectedCheckInRowKeys,
+                  }}
+                  locale={{ emptyText: 'Không có khách check-in hôm nay' }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} md={12}>
+              <Card
+                title="Check-out hôm nay"
+                bordered={false}
+                extra={
+                  <Button
+                    type="primary"
+                    size="small"
+                    disabled={selectedCheckOutRowKeys.length === 0}
+                    loading={quickCheckOutLoading}
+                    onClick={handleQuickCheckOut}
+                  >
+                    Check-out nhanh
+                  </Button>
+                }
+              >
+                <Table
+                  columns={scheduleColumns}
+                  dataSource={todayCheckOuts.map((item) => ({ ...item, key: item.booking_id }))}
+                  pagination={false}
+                  size="small"
+                  loading={scheduleLoading}
+                  scroll={{ x: true }}
+                  rowSelection={{
+                    selectedRowKeys: selectedCheckOutRowKeys,
+                    onChange: setSelectedCheckOutRowKeys,
+                  }}
+                  locale={{ emptyText: 'Không có khách check-out hôm nay' }}
+                />
+              </Card>
+            </Col>
+          </Row>
           <Row style={{ marginTop: 24 }}>
             <Col span={24}>
               <Card title="5 đặt phòng mới nhất" bordered={false}>
@@ -423,6 +604,7 @@ function Dashboard() {
         </>
       )}
     </div>
+
     <Modal
       open={detailModal.visible}
       onCancel={() => setDetailModal({ visible: false, loading: false, data: null })}

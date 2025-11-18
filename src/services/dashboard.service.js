@@ -353,6 +353,67 @@ export const getBookingStatusStats = async () => {
   }
 }
 
+/**
+ * Lấy danh sách khách sẽ check-in / check-out hôm nay
+ */
+export const getTodayCheckSchedules = async () => {
+  try {
+    const response = await httpClient.get('/bookings', {
+      params: { page: 1, limit: 1000 },
+    })
+
+    const bookings = Array.isArray(response?.bookings) ? response.bookings : []
+    const today = new Date()
+    const todayDay = today.getDate()
+    const todayMonth = today.getMonth()
+    const todayYear = today.getFullYear()
+
+    const isTodayOrTomorrow = (dateString) => {
+      if (!dateString) return false
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return false
+      const diff =
+        new Date(date.getFullYear(), date.getMonth(), date.getDate()) -
+        new Date(todayYear, todayMonth, todayDay)
+      return diff >= 0 && diff <= 24 * 60 * 60 * 1000
+    }
+    const checkIns = bookings
+      .filter(
+        (booking) =>
+          isTodayOrTomorrow(booking.check_in_date) &&
+          booking.booking_status === 'confirmed'
+      )
+      .map((booking) => ({
+        booking_id: booking.booking_id,
+        booking_code: booking.booking_code || `BK-${booking.booking_id}`,
+        customer_name: booking.user?.full_name || booking.customer_name || 'N/A',
+        room_type: booking.room_type?.room_type_name || booking.room_type_name || 'N/A',
+        check_time: booking.check_in_date,
+        booking_status: booking.booking_status,
+      }))
+
+    const checkOuts = bookings
+      .filter(
+        (booking) =>
+          isTodayOrTomorrow(booking.check_out_date) &&
+          !['cancelled'].includes(booking.booking_status)
+      )
+      .map((booking) => ({
+        booking_id: booking.booking_id,
+        booking_code: booking.booking_code || `BK-${booking.booking_id}`,
+        customer_name: booking.user?.full_name || booking.customer_name || 'N/A',
+        room_type: booking.room_type?.room_type_name || booking.room_type_name || 'N/A',
+        check_time: booking.check_out_date,
+        booking_status: booking.booking_status,
+      }))
+
+    return { checkIns, checkOuts }
+  } catch (error) {
+    console.error('Error getting today schedules:', error)
+    return { checkIns: [], checkOuts: [] }
+  }
+}
+
 export default {
   getTotalUsers,
   getTotalHotels,
@@ -363,6 +424,7 @@ export default {
   getRecentBookings,
   getRevenueByDay,
   getBookingStatusStats,
+  getTodayCheckSchedules,
   getBookingStatusColor,
   getBookingStatusText,
   formatDate
