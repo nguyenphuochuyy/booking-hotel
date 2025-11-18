@@ -241,6 +241,34 @@ const BookingManagement = () => {
       filtered = filtered.filter(booking => booking.booking_type === typeFilter)
     }
 
+    // Lọc theo khoảng ngày (check_in_date hoặc check_out_date)
+    if (dateRange && dateRange.length === 2) {
+      const [startDate, endDate] = dateRange
+      filtered = filtered.filter(booking => {
+        if (!booking.check_in_date && !booking.check_out_date) return false
+        
+        // Ant Design RangePicker trả về dayjs objects
+        const start = startDate ? startDate.startOf('day').toDate() : null
+        const end = endDate ? endDate.endOf('day').toDate() : null
+        
+        if (!start || !end) return false
+        
+        const checkIn = booking.check_in_date ? new Date(booking.check_in_date) : null
+        const checkOut = booking.check_out_date ? new Date(booking.check_out_date) : null
+        
+        // Kiểm tra nếu check_in_date hoặc check_out_date nằm trong khoảng
+        if (checkIn) {
+          checkIn.setHours(0, 0, 0, 0)
+          if (checkIn >= start && checkIn <= end) return true
+        }
+        if (checkOut) {
+          checkOut.setHours(0, 0, 0, 0)
+          if (checkOut >= start && checkOut <= end) return true
+        }
+        return false
+      })
+    }
+
     // Sort mapping for status
     const statusRank = {
       pending: 1,
@@ -268,7 +296,7 @@ const BookingManagement = () => {
     }
 
     return filtered
-  }, [bookings, searchText, statusFilter, typeFilter, sortBy, sortOrder])
+  }, [bookings, searchText, statusFilter, typeFilter, sortBy, sortOrder, dateRange])
 
   // Handle xem chi tiết đặt phòng
   const handleViewDetails = async (bookingId) => {
@@ -524,7 +552,7 @@ const BookingManagement = () => {
     fetchBookings(1, pagination.pageSize)
     message.success('Đã làm mới danh sách đặt phòng')
   }
-  // Get status tag
+  // lấy tag cho trạng thái đặt phòng
   const getStatusTag = (status) => {
     const statusConfig = {
       confirmed: { color: 'blue', icon: <CheckCircleOutlined />, text: 'Đã xác nhận' },
@@ -540,7 +568,7 @@ const BookingManagement = () => {
     )
   }
 
-  // Get payment status tag
+  // lấy tag cho trạng thái thanh toán
   const getPaymentStatusTag = (status) => {
     const statusConfig = {
       pending: { color: 'orange', text: 'Chờ thanh toán' },
@@ -572,25 +600,16 @@ const BookingManagement = () => {
     return stats
   }, [bookings])
 
-  // Table columns
+  // cột cho bảng danh sách đặt phòng
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'booking_id',
-      key: 'booking_id',
-      width: 60,
-      align: 'left',
-      sorter: (a, b) => a.booking_id - b.booking_id
-    },
     {
       title: 'Mã đặt phòng',
       dataIndex: 'booking_code',
-
       key: 'booking_code',
       width: 100,
       align: 'center',
       render: (code) => (
-        <Text code style={{ fontSize: '12px', color: '#1890ff' }}>
+        <Text code style={{ fontSize: '16px', color: 'blue' , fontWeight: 'bold' }}>
           {code}
         </Text>
       )
@@ -615,7 +634,7 @@ const BookingManagement = () => {
     {
       title: 'Loại phòng',
       key: 'room_type',
-      width: 180,
+      width: 150,
       render: (_, record) => {
         // Lấy room_type từ booking trực tiếp hoặc từ booking_rooms
         const roomTypeName = record.room_type?.room_type_name ||
@@ -653,7 +672,7 @@ const BookingManagement = () => {
     {
       title: 'Ngày nhận/trả',
       key: 'dates',
-      width: 100,
+      width: 120,
       align: 'center',
       render: (_, record) => (
         <div className="date-info">
@@ -721,23 +740,6 @@ const BookingManagement = () => {
       ],
       onFilter: (value, record) => record.payment_status === value
     },
-    {
-      title: 'Loại đặt',
-      dataIndex: 'booking_type',
-      key: 'booking_type',
-      width: 80,
-      align: 'center',
-      render: (type) => (
-        <Tag color={type === 'online' ? 'blue' : 'green'}>
-          {type === 'online' ? 'Online' : 'Walk-in'}
-        </Tag>
-      ),
-      filters: [
-        { text: 'Online', value: 'online' },
-        { text: 'Walk-in', value: 'walkin' }
-      ],
-      onFilter: (value, record) => record.booking_type === value
-    },
     // {
     //   title: 'Ngày tạo',
     //   dataIndex: 'created_at',
@@ -750,7 +752,6 @@ const BookingManagement = () => {
       title: 'Hành động',
       key: 'actions',
       width: 100,
-      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Tooltip title="Xem chi tiết">
@@ -841,9 +842,49 @@ const BookingManagement = () => {
           </Card>
         </Col>
       </Row>
-
+      {/* Toolbar tìm kiếm và lọc , tạo mới đặt phòng mới */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <Input
+            placeholder="Tìm kiếm theo tên khách hàng, email, mã đặt phòng..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+            size="large"
+          />
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <Select
+            style={{ width: '100%' }}
+            size="large"
+            placeholder="Lọc theo trạng thái"
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value)}
+            allowClear
+          >
+            <Option value="confirmed">Đã xác nhận</Option>
+            <Option value="cancelled">Đã hủy</Option>
+            <Option value="checked_in">Đã nhận phòng</Option>
+          </Select>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <RangePicker
+            style={{ width: '100%' }}
+            size="large"
+            format="DD/MM/YYYY"
+            placeholder={['Từ ngày', 'Đến ngày']}
+            value={dateRange}
+            onChange={(dates) => setDateRange(dates)}
+            allowClear
+          />
+        </Col>
+        
+      </Row>
+   
+   
       {/* Check-in/Check-out Buttons */}
-      <Row gutter={[16, 16]} className="statistics-row">
+      {/* <Row gutter={[16, 16]} className="statistics-row">
         <Col span={12}>
           <Space size="middle" style={{ width: '100%', justifyContent: 'start' }}>
             <Button
@@ -864,7 +905,7 @@ const BookingManagement = () => {
             >
               Check-out
             </Button>
-            {/* Nút làm mới */}
+    
             <Button
               type="primary"
               size="large"
@@ -875,7 +916,7 @@ const BookingManagement = () => {
             </Button>
           </Space>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* Table */}
       <Table

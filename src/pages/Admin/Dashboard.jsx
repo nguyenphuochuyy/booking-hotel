@@ -95,7 +95,7 @@ function Dashboard() {
       paid: 'green',
       pending: 'orange',
       partial_refunded: 'gold',
-      refunded: 'blue',
+      refunded: 'gray',
       failed: 'red',
     }
     return colors[status] || 'default'
@@ -156,8 +156,6 @@ function Dashboard() {
 
     try {
       setQuickCheckInLoading(true)
-      console.log(selectedCheckInRowKeys);
-
       await Promise.all(
         selectedCheckInRowKeys.map(async (bookingId) => {
           // tìm booking theo booking_id
@@ -296,8 +294,6 @@ function Dashboard() {
             item.revenue >= 0
         })
         setRevenueByDay(validData)
-        console.log(validData);
-
       } catch (error) {
         console.error('Error loading revenue by day:', error)
         setRevenueByDay([])
@@ -390,6 +386,7 @@ function Dashboard() {
           </div>
         ) : (
           <>
+            {/* Thống kê tổng quan */}
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} lg={5}>
                 <Card>
@@ -398,7 +395,7 @@ function Dashboard() {
                     title="Tổng đặt phòng"
                     value={stats.totalBookings}
                     // prefix={<CalendarOutlined />}
-                    valueStyle={{ color: '#000' }}
+                    valueStyle={{ color: '#000' , fontWeight: 'bold'}}
                   />
                 </Card>
               </Col>
@@ -420,7 +417,7 @@ function Dashboard() {
                         : 0
                     }
                     suffix="%"
-                    valueStyle={{ color: '#c08a19' }}
+                    valueStyle={{ color: '#c08a19' , fontWeight: 'bold'}}
                   />
                 </Card>
               </Col>
@@ -430,18 +427,28 @@ function Dashboard() {
                     title="Doanh thu"
                     value={formatPrice(stats.totalRevenue)}
                     // prefix={<DollarOutlined />}
-                    valueStyle={{ color: 'green' }}
+                    valueStyle={{ color: 'green' , fontWeight: 'bold'}}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={5}>
+                <Card>
+                  <Statistic
+                    title="Khách hàng"
+                    value={stats.totalUsers}
+                    // prefix={<DollarOutlined />}
+                    valueStyle={{ color: 'green' , fontWeight: 'bold'}}
                   />
                 </Card>
               </Col>
             </Row>
-
+            {/* Biểu đồ doanh thu theo ngày */}
             <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
               <Col xs={24} lg={12}>
                 <Card
-                  title="Doanh thu theo ngày (7 ngày gần nhất)"
+                  title="Doanh thu theo ngày"
                   bordered={false}
-                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column' , fontWeight: 'bold'}}
                   bodyStyle={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   {chartLoading ? (
@@ -464,7 +471,7 @@ function Dashboard() {
                 <Card
                   title="Thống kê trạng thái booking"
                   bordered={false}
-                  style={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' }}
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' , fontWeight: 'bold'}}
                   bodyStyle={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   {bookingStatusLoading ? (
@@ -533,6 +540,7 @@ function Dashboard() {
                 </Card>
               </Col>
             </Row>
+            {/* Check-in và Check-out hôm nay */}
             <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
               <Col xs={24} md={12}>
                 <Card
@@ -597,6 +605,7 @@ function Dashboard() {
                 </Card>
               </Col>
             </Row>
+            {/* Đặt phòng mới nhất */}
             <Row style={{ marginTop: 24 }}>
               <Col span={24}>
                 <Card title="Đặt phòng mới nhất" bordered={false}>
@@ -625,8 +634,8 @@ function Dashboard() {
         width={720}
         title={
           detailModal.data
-            ? `Chi tiết booking #${detailModal.data.booking_code || detailModal.data.booking_id}`
-            : 'Chi tiết booking'
+            ? `Chi tiết đặt phòng #${detailModal.data.booking_code || detailModal.data.booking_id}`
+            : 'Chi tiết đặt phòng'
         }
         destroyOnClose
       >
@@ -669,7 +678,7 @@ function Dashboard() {
             </Descriptions.Item>
           </Descriptions>
         ) : (
-          <Empty description="Không có dữ liệu booking" />
+          <Empty description="Không có dữ liệu đặt phòng mới" />
         )}
       </Modal>
     </>
