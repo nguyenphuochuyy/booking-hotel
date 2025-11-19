@@ -588,17 +588,17 @@ const BookingManagement = () => {
   // Calculate statistics
   const statistics = useMemo(() => {
     const stats = {
-      total: bookings.length,
-      confirmed: bookings.filter(b => b.booking_status === 'confirmed').length,
-      checkedIn: bookings.filter(b => b.booking_status === 'checked_in').length,
-      checkedOut: bookings.filter(b => b.booking_status === 'checked_out').length,
-      cancelled: bookings.filter(b => b.booking_status === 'cancelled').length,
-      totalRevenue: bookings
+      total: filteredBookings.length,
+      confirmed: filteredBookings.filter(b => b.booking_status === 'confirmed').length,
+      checkedIn: filteredBookings.filter(b => b.booking_status === 'checked_in').length,
+      checkedOut: filteredBookings.filter(b => b.booking_status === 'checked_out').length,
+      cancelled: filteredBookings.filter(b => b.booking_status === 'cancelled').length,
+      totalRevenue: filteredBookings
         .filter(b => b.payment_status === 'paid')
         .reduce((sum, b) => sum + (parseFloat(b.final_price) || 0), 0)
     }
     return stats
-  }, [bookings])
+  }, [filteredBookings])
 
   // cột cho bảng danh sách đặt phòng
   const columns = [

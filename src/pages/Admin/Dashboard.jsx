@@ -469,7 +469,7 @@ function Dashboard() {
               </Col>
               <Col xs={24} lg={12}>
                 <Card
-                  title="Thống kê trạng thái booking"
+                  title="Thống kê trạng thái đặt phòng"
                   bordered={false}
                   style={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' , fontWeight: 'bold'}}
                   bodyStyle={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
