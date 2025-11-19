@@ -70,7 +70,6 @@ function Users() {
         page: 1,
         limit: 1000, // Lấy nhiều records cùng lúc
       }
-
       const response = await getAllUsers(params)
       const usersData = response?.users || []
       // Map data để thêm key cho Table
@@ -80,6 +79,7 @@ function Users() {
       }))
 
       setAllUsers(usersWithKey)
+      
       setFilteredUsers(usersWithKey) // Ban đầu hiển thị tất cả
       setPagination(prev => ({
         ...prev,
@@ -164,6 +164,11 @@ function Users() {
       title: 'CCCD/CMND',
       dataIndex: 'cccd',
       key: 'cccd',
+      render: (text) => (
+        <span>
+          {text? text : 'chưa cập nhật'}
+          </span>
+      ),
     },
     {
       title: 'Vai trò',
@@ -222,6 +227,7 @@ function Users() {
       full_name: record.full_name,
       email: record.email,
       phone: record.phone,
+      cccd: record.cccd,
       date_of_birth: record.date_of_birth,
       role: record.role,
       is_verified: record.is_verified,
@@ -298,11 +304,7 @@ function Users() {
     })
   }
 
-  const handleSearch = (value) => {
-    setSearchText(value)
-    // Không cần reset pagination ở đây vì đã xử lý trong useEffect
-  }
-
+  
   return (
     <div
      style={{ padding: 24 }}
@@ -376,7 +378,7 @@ function Users() {
               { type: 'email', message: 'Email không hợp lệ!' }
             ]}
           >
-            <Input placeholder="Nhập email" disabled={editingUser} />
+            <Input placeholder="Nhập email"  />
           </Form.Item>
 
           {!editingUser && (
@@ -388,7 +390,8 @@ function Users() {
                 { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
               ]}
             >
-              <Input.Password placeholder="Nhập mật khẩu" />
+              <Input.Password placeholder="Nhập mật khẩu" 
+              />
             </Form.Item>
           )}
 
@@ -397,6 +400,16 @@ function Users() {
             label="Số điện thoại"
           >
             <Input placeholder="Nhập số điện thoại" />
+          </Form.Item>
+
+          <Form.Item
+            name="cccd"
+            label="CCCD/CMND"
+            rules={[
+              { pattern: /^[0-9]{9,12}$/, message: 'CCCD/CMND không hợp lệ!' }
+            ]}
+          >
+            <Input placeholder="Nhập CCCD/CMND" />
           </Form.Item>
 
           <Form.Item

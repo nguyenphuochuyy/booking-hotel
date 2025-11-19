@@ -28,6 +28,8 @@ const PromotionManagement = () => {
   const [editingPromotion, setEditingPromotion] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState(null)
+  const [discountTypeFilter, setDiscountTypeFilter] = useState(null)
+  const [dateRangeFilter, setDateRangeFilter] = useState(null)
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -105,8 +107,31 @@ const PromotionManagement = () => {
       filtered = filtered.filter(promotion => promotion.status === statusFilter)
     }
 
+    if (discountTypeFilter) {
+      filtered = filtered.filter(promotion => promotion.discount_type === discountTypeFilter)
+    }
+
+    if (dateRangeFilter && dateRangeFilter.length === 2) {
+      const [start, end] = dateRangeFilter
+      const startValue = dayjs(start).startOf('day').valueOf()
+      const endValue = dayjs(end).endOf('day').valueOf()
+
+      filtered = filtered.filter(promotion => {
+        const promoStart = dayjs(promotion.start_date).valueOf()
+        const promoEnd = dayjs(promotion.end_date).valueOf()
+        return promoStart <= endValue && promoEnd >= startValue
+      })
+    }
+
     return filtered
-  }, [promotions, searchText, statusFilter])
+  }, [promotions, searchText, statusFilter, discountTypeFilter, dateRangeFilter])
+  const handleDiscountTypeFilterChange = (type) => {
+    setDiscountTypeFilter(type)
+  }
+
+  const handleDateRangeFilterChange = (dates) => {
+    setDateRangeFilter(dates)
+  }
 
   // Handle create/update promotion
   const handleModalOk = async () => {
@@ -275,14 +300,6 @@ const PromotionManagement = () => {
   // Table columns
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'promotion_id',
-      key: 'promotion_id',
-      width: 60,
-      align: 'center',
-      sorter: (a, b) => a.promotion_id - b.promotion_id
-    },
-    {
       title: 'Tên khuyến mãi',
       dataIndex: 'name',
       key: 'name',
@@ -338,8 +355,8 @@ const PromotionManagement = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
-      align: 'center',
+      width: 140,
+      align: 'left',
       render: (status) => getStatusTag(status),
       filters: [
         { text: 'Đang hoạt động', value: 'active' },
@@ -368,7 +385,6 @@ const PromotionManagement = () => {
       title: 'Hành động',
       key: 'actions',
       width: 120,
-      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
@@ -405,8 +421,10 @@ const PromotionManagement = () => {
   return (
     <div className="promotion-management">
       {/* Header */}
-      <div className="promotion-header">
-        <h2 className="page-title">
+       <div
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' , marginBottom: '20px'}}
+       >
+       <h2 className="page-title">
           <GiftOutlined /> Quản lý khuyến mãi
         </h2>
         <Space>
@@ -426,7 +444,9 @@ const PromotionManagement = () => {
             Thêm khuyến mãi mới
           </Button>
         </Space>
-      </div>
+
+       </div>
+  
 
       {/* Statistics */}
       <Row gutter={[16, 16]} className="statistics-row">
@@ -475,7 +495,7 @@ const PromotionManagement = () => {
       {/* Search and Filters */}
       <div className="promotion-search">
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={24} md={12} lg={10}>
+          <Col xs={24} sm={12} md={6} lg={6}>
             <Input
               placeholder="Tìm kiếm theo tên, mô tả, mã khuyến mãi..."
               prefix={<SearchOutlined />}
@@ -486,7 +506,7 @@ const PromotionManagement = () => {
               size="large"
             />
           </Col>
-          <Col xs={24} sm={12} md={12} lg={8}>
+          <Col xs={24} sm={12} md={6} lg={6}>
             <Select
               placeholder="Lọc theo trạng thái"
               style={{ width: '100%' }}
@@ -499,6 +519,29 @@ const PromotionManagement = () => {
               <Option value="inactive">Không hoạt động</Option>
               <Option value="expired">Hết hạn</Option>
             </Select>
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6}>
+            <Select
+              placeholder="Lọc theo loại giảm giá"
+              style={{ width: '100%' }}
+              onChange={handleDiscountTypeFilterChange}
+              allowClear
+              value={discountTypeFilter}
+              size="large"
+            >
+              <Option value="percentage">Phần trăm</Option>
+              <Option value="amount">Số tiền cố định</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6}>
+            <RangePicker
+              style={{ width: '100%' }}
+              size="large"
+              format="DD/MM/YYYY"
+              placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+              value={dateRangeFilter}
+              onChange={handleDateRangeFilterChange}
+            />
           </Col>
         </Row>
       </div>
@@ -516,7 +559,6 @@ const PromotionManagement = () => {
         }}
         onChange={handleTableChange}
         loading={loading}
-        scroll={{ x: 1200 }}
         locale={{
           emptyText: (
             <Empty

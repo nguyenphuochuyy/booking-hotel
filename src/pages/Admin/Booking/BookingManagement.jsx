@@ -585,7 +585,7 @@ const BookingManagement = () => {
     )
   }
 
-  // Calculate statistics
+  // tính toán thống kê số lượng và doanh thu
   const statistics = useMemo(() => {
     const stats = {
       total: filteredBookings.length,

@@ -119,12 +119,6 @@ function Hotels() {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'hotel_id',
-      key: 'hotel_id',
-      width: 70,
-    },
-    {
       title: 'Hình ảnh',
       dataIndex: 'images',
       key: 'images',
@@ -224,16 +218,8 @@ function Hotels() {
       },
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 110,
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
-    },
-    {
       title: 'Thao tác',
       key: 'action',
-      fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Button 
@@ -612,7 +598,7 @@ function Hotels() {
           showTotal: (total) => `Tổng ${total} khách sạn`,
         }}
         onChange={handleTableChange}
-        scroll={{ x: 1200 }}
+        bordered
       />
 
       <Modal

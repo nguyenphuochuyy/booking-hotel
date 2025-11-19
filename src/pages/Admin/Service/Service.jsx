@@ -33,6 +33,7 @@ const ServiceManagement = () => {
     pageSize: 10,
     total: 0
   })
+  const [submitLoading, setSubmitLoading] = useState(false)
   const [form] = Form.useForm()
 
   // Fetch services data
@@ -110,6 +111,7 @@ const ServiceManagement = () => {
   // Handle create/update service
   const handleModalOk = async () => {
     try {
+      setSubmitLoading(true)
       const values = await form.validateFields()
       
       const formData = new FormData()
@@ -170,6 +172,8 @@ const ServiceManagement = () => {
       }
       
       message.error(errMsg)
+    } finally {
+      setSubmitLoading(false)
     }
   }
 
@@ -265,12 +269,18 @@ const ServiceManagement = () => {
   // Table columns
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'service_id',
-      key: 'service_id',
-      width: 60,
-      align: 'center',
-      sorter: (a, b) => a.service_id - b.service_id
+      title: 'Tên dịch vụ',
+      dataIndex: 'name',
+      key: 'name',
+      width: 100,
+      render: (name) => (
+        <Tooltip title={name}>
+          <Text strong style={{ fontSize: '14px' }}>
+            {name}
+          </Text>
+        </Tooltip>
+      ),
+      ellipsis: true
     },
     {
       title: 'Hình ảnh',
@@ -326,20 +336,7 @@ const ServiceManagement = () => {
         )
       }
     },
-    {
-      title: 'Tên dịch vụ',
-      dataIndex: 'name',
-      key: 'name',
-      width: 100,
-      render: (name) => (
-        <Tooltip title={name}>
-          <Text strong style={{ fontSize: '14px' }}>
-            {name}
-          </Text>
-        </Tooltip>
-      ),
-      ellipsis: true
-    },
+ 
     {
       title: 'Loại dịch vụ',
       dataIndex: 'service_type',
@@ -397,18 +394,9 @@ const ServiceManagement = () => {
       )
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 120,
-      render: (date) => dayjs(date).format('DD/MM/YYYY'),
-      sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at)
-    },
-    {
       title: 'Hành động',
       key: 'actions',
       width: 120,
-      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
@@ -470,7 +458,7 @@ const ServiceManagement = () => {
 
       {/* Statistics */}
       <Row gutter={[16, 16]} className="statistics-row">
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={5}>
           <Card className="stat-card">
             <Statistic
               title="Tổng dịch vụ"
@@ -480,7 +468,7 @@ const ServiceManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={5}>
           <Card className="stat-card">
             <Statistic
               title="Có sẵn"
@@ -490,7 +478,7 @@ const ServiceManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={5}>
           <Card className="stat-card">
             <Statistic
               title="Không có sẵn"
@@ -500,7 +488,7 @@ const ServiceManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={5}>
           <Card className="stat-card">
             <Statistic
               title="Trả trước"
@@ -510,7 +498,7 @@ const ServiceManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={4}>
           <Card className="stat-card">
             <Statistic
               title="Trả sau"
@@ -596,6 +584,7 @@ const ServiceManagement = () => {
         cancelText="Hủy"
         destroyOnClose
         centered
+        confirmLoading={submitLoading}
       >
         <Form
           form={form}

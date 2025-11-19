@@ -205,15 +205,6 @@ function RoomTypes() {
   }, [searchText, allRoomTypes])
 
   const columns = [
-
-    {
-      title: 'ID',
-      dataIndex: 'room_type_id',
-      key: 'room_type_id',
-      width: 60,
-      sorter: (a, b) => a.room_type_id - b.room_type_id
-  
-    },
     {
       title: 'Hình ảnh',
       dataIndex: 'images',
@@ -359,23 +350,9 @@ function RoomTypes() {
       },
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 100,
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '',
-      sorter: (a, b) => {
-        if (!a.created_at) return -1;
-        if (!b.created_at) return 1;
-        return new Date(a.created_at) - new Date(b.created_at);
-      },
-      sortDirections: ['ascend', 'descend'],
-    },
-    {
       title: 'Thao tác',
       key: 'action',
       width: 120,
-      fixed: 'left',
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -399,7 +376,7 @@ function RoomTypes() {
     },
   ]
 
-  const handleEdit = (record) => {
+  const handleEdit = (record) => {  
     setEditingRoomType(record)
     const formValues = {
       room_type_name: record.room_type_name,
@@ -1111,6 +1088,7 @@ function RoomTypes() {
         onChange={handleTableChange}
         // Loại bỏ scroll ngang để thao tác luôn hiển thị
         scroll={{ x: 'max-content' }}
+        bordered
       />
 
       <Modal

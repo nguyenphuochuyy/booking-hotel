@@ -14,7 +14,12 @@ import {
   getAllRoomTypes
 } from '../../../services/admin.service'
 import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
 import './roomPrice.css'
+
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -29,6 +34,7 @@ const RoomPriceManagement = () => {
   const [searchText, setSearchText] = useState('')
   const [selectedRoomType, setSelectedRoomType] = useState(null)
   const [form] = Form.useForm()
+  const [dateRangeFilter, setDateRangeFilter] = useState(null)
 
   // fetch giá phòng từ API
   const fetchRoomPrices = async (roomTypeId = null) => {
@@ -65,17 +71,38 @@ const RoomPriceManagement = () => {
 
   //  Lọc giá phòng theo tên loại phòng và giá
   const filteredRoomPrices = useMemo(() => {
-    if (!searchText) return roomPrices
+    let filtered = roomPrices
     
-    const searchLower = searchText.toLowerCase()
-    return roomPrices.filter(price => {
-      const roomTypeName = roomTypes.find(rt => rt.room_type_id === price.room_type_id)?.room_type_name || ''
-      const priceValue = price.price_per_night?.toString() || ''
-      
-      return roomTypeName.toLowerCase().includes(searchLower) ||
-             priceValue.includes(searchLower)
-    })
-  }, [roomPrices, searchText, roomTypes])
+    if (searchText) {
+      const searchLower = searchText.toLowerCase()
+      filtered = filtered.filter(price => {
+        const roomTypeName = roomTypes.find(rt => rt.room_type_id === price.room_type_id)?.room_type_name || ''
+        const priceValue = price.price_per_night?.toString() || ''
+        
+        return roomTypeName.toLowerCase().includes(searchLower) ||
+               priceValue.includes(searchLower)
+      })
+    }
+
+    if (dateRangeFilter && dateRangeFilter.length === 2) {
+      const [start, end] = dateRangeFilter
+      filtered = filtered.filter(price => {
+        const priceStart = dayjs(price.start_date)
+        const priceEnd = dayjs(price.end_date)
+        return (
+          (priceStart.isSameOrAfter(start, 'day') && priceStart.isSameOrBefore(end, 'day')) ||
+          (priceEnd.isSameOrAfter(start, 'day') && priceEnd.isSameOrBefore(end, 'day')) ||
+          (priceStart.isBefore(start, 'day') && priceEnd.isAfter(end, 'day'))
+        )
+      })
+    }
+
+    return filtered
+  }, [roomPrices, searchText, roomTypes, dateRangeFilter])
+
+  const handleDateRangeFilterChange = (dates) => {
+    setDateRangeFilter(dates)
+  }
 
   // Handle create/update room price
   const handleModalOk = async () => {
@@ -189,18 +216,9 @@ const RoomPriceManagement = () => {
   // Table columns
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'price_id',
-      key: 'price_id',
-      width: 60,
-      align: 'center',
-      sorter: (a, b) => a.price_id - b.price_id
-    },
-    {
       title: 'Loại phòng',
       dataIndex: 'room_type_id',
       key: 'room_type_id',
-      width: 200,
       render: (roomTypeId) => {
         const roomType = roomTypes.find(rt => rt.room_type_id === roomTypeId)
         return roomType ? (
@@ -221,16 +239,13 @@ const RoomPriceManagement = () => {
     {
       title: 'Thời gian áp dụng',
       key: 'date_range',
-      width: 200,
+
       render: (_, record) => (
         <div>
           <div style={{ fontSize: 13 }}>
-            <CalendarOutlined style={{ marginRight: 4, color: '#1890ff' }} />
-            <Text strong>{dayjs(record.start_date).format('DD/MM/YYYY')}</Text>
+            <Text strong>{dayjs(record.start_date).format('DD/MM/YYYY')} - {dayjs(record.end_date).format('DD/MM/YYYY')}</Text> 
           </div>
-          <div style={{ fontSize: 13, color: '#8c8c8c' }}>
-            đến {dayjs(record.end_date).format('DD/MM/YYYY')}
-          </div>
+    
         </div>
       ),
       sorter: (a, b) => dayjs(a.start_date).unix() - dayjs(b.start_date).unix()
@@ -239,10 +254,8 @@ const RoomPriceManagement = () => {
       title: 'Giá/đêm',
       dataIndex: 'price_per_night',
       key: 'price_per_night',
-      width: 120,
-      align: 'center',
       render: (price) => (
-        <div className="price-display">
+        <div>
           <Badge 
             count={`${parseFloat(price).toLocaleString('vi-VN')}đ`} 
             style={{ backgroundColor: '#52c41a', fontSize: 14, fontWeight: 600 }} 
@@ -253,18 +266,8 @@ const RoomPriceManagement = () => {
       sorter: (a, b) => parseFloat(a.price_per_night) - parseFloat(b.price_per_night)
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 120,
-      render: (date) => dayjs(date).format('DD/MM/YYYY'),
-      sorter: (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix()
-    },
-    {
       title: 'Hành động',
       key: 'actions',
-      width: 120,
-      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
@@ -306,13 +309,7 @@ const RoomPriceManagement = () => {
           <DollarOutlined /> Quản lý giá phòng
         </h2>
         <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => fetchRoomPrices(selectedRoomType)}
-            loading={loading}
-          >
-            Làm mới
-          </Button>
+        
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -371,7 +368,7 @@ const RoomPriceManagement = () => {
       {/* Search and Filters */}
       <div className="room-types-search">
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={24} md={12} lg={10}>
+          <Col xs={24} sm={24} md={10} lg={8}>
             <Input
               placeholder="Tìm kiếm theo loại phòng, giá..."
               prefix={<SearchOutlined />}
@@ -382,7 +379,7 @@ const RoomPriceManagement = () => {
               size="large"
             />
           </Col>
-          <Col xs={24} sm={12} md={12} lg={8}>
+          <Col xs={24} sm={12} md={7} lg={6}>
             <Select
               placeholder="Lọc theo loại phòng"
               style={{ width: '100%' }}
@@ -398,6 +395,16 @@ const RoomPriceManagement = () => {
               ))}
             </Select>
           </Col>
+          <Col xs={24} sm={12} md={7} lg={6}>
+            <RangePicker
+              style={{ width: '100%' }}
+              size="large"
+              format="DD/MM/YYYY"
+              placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+              value={dateRangeFilter}
+              onChange={handleDateRangeFilterChange}
+            />
+          </Col>
         </Row>
       </div>
 
@@ -407,7 +414,6 @@ const RoomPriceManagement = () => {
         dataSource={filteredRoomPrices}
         rowKey="price_id"
         loading={loading}
-        scroll={{ x: 1200 }}
         locale={{
           emptyText: (
             <Empty
@@ -416,6 +422,8 @@ const RoomPriceManagement = () => {
             />
           )
         }}
+        style={{ width: '100%' }}
+        bordered
       />
 
       {/* Create/Edit Modal */}
@@ -429,11 +437,12 @@ const RoomPriceManagement = () => {
         open={isModalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
-        width={600}
+        width={700}
         okText={editingPrice ? 'Cập nhật' : 'Tạo mới'}
         cancelText="Hủy"
         destroyOnClose
         centered
+        bodyStyle={{ overflowX: 'hidden' }}
       >
         <Form
           form={form}
@@ -478,7 +487,8 @@ const RoomPriceManagement = () => {
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={value => value.replace(/\$\s?|(,*)/g, '')}
                   min={0}
-                  step={10000}
+                  step={100000}
+                  addonAfter="VNĐ"
                 />
               </Form.Item>
             </Col>

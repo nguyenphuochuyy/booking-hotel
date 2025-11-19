@@ -12,10 +12,11 @@ import {
 } from '@ant-design/icons'
 import {
   getAllRooms, createRoom, updateRoom, deleteRoom,
-  getAllHotels, getAllRoomTypes
+  getAllHotels, getAllRoomTypes, getAllRoomPrices
 } from '../../../services/admin.service'
 import { createWalkInUser , createWalkInBooking, getAllServices } from '../../../services/admin.service'
 import './Room.css'
+import formatPrice from '../../../utils/formatPrice'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -25,6 +26,7 @@ const RoomManagement = () => {
   const [allRoomsForStats, setAllRoomsForStats] = useState([]) // Lưu tất cả phòng để tính statistics
   const [hotels, setHotels] = useState([])
   const [roomTypes, setRoomTypes] = useState([])
+  const [roomPrices, setRoomPrices] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isBookingModalVisible, setIsBookingModalVisible] = useState(false)
@@ -32,7 +34,8 @@ const RoomManagement = () => {
   const [editingRoom, setEditingRoom] = useState(null)
   const [selectedRoomForBooking, setSelectedRoomForBooking] = useState(null)
   const [searchText, setSearchText] = useState('')
-  const [selectedHotel, setSelectedHotel] = useState(null)
+  const [roomTypeFilter, setRoomTypeFilter] = useState(null)
+  const [roomStatusFilter, setRoomStatusFilter] = useState(null)
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -45,15 +48,12 @@ const RoomManagement = () => {
   const [selectedServices, setSelectedServices] = useState({})
 
   // Fetch rooms data
-  const fetchRooms = async (page = 1, pageSize = 10, hotelId = null) => {
+  const fetchRooms = async (page = 1, pageSize = 10) => {
     setLoading(true)
     try {
       const params = {
         page,
         limit: pageSize
-      }
-      if (hotelId) {
-        params.hotel_id = hotelId
       }
       const response = await getAllRooms(params)
       setRooms(response.rooms || [])
@@ -71,14 +71,11 @@ const RoomManagement = () => {
   }
 
   // Fetch all rooms for statistics (không phân trang)
-  const fetchAllRoomsForStats = async (hotelId = null) => {
+  const fetchAllRoomsForStats = async () => {
     try {
       const params = {
         page: 1,
         limit: 1000 // Lấy tối đa 1000 phòng để tính statistics
-      }
-      if (hotelId) {
-        params.hotel_id = hotelId
       }
       const response = await getAllRooms(params)
       setAllRoomsForStats(response.rooms || [])
@@ -87,7 +84,6 @@ const RoomManagement = () => {
       // Không hiển thị error để không làm phiền user
     }
   }
-
   // Load services for selected room's hotel
   const loadServices = async (room) => {
     if (!room?.hotel_id) {
@@ -104,7 +100,6 @@ const RoomManagement = () => {
       setServicesLoading(false)
     }
   }
-
   // Toggle select service
   const handleToggleService = (service, checked) => {
     const newSelected = { ...selectedServices }
@@ -116,7 +111,6 @@ const RoomManagement = () => {
     setSelectedServices(newSelected)
     bookingForm.setFieldsValue({ services: Object.values(newSelected) })
   }
-
   // Change quantity
   const handleChangeServiceQty = (serviceId, qty) => {
     if (qty <= 0) qty = 1
@@ -127,7 +121,6 @@ const RoomManagement = () => {
       bookingForm.setFieldsValue({ services: Object.values(newSelected) })
     }
   }
-
   // Fetch hotels for dropdown
   const fetchHotels = async () => {
     try {
@@ -139,14 +132,24 @@ const RoomManagement = () => {
     }
   }
 
-  // Fetch room types for dropdown
+  // ftech dữ liệu loại phòng từ API
   const fetchRoomTypes = async () => {
     try {
       const response = await getAllRoomTypes({ limit: 1000 })
       setRoomTypes(response.roomTypes || [])
     } catch (error) {
       console.error('Error fetching room types:', error)
-      message.error('Không thể tải danh sách loại phòng')
+      message.error('Không thể tải danh sách loại phòng' )
+    }
+  }
+
+  // Fetch room prices
+  const fetchRoomPrices = async () => {
+    try {
+      const response = await getAllRoomPrices({ limit: 1000 })
+      setRoomPrices(response.prices || response.roomPrices || [])
+    } catch (error) {
+      console.error('Error fetching room prices:', error)
     }
   }
 
@@ -155,23 +158,92 @@ const RoomManagement = () => {
     fetchAllRoomsForStats() // Lấy tất cả phòng để tính statistics
     fetchHotels()
     fetchRoomTypes()
+    fetchRoomPrices()
   }, [])
 
-  // Filter rooms based on search
+  // Filter rooms based on search, room type, status
   const filteredRooms = useMemo(() => {
-    if (!searchText) return rooms
+    let filtered = rooms
 
-    const searchLower = searchText.toLowerCase()
-    return rooms.filter(room => {
-      const roomNum = room.room_num?.toString() || ''
-      const hotelName = hotels.find(h => h.hotel_id === room.hotel_id)?.name || ''
-      const roomTypeName = roomTypes.find(rt => rt.room_type_id === room.room_type_id)?.room_type_name || ''
+    if (searchText) {
+      const searchLower = searchText.toLowerCase()
+      filtered = filtered.filter(room => {
+        const roomNum = room.room_num?.toString()?.toLowerCase() || ''
+        return roomNum.includes(searchLower)
+      })
+    }
 
-      return roomNum.includes(searchLower) ||
-        hotelName.toLowerCase().includes(searchLower) ||
-        roomTypeName.toLowerCase().includes(searchLower)
+    if (roomTypeFilter) {
+      filtered = filtered.filter(room => room.room_type_id === roomTypeFilter)
+    }
+
+    if (roomStatusFilter) {
+      filtered = filtered.filter(room => room.status === roomStatusFilter)
+    }
+
+    return filtered
+  }, [rooms, searchText, roomTypeFilter, roomStatusFilter])
+
+  const roomPriceMap = useMemo(() => {
+    const map = {}
+    roomPrices.forEach(price => {
+      const existing = map[price.room_type_id]
+      if (!existing || new Date(price.updated_at || 0) > new Date(existing.updated_at || 0)) {
+        map[price.room_type_id] = price
+      }
     })
-  }, [rooms, searchText, hotels, roomTypes])
+    return map
+  }, [roomPrices])
+
+  const [bookingPricePreview, setBookingPricePreview] = useState({
+    roomPrice: 0,
+    totalPrice: 0
+  })
+
+  const selectedRoomTypeInfo = useMemo(() => {
+    if (!selectedRoomForBooking) return null
+    const roomType = roomTypes.find(rt => rt.room_type_id === selectedRoomForBooking.room_type_id)
+    if (!roomType) return null
+    
+    const priceEntry = roomPriceMap[selectedRoomForBooking.room_type_id]
+    const currentPrice =
+      priceEntry?.price_per_night ??
+      priceEntry?.price ??
+      priceEntry?.base_price ??
+      priceEntry?.default_price ?? null
+    
+    return {
+      ...roomType,
+      currentPrice: currentPrice
+    }
+}, [selectedRoomForBooking, roomTypes, roomPriceMap])
+
+  useEffect(() => {
+    if (!selectedRoomTypeInfo) {
+      setBookingPricePreview({
+        roomPrice: 0,
+        totalPrice: 0
+      })
+      return
+    }
+    const values = bookingForm.getFieldsValue()
+    const basePrice = selectedRoomTypeInfo.currentPrice || 0
+    const numNights = Number(values.num_nights) > 0 ? Number(values.num_nights) : 1
+    setBookingPricePreview({
+      roomPrice: basePrice,
+      totalPrice: basePrice * numNights
+    })
+  }, [selectedRoomTypeInfo, bookingForm])
+
+  const handleBookingFormChange = (_, allValues) => {
+    if (!selectedRoomTypeInfo) return
+    const basePrice = selectedRoomTypeInfo.currentPrice || 0
+    const numNights = Number(allValues.num_nights) > 0 ? Number(allValues.num_nights) : 1
+    setBookingPricePreview({
+      roomPrice: basePrice,
+      totalPrice: basePrice * numNights
+    })
+  }
 
   // Handle create/update room
   const handleModalOk = async () => {
@@ -195,8 +267,8 @@ const RoomManagement = () => {
       setIsModalVisible(false)
       setEditingRoom(null)
       form.resetFields()
-      fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
-      fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi tạo/sửa phòng
+      fetchRooms(pagination.current, pagination.pageSize)
+      fetchAllRoomsForStats() // Cập nhật statistics sau khi tạo/sửa phòng
     } catch (error) {
       const errMsg = error?.message || (editingRoom ? 'Không thể cập nhật phòng!' : 'Không thể tạo phòng!')
       message.error(errMsg)
@@ -227,8 +299,8 @@ const RoomManagement = () => {
     try {
       await deleteRoom(roomId)
       message.success('Xóa phòng thành công!')
-      fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
-      fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi xóa phòng
+      fetchRooms(pagination.current, pagination.pageSize)
+      fetchAllRoomsForStats() // Cập nhật statistics sau khi xóa phòng
     } catch (error) {
       console.error('Error deleting room:', error)
       message.error('Không thể xóa phòng!')
@@ -237,14 +309,7 @@ const RoomManagement = () => {
 
   // Handle table change
   const handleTableChange = (paginationInfo) => {
-    fetchRooms(paginationInfo.current, paginationInfo.pageSize, selectedHotel)
-  }
-
-  // Handle hotel filter change
-  const handleHotelFilterChange = (hotelId) => {
-    setSelectedHotel(hotelId)
-    fetchRooms(1, pagination.pageSize, hotelId)
-    fetchAllRoomsForStats(hotelId) // Cập nhật statistics khi filter theo hotel
+    fetchRooms(paginationInfo.current, paginationInfo.pageSize)
   }
 
   // Handle booking modal
@@ -269,9 +334,13 @@ const RoomManagement = () => {
     setSelectedRoomForBooking(null)
     bookingForm.resetFields()
     setSelectedServices({})
+    setBookingPricePreview({
+      roomPrice: 0,
+      totalPrice: 0
+    })
   }
 
-  // Handle create booking
+  // Hàm tạo mới đặt phòng
   const handleCreateBooking = async () => {
     try {
       const values = await bookingForm.validateFields()
@@ -284,16 +353,6 @@ const RoomManagement = () => {
       const nights = Number(values.num_nights) > 0 ? Number(values.num_nights) : 1
       d2.setDate(d2.getDate() + nights)
       const check_out_date = `${d2.getFullYear()}-${pad(d2.getMonth() + 1)}-${pad(d2.getDate())}`
-      const payload = {
-        full_name: values.full_name,
-        phone: values.phone,
-        national_id: values.national_id,
-        room_id: room_id,
-        check_in_date,
-        check_out_date,
-        num_person: values.num_person || 1,
-        services: values.services || []
-      }
       const createWalkInUserPayload = {
         full_name: values.full_name,
         cccd: values.national_id
@@ -315,8 +374,8 @@ const RoomManagement = () => {
           setIsBookingModalVisible(false)
           bookingForm.resetFields()
           setSelectedServices({})
-          fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
-          fetchAllRoomsForStats(selectedHotel) // Cập nhật statistics sau khi đặt phòng
+          fetchRooms(pagination.current, pagination.pageSize)
+          fetchAllRoomsForStats() // Cập nhật statistics sau khi đặt phòng
         } else {
           message.error('Tạo đặt phòng thất bại, vui lòng thử lại!')
         }
@@ -332,7 +391,7 @@ const RoomManagement = () => {
     }
   }
 
-  // Get status tag
+  // Hàm lấy tag cho trạng thái phòng
   const getStatusTag = (status) => {
     // lấy status từ database và hiển thị tương ứng với status từ danh sách các phòng
     const statusConfig = {
@@ -351,49 +410,29 @@ const RoomManagement = () => {
     )
   }
 
-  // Calculate statistics từ tất cả phòng (không chỉ trang hiện tại)
+  const hasActiveFilters = Boolean(
+    (searchText && searchText.trim().length > 0) ||
+    roomTypeFilter ||
+    roomStatusFilter
+  )
+
+  // Calculate statistics: nếu chưa lọc → dùng toàn bộ phòng, nếu đã lọc → dùng danh sách lọc
   const statistics = useMemo(() => {
-    const allRooms = allRoomsForStats.length > 0 ? allRoomsForStats : rooms
-    const stats = {
-      total: pagination.total > 0 ? pagination.total : allRooms.length, // Ưu tiên dùng total từ pagination
-      available: allRooms.filter(r => r.status === 'available').length,
-      booked: allRooms.filter(r => r.status === 'booked').length,
-      cleaning: allRooms.filter(r => r.status === 'cleaning').length,
-      in_use: allRooms.filter(r => r.status === 'in_use').length,
-      checked_out: allRooms.filter(r => r.status === 'checked_out').length
+    const source = hasActiveFilters
+      ? filteredRooms
+      : (allRoomsForStats.length > 0 ? allRoomsForStats : rooms)
+    return {
+      total: source.length,
+      available: source.filter(r => r.status === 'available').length,
+      booked: source.filter(r => r.status === 'booked').length,
+      cleaning: source.filter(r => r.status === 'cleaning').length,
+      in_use: source.filter(r => r.status === 'in_use').length,
+      checked_out: source.filter(r => r.status === 'checked_out').length,
     }
-    return stats
-  }, [allRoomsForStats, rooms, pagination.total])
+  }, [filteredRooms, allRoomsForStats, rooms, hasActiveFilters])
 
   // Table columns
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'room_id',
-      key: 'room_id',
-      width: 60,
-      align: 'center',
-      sorter: (a, b) => a.room_id - b.room_id
-    },
-    {
-      title: 'Khách sạn',
-      dataIndex: 'hotel_id',
-      key: 'hotel_id',
-      width: 100,
-      render: (hotelId) => {
-        const hotel = hotels.find(h => h.hotel_id === hotelId)
-        return hotel ? (
-          <div className="hotel-name">
-
-            <Text strong>{hotel.name}</Text>
-          </div>
-        ) : (
-          <Text type="secondary">N/A</Text>
-        )
-      },
-      filters: hotels.map(h => ({ text: h.name, value: h.hotel_id })),
-      onFilter: (value, record) => record.hotel_id === value
-    },
     {
       title: 'Số phòng',
       dataIndex: 'room_num',
@@ -402,7 +441,7 @@ const RoomManagement = () => {
       align: 'center',
       render: (num) => (
         <div className="room-number-display">
-          <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
+          <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
             {num}
           </Text>
         </div>
@@ -418,8 +457,31 @@ const RoomManagement = () => {
         const roomType = roomTypes.find(rt => rt.room_type_id === roomTypeId)
         return roomType ? (
           <Tooltip title={`Diện tích: ${roomType.area}m² - Số lượng: ${roomType.quantity}`}>
-            <Text>{roomType.room_type_name}</Text>
+            <Text
+            style={{ fontSize: '16px' , fontWeight: '500' }}
+            >{roomType.room_type_name}</Text>
           </Tooltip>
+        ) : (
+          <Text type="secondary">N/A</Text>
+        )
+      }
+    },
+    {
+      title: 'Giá hiện tại',
+      key: 'current_price',
+      width: 140,
+      render: (_, record) => {
+        const priceEntry = roomPriceMap[record.room_type_id]
+        const price =
+          priceEntry?.price_per_night ??
+          priceEntry?.price ??
+          priceEntry?.base_price ??
+          priceEntry?.default_price ??
+          null
+        return price ? (
+          <Text strong style={{ color: '#52c41a' , fontWeight: 'bold' , fontSize: '16px' }}>
+            {formatPrice(price)}
+          </Text>
         ) : (
           <Text type="secondary">N/A</Text>
         )
@@ -442,18 +504,9 @@ const RoomManagement = () => {
       onFilter: (value, record) => record.status === value
     },
     {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 150,
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
-      sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at)
-    },
-    {
       title: 'Hành động',
       key: 'actions',
       width: 150,
-      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
@@ -505,16 +558,6 @@ const RoomManagement = () => {
           <HomeOutlined /> Quản lý phòng
         </h2>
         <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              fetchRooms(pagination.current, pagination.pageSize, selectedHotel)
-              fetchAllRoomsForStats(selectedHotel) // Làm mới statistics
-            }}
-            loading={loading}
-          >
-            Làm mới
-          </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -573,9 +616,9 @@ const RoomManagement = () => {
       {/* Search and Filters */}
       <div className="room-types-search">
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={24} md={12} lg={10}>
+          <Col xs={24} sm={12} md={8} lg={6}>
             <Input
-              placeholder="Tìm kiếm theo số phòng, khách sạn, loại phòng..."
+              placeholder="Tìm theo số phòng..."
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -584,20 +627,36 @@ const RoomManagement = () => {
               size="large"
             />
           </Col>
-          <Col xs={24} sm={12} md={12} lg={8}>
+          <Col xs={24} sm={12} md={8} lg={6}>
             <Select
-              placeholder="Lọc theo khách sạn"
+              placeholder="Lọc theo loại phòng"
               style={{ width: '100%' }}
-              onChange={handleHotelFilterChange}
               allowClear
-              value={selectedHotel}
+              value={roomTypeFilter}
               size="large"
+              onChange={(value) => setRoomTypeFilter(value || null)}
             >
-              {hotels.map(hotel => (
-                <Option key={hotel.hotel_id} value={hotel.hotel_id}>
-                  {hotel.name}
+              {roomTypes.map(roomType => (
+                <Option key={roomType.room_type_id} value={roomType.room_type_id}>
+                  {roomType.room_type_name}
                 </Option>
               ))}
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Select
+              placeholder="Lọc theo trạng thái"
+              style={{ width: '100%' }}
+              allowClear
+              value={roomStatusFilter}
+              size="large"
+              onChange={(value) => setRoomStatusFilter(value || null)}
+            >
+              <Option value="available">Có sẵn</Option>
+              <Option value="booked">Đã đặt</Option>
+              <Option value="cleaning">Đang dọn</Option>
+              <Option value="in_use">Đang sử dụng</Option>
+              <Option value="checked_out">Đã trả phòng</Option>
             </Select>
           </Col>
         </Row>
@@ -631,8 +690,9 @@ const RoomManagement = () => {
       <Modal
         title={
           <Space>
-            {editingRoom ? <EditOutlined /> : <PlusOutlined />}
-            <span>{editingRoom ? 'Chỉnh sửa phòng' : 'Thêm phòng mới'}</span>
+            <span
+            style={{ fontSize: '18px' , fontWeight: '500' }}
+            >{editingRoom ? 'Chỉnh sửa phòng' : 'Thêm phòng mới'}</span>
           </Space>
         }
         open={isModalVisible}
@@ -641,8 +701,8 @@ const RoomManagement = () => {
         width={600}
         okText={editingRoom ? 'Cập nhật' : 'Tạo mới'}
         cancelText="Hủy"
-        destroyOnClose
         centered
+        bodyStyle={{ overflowX: 'hidden' }}
       >
         <Form
           form={form}
@@ -737,14 +797,7 @@ const RoomManagement = () => {
             </Col>
           </Row>
 
-          <Divider />
 
-          <div className="form-note">
-            <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
-            <Text type="secondary">
-              Lưu ý: Số phòng phải là duy nhất trong mỗi khách sạn
-            </Text>
-          </div>
         </Form>
       </Modal>
 
@@ -765,11 +818,13 @@ const RoomManagement = () => {
         confirmLoading={bookingLoading}
         destroyOnClose
         centered
+        bodyStyle={{ overflowX: 'hidden' }}
       >
         <Form
           form={bookingForm}
           layout="vertical"
           autoComplete="off"
+          onValuesChange={handleBookingFormChange}
         >
           <Row gutter={16}>
             <Col xs={24} md={12}>
@@ -796,23 +851,6 @@ const RoomManagement = () => {
           </Row>
 
           <Row gutter={16}>
-
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="num_person"
-                label="Số lượng người"
-                rules={[{ required: true, message: 'Vui lòng nhập số lượng người!' }]}
-                initialValue={1}
-              >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  placeholder="Số lượng người"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-
             <Col xs={24} md={12}>
               <Form.Item
                 name="num_nights"
@@ -828,11 +866,89 @@ const RoomManagement = () => {
                 />
               </Form.Item>
             </Col>
+            <Col xs={24} md={12}>
+              <div
+                style={{
+                  border: '1px solid #f0f0f0',
+                  borderRadius: 8,
+                  padding: 12,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}
+              >
+             
+                <div>
+                  <Text type="secondary">Tạm tính</Text>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: '#111'
+                    }}
+                  >
+                    {bookingPricePreview.totalPrice > 0
+                      ? formatPrice(bookingPricePreview.totalPrice)
+                      : selectedRoomTypeInfo?.currentPrice
+                        ? formatPrice(selectedRoomTypeInfo.currentPrice)
+                        : 'Chưa có giá'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    Tạm tính dựa trên số đêm (chưa gồm dịch vụ)
+                  </div>
+                </div>
+              </div>
+            </Col>
           </Row>
 
-          <Row gutter={16}>
-
-          </Row>
+          {selectedRoomTypeInfo && (
+            <Card
+              size="small"
+              title="Tiện nghi phòng"
+              style={{ marginTop: 12 }}
+            >
+              <Row gutter={[12, 12]}>
+                <Col xs={24} md={12}>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary">Loại phòng:</Text>
+                    <br />
+                    <Text strong>{selectedRoomTypeInfo.room_type_name}</Text>
+                  </div>
+                  <div>
+                    <Text type="secondary">Diện tích:</Text>
+                    <br />
+                    <Text strong>{selectedRoomTypeInfo.area ? `${selectedRoomTypeInfo.area} m²` : 'N/A'}</Text>
+                  </div>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Text type="secondary">Tiện nghi:</Text>
+                  <div style={{ marginTop: 8 }}>
+                    {(() => {
+                      const amenitiesData = selectedRoomTypeInfo.amenities
+                      let amenityItems = []
+                      if (Array.isArray(amenitiesData)) {
+                        amenityItems = amenitiesData
+                      } else if (typeof amenitiesData === 'string') {
+                        amenityItems = amenitiesData.split(',').map(item => item.trim()).filter(Boolean)
+                      }
+                      return amenityItems.length > 0 ? (
+                        <Space wrap>
+                          {amenityItems.map((item, index) => (
+                            <Tag color="blue" key={`${item}-${index}`}>
+                              {item}
+                            </Tag>
+                          ))}
+                        </Space>
+                      ) : (
+                        <Text type="secondary">Chưa cập nhật</Text>
+                      )
+                    })()}
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+          )}
 
           <Collapse ghost style={{ marginTop: 8 }}
             items={[{
