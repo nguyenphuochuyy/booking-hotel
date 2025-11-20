@@ -93,7 +93,7 @@ function UserBookingHistory() {
     images: []
   })
   const [invoiceLoading, setInvoiceLoading] = useState(false)
-  const {user} = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const [pendingPayments, setPendingPayments] = useState([])
 
   // Chuyển đổi pendingPayment thành format booking
@@ -158,15 +158,21 @@ function UserBookingHistory() {
 
   // load danh sách đặt phòng và thanh toán đang chờ
   useEffect(() => {
+    let isMounted = true
     const load = async () => {
+      const userId = user?.user_id || user?.id
+      if (!isAuthenticated || !userId) {
+        if (!isMounted) return
+        setPendingPayments([])
+        setBookings([])
+        setLoading(false)
+        return
+      }
       try {
+        if (!isMounted) return
         setLoading(true)
         // Lấy tất cả temp bookings của user từ localStorage
-        const userId = user?.user_id || user?.id
-        let tempBookings = []
-        if (userId) {
-          tempBookings = getAllPendingPayments(userId)
-        }
+        let tempBookings = getAllPendingPayments(userId) || []
         
         // Xử lý từng temp booking để tạo payment link nếu chưa có
         const pendingBookings = []
@@ -250,6 +256,7 @@ function UserBookingHistory() {
           }
         }
         
+        if (!isMounted) return
         setPendingPayments(pendingBookings)
     
         // Lấy danh sách bookings từ API
@@ -300,6 +307,7 @@ function UserBookingHistory() {
             services: Array.isArray(b.services) ? b.services : [],
             isPendingPayment: false
           }})
+          if (!isMounted) return
           setBookings(mapped)
         } else {
           message.error(res.message)
@@ -309,11 +317,14 @@ function UserBookingHistory() {
         message.error('Không thể tải lịch sử đặt phòng')
         setBookings([])
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     load()
-  }, [])
+    return () => { isMounted = false }
+  }, [isAuthenticated, user?.user_id, user?.id])
 
   // Format currency
   const formatCurrency = (amount) => {

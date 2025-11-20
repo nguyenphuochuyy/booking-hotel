@@ -6,13 +6,13 @@
   overflow: visible;
 }
 
-/* Make BookingWidget float over the banner */
+/* Make BookingWidget float under the banner */
 .banner-slider .booking-widget-container {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  top: 20%;
+  top: auto;
+  bottom: -90px;
   z-index: 5;
   display: flex;
   justify-content: center;
@@ -29,6 +29,37 @@
   top: auto;
   bottom: 0;
   transform: none;
+}
+
+@media (max-width: 1023.98px) {
+  .banner-slider .booking-widget-container {
+    bottom: -70px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .banner-slider .booking-widget-container {
+    bottom: -50px;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .banner-slider {
+    padding-bottom: 160px;
+  }
+
+  .banner-slider .booking-widget-container {
+    top: auto;
+    bottom: -80px;
+    padding: 0 16px;
+  }
+
+  .banner-slider .booking-widget {
+    position: relative;
+    bottom: auto;
+  }
 }
 
 .banner-image-container {
@@ -84,7 +115,25 @@
 }
 
 .home-page {
-  padding-top: 40px;
+  padding-top: 150px;
+}
+
+@media (max-width: 1023.98px) {
+  .home-page {
+    padding-top: 120px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .home-page {
+    padding-top: 100px;
+  }
+}
+
+@media (max-width: 575px) {
+  .home-page {
+    padding-top: 80px;
+  }
 }
 
 .features{
@@ -180,13 +229,6 @@
   width: 100%;
   height: 100%;
   position: relative;
-}
-
-.about-banner-images {
-  /* display: flex;
-  flex-direction: row;
-  gap: 20px;
-  width: 100%; */
 }
 
 .about-banner-item {

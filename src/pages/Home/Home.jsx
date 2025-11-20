@@ -284,14 +284,10 @@ const AnimatedSection = ({ children }) => {
         </div> 
         </AnimatedSection>
      
-
-        {/* <div className='features'>
-          <RoomList />
-        </div> */}
        {/* Section khoảng khắc thú vị với chúng tôi */}
-        {/* Tại sao chọn chúng tôi */}
-      </div>
 
+      </div>
+        {/* Tại sao chọn chúng tôi */}
       <div className='container'>
         <AnimatedSection>
           <WhyChooseUs />

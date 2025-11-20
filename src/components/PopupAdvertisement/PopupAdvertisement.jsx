@@ -77,7 +77,7 @@ function PopupAdvertisement() {
           <Col xs={24} md={12} className="popup-image-col">
             <div className="popup-image-container">
               <Image
-                src={khuyenmai}
+                src={'https://decoxdesign.com/upload/images/sanh-khach-san-01-decox-design.jpg'}
                 alt="Ưu đãi đặt phòng"
                 className="popup-image"
                 preview={false}

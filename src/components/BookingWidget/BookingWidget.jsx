@@ -1,8 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  DatePicker, Button, Popover, 
-  Form, message, Space
-} from 'antd'
+import React, { useState, useEffect, useMemo } from 'react'
+import { DatePicker, Button, Popover, Form, message, Space } from 'antd'
 import { 
   CalendarOutlined, UserOutlined,
   RightOutlined
@@ -10,7 +7,40 @@ import {
 import './BookingWidget.css'
 import dayjs from 'dayjs'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { searchAvailableRooms } from '../../services/booking.service'
+
+const { RangePicker } = DatePicker
+
+const GuestSelector = ({ adults, children, rooms, setAdults, setChildren, setRooms, onClose }) => (
+  <div className="guest-popover">
+    <div className="guest-item">
+      <span>Người lớn</span>
+      <Space>
+        <Button size="small" onClick={() => adults > 1 && setAdults(adults - 1)}>-</Button>
+        <span>{adults}</span>
+        <Button size="small" onClick={() => setAdults(adults + 1)}>+</Button>
+      </Space>
+    </div>
+    <div className="guest-item">
+      <span>Trẻ em</span>
+      <Space>
+        <Button size="small" onClick={() => children > 0 && setChildren(children - 1)}>-</Button>
+        <span>{children}</span>
+        <Button size="small" onClick={() => setChildren(children + 1)}>+</Button>
+      </Space>
+    </div>
+    <div className="guest-item">
+      <span>Phòng</span>
+      <Space>
+        <Button size="small" onClick={() => rooms > 1 && setRooms(rooms - 1)}>-</Button>
+        <span>{rooms}</span>
+        <Button size="small" onClick={() => setRooms(rooms + 1)}>+</Button>
+      </Space>
+    </div>
+    <Button type="primary" block onClick={onClose}>
+      Xác nhận
+    </Button>
+  </div>
+)
 
 const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: propAdults, children: propChildren, rooms: propRooms }) => {
   const navigate = useNavigate()
@@ -35,7 +65,7 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
     propChildren || (urlChildren ? parseInt(urlChildren, 10) : 0)
   )
   const [rooms, setRooms] = useState(
-    propRooms || (urlRooms ? parseInt(urlRooms, 10) : 1)
+    propRooms || (urlRooms ? parseInt(urlRooms, 1) : 1)
   )
   
   // Đồng bộ state với URL params khi URL thay đổi
@@ -51,52 +81,45 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
     }
   }, [urlAdults, urlChildren, urlRooms, propAdults, propChildren, propRooms])
   
-  // Set initial values cho form từ URL params hoặc props
-  useEffect(() => {
+  const initialRange = useMemo(() => {
     const initialCheckIn = propCheckIn || urlCheckIn
     const initialCheckOut = propCheckOut || urlCheckOut
-
-    // Tính mốc nhận phòng sớm nhất: sau 14:00 hôm nay thì mốc là ngày mai
     const now = dayjs()
     const cutoff = now.hour(14).minute(0).second(0).millisecond(0)
     const earliestCheckIn = now.isAfter(cutoff) ? now.add(1, 'day').startOf('day') : now.startOf('day')
 
-    let checkInValue = initialCheckIn ? dayjs(initialCheckIn) : undefined
-    let checkOutValue = initialCheckOut ? dayjs(initialCheckOut) : undefined
+    let checkInValue = initialCheckIn ? dayjs(initialCheckIn) : earliestCheckIn
+    let checkOutValue = initialCheckOut ? dayjs(initialCheckOut) : checkInValue.add(1, 'day')
 
-    // Điều chỉnh nếu check-in trước mốc sớm nhất
-    if (!checkInValue || checkInValue.isBefore(earliestCheckIn, 'day')) {
+    if (checkInValue.isBefore(earliestCheckIn, 'day')) {
       checkInValue = earliestCheckIn
     }
-    // Đảm bảo check-out sau check-in ít nhất 1 ngày
-    if (!checkOutValue || !checkOutValue.isAfter(checkInValue, 'day')) {
+    if (!checkOutValue.isAfter(checkInValue, 'day')) {
       checkOutValue = checkInValue.add(1, 'day')
     }
 
+    return [checkInValue, checkOutValue]
+  }, [propCheckIn, propCheckOut, urlCheckIn, urlCheckOut])
+
+  useEffect(() => {
     form.setFieldsValue({
-      checkIn: checkInValue,
-      checkOut: checkOutValue
+      dateRange: initialRange
     })
-  }, [propCheckIn, propCheckOut, urlCheckIn, urlCheckOut, form])
+  }, [initialRange, form])
 
   const handleSearch = async (values) => {
     try {
       setLoading(true)
       // Validate dates
-      if (!values.checkIn || !values.checkOut) {
+      if (!values?.dateRange || values.dateRange.length !== 2) {
         message.error('Vui lòng chọn ngày nhận và trả phòng!')
         return
       }
 
-      const checkIn = values.checkIn.format('YYYY-MM-DD')
-      const checkOut = values.checkOut.format('YYYY-MM-DD')
+      const [checkInValue, checkOutValue] = values.dateRange
+      const checkIn = checkInValue.format('YYYY-MM-DD')
+      const checkOut = checkOutValue.format('YYYY-MM-DD')
       
-      // Check if checkout is after checkin
-      if (values.checkIn.isAfter(values.checkOut) || 
-          values.checkIn.isSame(values.checkOut)) {
-        message.error('Ngày trả phòng phải sau ngày nhận phòng!')
-        return
-      }
       // Navigate to hotels page with search parameters in URL
       const params = new URLSearchParams({
         checkIn,
@@ -174,54 +197,36 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
           }}
         >
           <div className="widget-content-inline">
-            {/* Check-in Date */}
-            <div className="widget-field">
-              <CalendarOutlined className="widget-icon" />
+            {/* Range Picker */}
+            <div className="widget-field widget-range-field">
               <Form.Item
-                name="checkIn"
+                name="dateRange"
                 className="widget-form-item"
               >
-                <DatePicker
-                  className="widget-date-picker"
-                  placeholder="Ngày đặt"
+                <RangePicker
+                  className="widget-range-picker"
                   format="DD/MM/YYYY"
                   disabledDate={disabledDate}
-                  suffixIcon={null}
+                  separator={<span className="range-separator">↔</span>}
+                  allowClear={false}
+                  popupClassName="widget-range-popup"
                 />
               </Form.Item>
-            </div>
-
-            {/* Separator */}
-            <div className="widget-separator">
-              <div className="separator-line"></div>
-              <div className="separator-arrow">↔</div>
-            </div>
-
-            {/* Check-out Date */}
-            <div className="widget-field">
-              <CalendarOutlined className="widget-icon" />
-              <Form.Item
-                name="checkOut"
-                className="widget-form-item"
-              >
-                <DatePicker
-                  className="widget-date-picker"
-                  placeholder="Ngày trả"
-                  format="DD/MM/YYYY"
-                  disabledDate={disabledDate}
-                  suffixIcon={null}
-                />
-              </Form.Item>
-            </div>
-
-            {/* Separator */}
-            <div className="widget-separator">
-              <div className="separator-line"></div>
             </div>
 
             {/* Guest and Room Selector */}
             <Popover
-              content={guestContent}
+              content={
+                <GuestSelector
+                  adults={adults}
+                  children={children}
+                  rooms={rooms}
+                  setAdults={setAdults}
+                  setChildren={setChildren}
+                  setRooms={setRooms}
+                  onClose={() => setGuestVisible(false)}
+                />
+              }
               title="Chọn số khách và phòng"
               trigger="click"
               open={guestVisible}
@@ -229,8 +234,7 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
               placement="bottomLeft"
               className="guest-popover-wrapper"
             >
-              <div className="widget-field">
-                <UserOutlined className="widget-icon" />
+              <div className="widget-field guest-field">
                 <div className="guest-selector">
                   <span>{guestText}</span>
                   <RightOutlined className="selector-arrow" style={{ transform: 'rotate(90deg)' }} />
@@ -239,15 +243,17 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
             </Popover>
 
             {/* Submit Button */}
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="widget-submit-button"
-              loading={loading}
-            >
-              <span>GIỮ CHỖ NGAY</span>
-              <RightOutlined className="button-arrow" />
-            </Button>
+            <div className="widget-submit-wrapper">
+              <Button
+                type="primary"
+                htmlType="submit"
+                className="widget-submit-button"
+                loading={loading}
+              >
+                <span>GIỮ CHỖ NGAY</span>
+                <RightOutlined className="button-arrow" />
+              </Button>
+            </div>
           </div>
         </Form>
       </div>

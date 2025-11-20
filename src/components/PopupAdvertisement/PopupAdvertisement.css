@@ -16,16 +16,13 @@
 
 .advertisement-popup .ant-modal-body {
   padding: 0;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+
 }
 
 .popup-content {
   position: relative;
   background: white;
-  border-radius: 16px;
+  /* border-radius: 16px; */
   overflow: hidden;
   height: 100%;
   display: flex;

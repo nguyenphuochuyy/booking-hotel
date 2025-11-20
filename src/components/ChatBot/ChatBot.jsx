@@ -1,59 +1,28 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { Button, Input, List, Avatar, Typography, Space, Badge, message } from 'antd'
-import { MessageOutlined, SendOutlined, RobotOutlined, UserOutlined, CloseOutlined, HomeOutlined, SearchOutlined, HistoryOutlined, FileTextOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin } from 'antd'
+import {
+  MessageOutlined,
+  SendOutlined,
+  RobotOutlined,
+  UserOutlined,
+  CloseOutlined,
+  HomeOutlined,
+  SearchOutlined,
+  HistoryOutlined,
+  FileTextOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './ChatBot.css'
 import { sendChatMessage, getAllTools, getChatHistoryByUserId } from '../../services/chatbot.service'
 import { useAuth } from '../../context/AuthContext'
 
 const { Text } = Typography
 
-// Hàm format message để hiển thị đẹp hơn (loại bỏ dấu * và format list)
-const formatMessage = (text) => {
-  if (!text || typeof text !== 'string') return text
-  
-  // Tách text thành các dòng
-  const lines = text.split('\n')
-  const formattedElements = []
-  
-  lines.forEach((line, index) => {
-    const trimmedLine = line.trim()
-    
-    // Nếu dòng bắt đầu bằng * hoặc - (markdown list), format thành list item
-    if (trimmedLine.startsWith('*') || trimmedLine.startsWith('-')) {
-      const listText = trimmedLine.replace(/^[\*\-\s]+/, '').trim()
-      if (listText) {
-        formattedElements.push(
-          <div key={index} style={{ marginLeft: '16px', marginTop: '4px', marginBottom: '4px' }}>
-            <Text>• {listText}</Text>
-          </div>
-        )
-      }
-    } else if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
-      // Bold text (markdown **text**)
-      const boldText = trimmedLine.replace(/\*\*/g, '')
-      formattedElements.push(
-        <div key={index} style={{ marginTop: index > 0 ? '8px' : '0', marginBottom: '4px' }}>
-          <Text strong>{boldText}</Text>
-        </div>
-      )
-    } else if (trimmedLine) {
-      // Text thường
-      formattedElements.push(
-        <div key={index} style={{ marginTop: index > 0 ? '8px' : '0', marginBottom: '4px' }}>
-          <Text>{trimmedLine}</Text>
-        </div>
-      )
-    } else {
-      // Dòng trống
-      formattedElements.push(<div key={index} style={{ height: '4px' }} />)
-    }
-  })
-  
-  return formattedElements.length > 0 ? formattedElements : text
-}
-
 function ChatBot() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([]) // Tin nhắn đang hiển thị
@@ -62,6 +31,7 @@ function ChatBot() {
   const [hasMore, setHasMore] = useState(false) // Còn tin nhắn cũ không
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false) // Đang load thêm tin nhắn cũ
+  const [historyLoading, setHistoryLoading] = useState(false)
   const [unread, setUnread] = useState(0)
   const [sessionId, setSessionId] = useState(null)
   const [tools, setTools] = useState([])
@@ -70,9 +40,25 @@ function ChatBot() {
   const isScrollingUpRef = useRef(false)
   const allMessagesRef = useRef([])
   const displayedCountRef = useRef(20)
-  const user = JSON.parse(localStorage.getItem('user'))
+
+  const clearChatState = useCallback(() => {
+    setMessages([])
+    setAllMessages([])
+    allMessagesRef.current = []
+    setDisplayedCount(20)
+    displayedCountRef.current = 20
+    setHasMore(false)
+    setSessionId(null)
+    setUnread(0)
+    setShowQuickActions(true)
+    setInput('')
+    setLoading(false)
+    setLoadingMore(false)
+    setHistoryLoading(false)
+  }, [])
+
   // lấy danh sách các tools 
-  const fetchTools = async () => {
+  const fetchTools = useCallback(async () => {
     const tools = await getAllTools()
     if(tools.statusCode === 200) {
       setTools(tools.tools)
@@ -80,14 +66,15 @@ function ChatBot() {
     else {
       message.error("Lấy danh sách các công cụ thất bại, vui lòng thử lại sau")
     }
-  }
+  }, [])
   
   // lấy lịch sử chat của user - chỉ lấy 20 tin nhắn gần nhất ban đầu
-  const fetchChatHistory = async () => {
+  const fetchChatHistory = useCallback(async (userId) => {
     try {
-      if (!user || !user.user_id) return
+      if (!userId) return
+      setHistoryLoading(true)
       
-      const chatHistory = await getChatHistoryByUserId({user_id: user.user_id})
+      const chatHistory = await getChatHistoryByUserId({user_id: userId})
       const chatHistoryData = chatHistory.sessions || []
       // Gộp tất cả tin nhắn từ tất cả sessions, sắp xếp theo thời gian
       const allHistoryMessages = []
@@ -133,8 +120,10 @@ function ChatBot() {
       }
     } catch (error) {
       console.error('Error fetching chat history:', error)
+    } finally {
+      setHistoryLoading(false)
     }
-  }
+  }, [])
   
   // Load thêm tin nhắn cũ khi scroll lên
   const loadMoreMessages = useCallback(async () => {
@@ -176,8 +165,18 @@ function ChatBot() {
 
   useEffect(() => {
     fetchTools()
-    fetchChatHistory()
-  }, [isAuthenticated])
+  }, [fetchTools])
+
+  useEffect(() => {
+    if (isAuthenticated && user?.user_id) {
+      fetchChatHistory(user.user_id)
+    } else {
+      clearChatState()
+      try {
+        localStorage.removeItem('chatbot_session_id')
+      } catch (_err) {}
+    }
+  }, [isAuthenticated, user?.user_id, fetchChatHistory, clearChatState])
 
   useEffect(() => {
     if (open) {
@@ -329,7 +328,9 @@ function ChatBot() {
       // Cập nhật session_id nếu có
       if (response.session_id && response.session_id !== sessionId) {
         setSessionId(response.session_id)
-        localStorage.setItem('chatbot_session_id', response.session_id)
+        try {
+          localStorage.setItem('chatbot_session_id', response.session_id)
+        } catch (_err) {}
       }
      }
     } catch (e) {
@@ -394,78 +395,84 @@ function ChatBot() {
           </div>
           <div className="chatbot-container">
             <div className="chatbot-messages" ref={listRef}>
-              {loadingMore && (
-                <div style={{ textAlign: 'center', padding: '10px', color: '#999' }}>
-                  Đang tải thêm tin nhắn...
+              {historyLoading ? (
+                <div className="chatbot-history-loading">
+                  <Spin tip="Đang tải hội thoại..." />
                 </div>
-              )}
-              
-              {/* Quick Actions - Hiển thị khi chưa có tin nhắn */}
-              {showQuickActions && messages.length === 0 && (
-                <div className="quick-actions-container">
-                  <Text type="secondary" style={{ display: 'block', marginBottom: '12px', fontSize: '13px' }}>
-                    Chọn một trong các tùy chọn sau:
-                  </Text>
-                  <div className="quick-actions-grid">
-                    <Button 
-                      type="default" 
-                      icon={<HomeOutlined />} 
-                      className="quick-action-btn"
-                      onClick={() => handleQuickAction('list_rooms')}
-                    >
-                      Danh sách phòng
-                    </Button>
-                    <Button 
-                      type="default" 
-                      icon={<SearchOutlined />} 
-                      className="quick-action-btn"
-                      onClick={() => handleQuickAction('search_rooms')}
-                    >
-                      Tìm kiếm phòng
-                    </Button>
-                    {isAuthenticated && (
-                      <>
+              ) : (
+                <>
+                  {loadingMore && (
+                    <div className="chatbot-loading-more">
+                      <Spin size="small" /> <span>Đang tải thêm tin nhắn...</span>
+                    </div>
+                  )}
+                  
+                  {/* Quick Actions - Hiển thị khi chưa có tin nhắn */}
+                  {showQuickActions && messages.length === 0 && (
+                    <div className="quick-actions-container">
+                      <Text type="secondary" style={{ display: 'block', marginBottom: '12px', fontSize: '13px' }}>
+                        Chọn một trong các tùy chọn sau:
+                      </Text>
+                      <div className="quick-actions-grid">
                         <Button 
                           type="default" 
-                          icon={<HistoryOutlined />} 
+                          icon={<HomeOutlined />} 
                           className="quick-action-btn"
-                          onClick={() => handleQuickAction('booking_history')}
+                          onClick={() => handleQuickAction('list_rooms')}
                         >
-                          Lịch sử đặt phòng
+                          Danh sách phòng
                         </Button>
                         <Button 
                           type="default" 
-                          icon={<FileTextOutlined />} 
+                          icon={<SearchOutlined />} 
                           className="quick-action-btn"
-                          onClick={() => handleQuickAction('booking_detail')}
+                          onClick={() => handleQuickAction('search_rooms')}
                         >
-                          Chi tiết đặt phòng
+                          Tìm kiếm phòng
                         </Button>
-                        <Button 
-                          type="default" 
-                          icon={<PlusOutlined />} 
-                          className="quick-action-btn"
-                          onClick={() => handleQuickAction('create_booking')}
-                        >
-                          Tạo đặt phòng
-                        </Button>
-                        <Button 
-                          type="default" 
-                          icon={<DeleteOutlined />} 
-                          className="quick-action-btn"
-                          onClick={() => handleQuickAction('cancel_booking')}
-                        >
-                          Hủy đặt phòng
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              <List
-                dataSource={messages}
-                renderItem={(item) => {
+                        {isAuthenticated && (
+                          <>
+                            <Button 
+                              type="default" 
+                              icon={<HistoryOutlined />} 
+                              className="quick-action-btn"
+                              onClick={() => handleQuickAction('booking_history')}
+                            >
+                              Lịch sử đặt phòng
+                            </Button>
+                            <Button 
+                              type="default" 
+                              icon={<FileTextOutlined />} 
+                              className="quick-action-btn"
+                              onClick={() => handleQuickAction('booking_detail')}
+                            >
+                              Chi tiết đặt phòng
+                            </Button>
+                            <Button 
+                              type="default" 
+                              icon={<PlusOutlined />} 
+                              className="quick-action-btn"
+                              onClick={() => handleQuickAction('create_booking')}
+                            >
+                              Tạo đặt phòng
+                            </Button>
+                            <Button 
+                              type="default" 
+                              icon={<DeleteOutlined />} 
+                              className="quick-action-btn"
+                              onClick={() => handleQuickAction('cancel_booking')}
+                            >
+                              Hủy đặt phòng
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <List
+                    dataSource={messages}
+                    renderItem={(item) => {
                   // Đảm bảo text luôn là string
                   const messageText = typeof item.text === 'string' ? item.text : String(item.text || '')
                   
@@ -558,8 +565,10 @@ function ChatBot() {
                           <Avatar icon={<RobotOutlined />} className="message-avatar" />
                           <div className="message-content bot-content">
                             <Text strong style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>BeanBot</Text>
-                            <div style={{ whiteSpace: 'pre-wrap' }}>
-                              {formatMessage(messageText)}
+                            <div className="chatbot-markdown">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {messageText}
+                              </ReactMarkdown>
                             </div>
                           </div>
                         </div>
@@ -583,10 +592,12 @@ function ChatBot() {
                   </div>
                 </List.Item>
               )}
+                </>
+              )}
             </div>
             <div className="chatbot-input">
               <Input
-                placeholder="Nhập tin nhắn..."
+                placeholder="Gõ 'menu' để xem các tùy chọn"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onPressEnter={(e) => {

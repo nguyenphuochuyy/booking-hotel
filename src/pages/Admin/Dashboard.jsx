@@ -377,24 +377,24 @@ function Dashboard() {
   };
   return (
     <>
-      <div style={{ padding: 24 }}>
-        <Title align='center' level={2}>Trang quản trị</Title>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" />
-            <p style={{ marginTop: '16px', color: '#666' }}>Đang tải thống kê...</p>
-          </div>
-        ) : (
-          <>
+    <div style={{ padding: 24 }}>
+      <Title align='center' level={2}>Trang quản trị</Title>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <Spin size="large" />
+          <p style={{ marginTop: '16px', color: '#666' }}>Đang tải thống kê...</p>
+        </div>
+      ) : (
+        <>
             {/* Thống kê tổng quan */}
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} lg={5}>
-                <Card>
-                  <Statistic
-                    bordered={true}
-                    title="Tổng đặt phòng"
-                    value={stats.totalBookings}
-                    // prefix={<CalendarOutlined />}
+          <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={5}>
+              <Card>
+                <Statistic
+                  bordered={true}
+                  title="Tổng đặt phòng"
+                  value={stats.totalBookings}
+                  // prefix={<CalendarOutlined />}
                     valueStyle={{ color: '#000' , fontWeight: 'bold'}}
                   />
                 </Card>
@@ -418,32 +418,32 @@ function Dashboard() {
                     }
                     suffix="%"
                     valueStyle={{ color: '#c08a19' , fontWeight: 'bold'}}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} lg={5}>
-                <Card>
-                  <Statistic
-                    title="Doanh thu"
-                    value={formatPrice(stats.totalRevenue)}
-                    // prefix={<DollarOutlined />}
+                />
+              </Card>
+            </Col>
+           <Col xs={24} sm={12} lg={5}>
+              <Card>
+                <Statistic
+                  title="Doanh thu"
+                  value={formatPrice(stats.totalRevenue)}
+                  // prefix={<DollarOutlined />}
                     valueStyle={{ color: 'green' , fontWeight: 'bold'}}
-                  />
-                </Card>
-              </Col>
+                />
+              </Card>
+            </Col>
               <Col xs={24} sm={12} lg={5}>
-                <Card>
-                  <Statistic
+              <Card>
+                <Statistic
                     title="Khách hàng"
                     value={stats.totalUsers}
                     // prefix={<DollarOutlined />}
                     valueStyle={{ color: 'green' , fontWeight: 'bold'}}
-                  />
-                </Card>
+                />
+              </Card>
               </Col>
-            </Row>
+          </Row>
             {/* Biểu đồ doanh thu theo ngày */}
-            <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
               <Col xs={24} lg={12}>
                 <Card
                   title="Doanh thu theo ngày"
@@ -455,13 +455,13 @@ function Dashboard() {
                     <div style={{ textAlign: 'center', padding: '60px 0' }}>
                       <Spin size="large" />
                       <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu biểu đồ...</p>
-                    </div>
+                          </div>
                   ) : revenueByDay.length > 0 ? (
 
                     <div style={{ width: '100%' }}>
                       <Column {...columnConfig} />
-                    </div>
-
+                        </div>
+                        
                   ) : (
                     <Empty description="Chưa có dữ liệu doanh thu" />
                   )}
@@ -478,7 +478,7 @@ function Dashboard() {
                     <div style={{ textAlign: 'center', padding: '60px 0' }}>
                       <Spin size="large" />
                       <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
-                    </div>
+                        </div>
                   ) : bookingStatusData.length > 0 ? (
                     <Pie
                       appendPadding={10}
@@ -620,12 +620,12 @@ function Dashboard() {
                   ) : (
                     <Empty description="Chưa có đặt phòng mới" />
                   )}
-                </Card>
-              </Col>
-            </Row>
-          </>
-        )}
-      </div>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
+    </div>
 
       <Modal
         open={detailModal.visible}

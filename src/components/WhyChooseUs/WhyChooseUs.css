@@ -14,59 +14,72 @@
 /* Tiêu đề chính và phụ */
 .why-choose-us-title {
   text-align: center;
-  margin-bottom: 16px !important;
-  color: #1f2937; /* Màu đen xám đậm */
-  font-weight: 700 !important;
+  margin-bottom: 16px;
+  color: #1f2937;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
 }
 
 .why-choose-us-subtitle {
-  text-align: center;
   font-size: 16px;
-  color: #6b7280; /* Màu xám */
+  color: #6b7280;
   max-width: 600px;
-  margin: 0 auto 40px auto; /* Căn giữa và tạo khoảng cách dưới */
+  margin: 0 auto;
 }
 
-/* Tùy chỉnh thẻ Card */
-.why-choose-us-card {
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 100%; /* Đảm bảo các thẻ trên cùng 1 hàng cao bằng nhau */
-  text-align: center;
-}
+  .why-choose-us-card {
+    border-radius: 16px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+    text-align: center;
+  }
 
-.why-choose-us-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-}
+  .why-choose-us-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+  }
 
-.why-choose-us-card .ant-card-body {
-  padding: 32px 24px;
-}
+  .why-choose-us-card .ant-card-body {
+    padding: 36px 28px;
+  }
 
-/* Tùy chỉnh Icon */
-.why-choose-us-icon {
-  font-size: 48px; /* Kích thước Icon */
-  color: #667eea; /* Màu tím/xanh (bạn có thể đổi màu chủ đạo) */
-  margin-bottom: 20px;
+  .why-choose-us-icon {
+    margin-bottom: 24px;
+  }
+
+  .why-choose-us-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(192, 138, 25, 0.12);
+    color: #c08a19;
+    font-size: 28px;
+  }
+
+.why-choose-us-icon-circle .anticon {
+  font-size: 28px;
 }
 
 /* Tiêu đề của thẻ */
 .why-choose-us-card-title {
-  font-size: 20px !important;
-  font-weight: 600 !important;
-  color: #374151;
-  margin-bottom: 12px !important;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
 }
 
 /* Mô tả của thẻ */
 .why-choose-us-card-desc {
   font-size: 14px;
   color: #6b7280;
-  line-height: 1.6;
-  margin-bottom: 0 !important;
+  line-height: 1.7;
+  margin-bottom: 0;
 }
 
 /* Responsive cho Tablet */
@@ -87,7 +100,7 @@
   }
 
   .why-choose-us-title {
-    font-size: 28px !important; /* Giảm cỡ chữ tiêu đề */
+    font-size: 28px; /* Giảm cỡ chữ tiêu đề */
   }
 
   .why-choose-us-subtitle {
@@ -99,6 +112,6 @@
   }
 
   .why-choose-us-card-title {
-    font-size: 18px !important;
+    font-size: 18px;
   }
 }

@@ -74,6 +74,8 @@ function Reports() {
   const [dailyRevenue, setDailyRevenue] = useState([])
   const [dailyRevenueLoading, setDailyRevenueLoading] = useState(false)
   const [chartType, setChartType] = useState('day') // 'day' hoặc 'month'
+  const [rangeRevenue, setRangeRevenue] = useState([])
+  const [rangeRevenueLoading, setRangeRevenueLoading] = useState(false)
   const [metrics, setMetrics] = useState({
     totalRevenue: 0,
     totalBookings: 0,
@@ -119,6 +121,83 @@ function Reports() {
       message.error('Không thể tải dữ liệu doanh thu theo ngày')
     } finally {
       setDailyRevenueLoading(false)
+    }
+  }
+
+  // Lấy doanh thu theo khoảng thời gian đã chọn
+  const fetchRevenueByRange = async (rangeValue, type = chartType) => {
+    if (!rangeValue || !Array.isArray(rangeValue) || rangeValue.length !== 2) {
+      setRangeRevenue([])
+      return
+    }
+
+    try {
+      setRangeRevenueLoading(true)
+      const response = await httpClient.get('/bookings', {
+        params: { page: 1, limit: 1000 },
+      })
+
+      const bookings = Array.isArray(response?.bookings) ? response.bookings : []
+      const [startDate, endDate] = rangeValue
+
+      // Filter bookings theo khoảng thời gian
+      const filteredBookings = bookings.filter((booking) => {
+        if (!booking || booking.booking_status === 'cancelled') return false
+        
+        const bookingDate = dayjs(booking.created_at || booking.check_in_date)
+        if (!bookingDate.isValid()) return false
+
+        return (
+          bookingDate.isSameOrAfter(startDate, 'day') &&
+          bookingDate.isSameOrBefore(endDate, 'day')
+        )
+      })
+
+      // Nhóm doanh thu theo ngày hoặc tháng tùy theo type
+      const revenueMap = {}
+      
+      filteredBookings.forEach((booking) => {
+        const bookingDate = dayjs(booking.created_at || booking.check_in_date)
+        const revenue = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        
+        if (Number.isNaN(revenue) || revenue <= 0) return
+
+        let key
+        let label
+
+        if (type === 'day') {
+          // Nhóm theo ngày
+          key = bookingDate.format('YYYY-MM-DD')
+          label = bookingDate.format('DD/MM/YYYY')
+        } else {
+          // Nhóm theo tháng
+          key = bookingDate.format('YYYY-MM')
+          const month = bookingDate.month() + 1
+          label = `Tháng ${month}`
+        }
+
+        if (!revenueMap[key]) {
+          revenueMap[key] = {
+            date: label,
+            revenue: 0,
+          }
+        }
+
+        revenueMap[key].revenue += revenue
+      })
+
+      // Chuyển đổi thành mảng và sắp xếp
+      const result = Object.keys(revenueMap)
+        .sort()
+        .map((key) => revenueMap[key])
+
+      setRangeRevenue(result)
+    } catch (error) {
+      console.error('Error fetching revenue by range:', error)
+      message.error('Không thể tải dữ liệu doanh thu theo khoảng thời gian')
+      setRangeRevenue([])
+    } finally {
+      setRangeRevenueLoading(false)
     }
   }
 
@@ -213,6 +292,15 @@ function Reports() {
     computeRevenueMetrics(range, selectedRoomTypeId)
   }, [range, selectedRoomTypeId, computeRevenueMetrics])
 
+  // Tự động lấy doanh thu theo khoảng thời gian khi range hoặc chartType thay đổi
+  useEffect(() => {
+    if (range && Array.isArray(range) && range.length === 2) {
+      fetchRevenueByRange(range, chartType)
+    } else {
+      setRangeRevenue([])
+    }
+  }, [range, chartType])
+
   // Hàm format doanh thu: 20tr, 500k, v.v.
   const formatRevenue = (value) => {
     if (!value || value === 0) return '0'
@@ -239,26 +327,32 @@ function Reports() {
   }
 
   // Map dữ liệu doanh thu theo loại đã chọn (ngày hoặc tháng) sang format cho BarChart
-  const chartData = chartType === 'day' 
-    ? dailyRevenue.map((item) => ({
+  // Ưu tiên dữ liệu từ range nếu có, nếu không thì dùng daily/monthly revenue
+  const chartData = range && range.length === 2 && rangeRevenue.length > 0
+    ? rangeRevenue.map((item) => ({
         date: item.date,
         value: item.revenue || 0,
       }))
-    : monthlyRevenue.map((item) => {
-        // Parse date từ format DD/MM/YYYY để lấy tháng
-        const dateParts = item.date.split('/')
-        if (dateParts.length === 3) {
-          const month = parseInt(dateParts[1], 10)
-          return {
-            date: `Tháng ${month}`,
-            value: item.revenue || 0,
-          }
-        }
-        return {
+    : chartType === 'day' 
+      ? dailyRevenue.map((item) => ({
           date: item.date,
           value: item.revenue || 0,
-        }
-      })
+        }))
+      : monthlyRevenue.map((item) => {
+          // Parse date từ format DD/MM/YYYY để lấy tháng
+          const dateParts = item.date.split('/')
+          if (dateParts.length === 3) {
+            const month = parseInt(dateParts[1], 10)
+            return {
+              date: `Tháng ${month}`,
+              value: item.revenue || 0,
+            }
+          }
+          return {
+            date: item.date,
+            value: item.revenue || 0,
+          }
+        })
   return (
     <div style={{ padding: 24 }}>
       <Row>
@@ -358,13 +452,18 @@ function Reports() {
             title={
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text strong>
-                  {chartType === 'day' ? 'Biểu đồ doanh thu 7 ngày gần nhất' : 'Biểu đồ doanh thu theo tháng'}
+                  {range && range.length === 2
+                    ? `Biểu đồ doanh thu từ ${range[0].format('DD/MM/YYYY')} đến ${range[1].format('DD/MM/YYYY')}`
+                    : chartType === 'day' 
+                      ? 'Biểu đồ doanh thu 7 ngày gần nhất' 
+                      : 'Biểu đồ doanh thu theo tháng'}
                 </Text>
                 <Space>
                   <Button
                     type={chartType === 'day' ? 'primary' : 'default'}
                     onClick={() => handleChartTypeChange('day')}
                     size="small"
+                    disabled={range && range.length === 2}
                   >
                     Theo ngày
                   </Button>
@@ -372,13 +471,20 @@ function Reports() {
                     type={chartType === 'month' ? 'primary' : 'default'}
                     onClick={() => handleChartTypeChange('month')}
                     size="small"
+                    disabled={range && range.length === 2}
                   >
                     Theo tháng
                   </Button>
                 </Space>
               </div>
             }
-            loading={chartType === 'day' ? dailyRevenueLoading : monthlyRevenueLoading}
+            loading={
+              range && range.length === 2
+                ? rangeRevenueLoading
+                : chartType === 'day' 
+                  ? dailyRevenueLoading 
+                  : monthlyRevenueLoading
+            }
           >
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
@@ -407,9 +513,11 @@ function Reports() {
             ) : (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Text type="secondary">
-                  {chartType === 'day' 
-                    ? 'Không có dữ liệu doanh thu 7 ngày gần nhất' 
-                    : 'Không có dữ liệu doanh thu theo tháng'}
+                  {range && range.length === 2
+                    ? `Không có dữ liệu doanh thu trong khoảng thời gian từ ${range[0].format('DD/MM/YYYY')} đến ${range[1].format('DD/MM/YYYY')}`
+                    : chartType === 'day' 
+                      ? 'Không có dữ liệu doanh thu 7 ngày gần nhất' 
+                      : 'Không có dữ liệu doanh thu theo tháng'}
                 </Text>
               </div>
             )}

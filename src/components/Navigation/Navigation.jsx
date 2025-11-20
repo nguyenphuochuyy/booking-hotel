@@ -1,17 +1,26 @@
-import React, { useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Avatar, Button, Divider, Drawer, Dropdown, Space } from 'antd'
+import { MenuOutlined, UserOutlined } from '@ant-design/icons'
 import './Navigation.css'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
 import { useAuth } from '../../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
-import { Avatar } from 'antd'
-import { UserOutlined } from '@ant-design/icons'
+
 function Navigation() {
   const location = useLocation()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+  const { user, isAuthenticated, logout } = useAuth()
+
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 12)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const menuItems = useMemo(() => ([
     { key: '/', label: 'Trang chủ' },
     { key: '/about', label: 'Về chúng tôi' },
@@ -23,11 +32,56 @@ function Navigation() {
 
   const activeKey = menuItems.find(i => i.key === location.pathname)?.key || '/'
 
-  const renderMenu = (isMobile = false) => (
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+    setDrawerOpen(false)
+  }
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: <Link to="/user/profile">Thông tin cá nhân</Link>,
+    },
+    {
+      key: 'bookings',
+      label: <Link to="/user/bookings">Lịch sử đặt phòng</Link>,
+    },
+    ...(user?.role === 'ADMIN'
+      ? [{
+          key: 'admin',
+          label: <Link to="/admin">Trang quản lý</Link>,
+        }]
+      : []),
+    { type: 'divider' },
+    {
+      key: 'logout',
+      label: <span className="dropdown-logout">Đăng xuất</span>,
+    },
+  ]
+
+  const handleUserMenuClick = ({ key }) => {
+    if (key === 'logout') {
+      handleLogout()
+    } else {
+      setDrawerOpen(false)
+    }
+  }
+
+  const renderNavLinks = (isMobile = false) => (
     <ul className={`nav-menu${isMobile ? ' mobile' : ''}`}>
       {menuItems.map(item => (
-        <li key={item.key} className={`nav-item${activeKey === item.key ? ' active' : ''}`}>
-          <Link to={item.key} className="nav-link" onClick={() => { if (isMobile) setIsMenuOpen(false) }}>
+        <li
+          key={item.key}
+          className={`nav-item${activeKey === item.key ? ' active' : ''}`}
+        >
+          <Link
+            to={item.key}
+            className="nav-link"
+            onClick={() => {
+              if (isMobile) setDrawerOpen(false)
+            }}
+          >
             {item.label}
           </Link>
         </li>
@@ -36,105 +90,133 @@ function Navigation() {
   )
 
   return (
-    <div className="navigation">
-      <div className="nav-container container">
-        {/* Left: Logo */}
-        <div className="nav-left">
-          <Link to="/" className="nav-logo">
-            <img src={logo} alt="Hotel Logo" className="hotel-logo" />
+    <>
+      <header className={`navigation ${isScrolled ? 'scrolled' : ''}`}>
+        <div className="nav-container">
+          <div className="nav-left">
+            <button
+              className="mobile-menu-btn"
+              aria-label="Toggle navigation menu"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <MenuOutlined />
+            </button>
+
+            <Link to="/" className="nav-logo" aria-label="Trang chủ">
+              <img src={logo} alt="Bean Hotel" className="hotel-logo" />
+              <span className="hotel-name">Bean Hotel</span>
+            </Link>
+          </div>
+
+          <nav className="nav-center">
+            {renderNavLinks()}
+          </nav>
+
+          <div className="nav-actions">
+            {!isAuthenticated ? (
+              <>
+                <Link to="/login" className="action-link ghost">Đăng nhập</Link>
+                <Link to="/register" className="action-link primary">Đăng ký</Link>
+              </>
+            ) : (
+              <Dropdown
+                trigger={['click']}
+                placement="bottomRight"
+                menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+              >
+                <Space className="user-trigger" size={8}>
+                  <Avatar
+                    size="large"
+                    src={user?.avatar}
+                    icon={!user?.avatar && <UserOutlined />}
+                  />
+                  <span className="user-name">
+                    {user?.full_name || 'Người dùng'}
+                  </span>
+                </Space>
+              </Dropdown>
+            )}
+          </div>
+
+          <div className="nav-mobile-user">
+            {isAuthenticated && (
+              <Link
+                to="/user/profile"
+                className="mobile-user-btn"
+                aria-label="Trang cá nhân"
+              >
+                <Avatar
+                  size="large"
+                  src={user?.avatar}
+                  icon={!user?.avatar && <UserOutlined />}
+                />
+              </Link>
+            )}
+          </div>
+
+        </div>
+      </header>
+
+      <Drawer
+        placement="left"
+        width={280}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        bodyStyle={{ padding: '24px 20px' }}
+        headerStyle={{ borderBottom: 'none' }}
+        className="nav-drawer"
+      >
+        <div className="drawer-header">
+          <Link to="/" className="nav-logo" onClick={() => setDrawerOpen(false)}>
+            <img src={logo} alt="Bean Hotel" className="hotel-logo" />
             <span className="hotel-name">Bean Hotel</span>
           </Link>
         </div>
 
-        {/* Center: Menu (tablet/pc) */}
-        <nav className="nav-center" style={{ justifySelf: 'center' }}>
-          {renderMenu(false)}
-        </nav>
+        <Divider />
 
-        {/* Right: Actions (PC/Tablet) */}
-        <div className="nav-actions" style={{ justifySelf: 'end' }}>
-          {!isAuthenticated ? (
-            <>
-              <Link to="/login" className="action-link login-btn">Đăng nhập</Link>
-              <Link to="/register" className="action-link register-btn">Đăng ký</Link>
-            </>
-          ) : (
-            <div
-              className="user-menu"
-              onMouseEnter={() => setIsUserMenuOpen(true)}
-              onMouseLeave={() => setIsUserMenuOpen(false)}
+        {renderNavLinks(true)}
+
+        <Divider />
+
+        {!isAuthenticated ? (
+          <div className="drawer-actions">
+            <Button
+              block
+              className="action-link ghost"
+              onClick={() => {
+                setDrawerOpen(false)
+                navigate('/login')
+              }}
             >
-              {user?.avatar ? (
-             
-            
-                  <Avatar size="large" src={user.avatar} />
-              
-
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {user?.full_name ? user.full_name: 'U'}
-                <Avatar size="large" icon={<UserOutlined />} />
-                </div>
-               
-              )}
-              {/* <button
-                className="user-avatar"
-                onClick={() => setIsUserMenuOpen(v => !v)}
-                aria-haspopup="true"
-                aria-expanded={isUserMenuOpen}
-              >
-                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </button> */}
-              {isUserMenuOpen && (
-                <div className="user-dropdown">
-                  <Link to="/user/profile" className="user-item">Thông tin cá nhân</Link>
-                  <Link to="/user/bookings" className="user-item">Lịch sử đặt phòng</Link>
-                  {user?.role === 'ADMIN' && (
-                    <Link to="/admin" className="user-item">Trang quản lý</Link>
-                  )}
-                  <button className="user-item logout" onClick={() => { logout(); navigate('/login') }}>Đăng xuất</button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right: Mobile burger (<992px) */}
-        <div className="nav-right" style={{ justifySelf: 'end' }}>
-          <button
-            className={`menu-toggle${isMenuOpen ? ' open' : ''}`}
-            aria-label="Toggle navigation menu"
-            onClick={() => setIsMenuOpen(v => !v)}
-          >
-            <span className="bar"></span>
-            <span className="bar"></span>
-            <span className="bar"></span>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile panel */}
-      <div style={{ display: isMenuOpen ? 'block' : 'none' }}>
-        {renderMenu(true)}
-        <div style={{ padding: '12px' }}>
-          {!isAuthenticated ? (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <Link to="/login" className="login-btn" style={{ textAlign: 'center' }} onClick={() => setIsMenuOpen(false)}>Đăng nhập</Link>
-              <Link to="/register" className="register-btn" style={{ textAlign: 'center' }} onClick={() => setIsMenuOpen(false)}>Đăng ký</Link>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <Link to="/user/profile" className="login-btn" onClick={() => setIsMenuOpen(false)}>Thông tin cá nhân</Link>
-              <Link to="/user/bookings" className="login-btn" onClick={() => setIsMenuOpen(false)}>Lịch sử đặt phòng</Link>
-              {user?.role === 'ADMIN' && (
-                <Link to="/admin" className="login-btn" onClick={() => setIsMenuOpen(false)}>Trang quản lý</Link>
-              )}
-              <button className="login-btn" onClick={() => { setIsMenuOpen(false); logout(); navigate('/login') }}>Đăng xuất</button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+              Đăng nhập
+            </Button>
+            <Button
+              type="primary"
+              block
+              className="action-link primary"
+              onClick={() => {
+                setDrawerOpen(false)
+                navigate('/register')
+              }}
+            >
+              Đăng ký
+            </Button>
+          </div>
+        ) : (
+          <>
+           {/* đăng xuất */}
+           <Button
+              block
+              className="action-link ghost"
+              onClick={handleLogout}
+            >
+              Đăng xuất
+            </Button>
+          </>
+        )}
+      </Drawer>
+    </>
   )
 }
 

@@ -90,7 +90,7 @@ function Hotels() {
   const checkOut = searchParams.get('checkOut')
   const adults = searchParams.get('adults')
   const children = searchParams.get('children')
-
+  const numRoomsURL = parseInt(searchParams.get('rooms') || 1, 10)
   // Load available rooms khi có search params
   useEffect(() => {
     if (checkIn && checkOut) {
@@ -132,7 +132,7 @@ function Hotels() {
 
   // State cho booking summary
   const [selectedRoom, setSelectedRoom] = useState(null)
-  const [numRooms, setNumRooms] = useState(1)
+  const [numRooms, setNumRooms] = useState(numRoomsURL || 1)
 
   // State cho modal
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -1258,6 +1258,31 @@ function Hotels() {
       >
         <Text>Vui lòng đăng nhập để tiếp tục đặt phòng.</Text>
       </Modal>
+
+      {/* Sticky Bottom Bar - Mobile Only */}
+      {selectedRoom && (
+        <div className="mobile-sticky-booking-bar">
+          <div className="mobile-booking-info">
+            <div className="mobile-booking-text">
+              <Text strong style={{ fontSize: '14px', color: '#1f2937' }}>
+                {numRooms} {numRooms === 1 ? 'phòng' : 'phòng'} đã chọn
+              </Text>
+              <Text strong style={{ fontSize: '16px', color: '#c08a19', marginTop: '2px' }}>
+                Tổng: {formatPrice(totalPrice)}
+              </Text>
+            </div>
+            <Button
+              type="primary"
+              size="large"
+              className="mobile-continue-btn"
+              onClick={handleBookNow}
+              disabled={!selectedRoom}
+            >
+              Tiếp tục
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
