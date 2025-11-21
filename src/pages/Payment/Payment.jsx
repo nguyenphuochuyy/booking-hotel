@@ -1216,7 +1216,7 @@ const Payment = () => {
               replace: true,
               state: { booking: normalizedBooking }
             })
-          }, 500)
+          }, 1500)
         }
       } catch (error) {}
     }
