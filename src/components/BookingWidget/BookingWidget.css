@@ -1,3 +1,6 @@
+/* BookingWidget.css */
+
+/* --- Main Wrapper --- */
 .booking-widget {
   position: relative;
   z-index: 10;
@@ -10,6 +13,7 @@
   margin-right: auto;
   top: auto;
   transform: none;
+  animation: slideUp 0.5s ease-out;
 }
 
 .booking-widget-card {
@@ -27,57 +31,18 @@
   padding: 8px 0;
 }
 
+/* --- Field Wrapper (Khung xám bao quanh từng input) --- */
 .widget-field {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: center; /* Căn giữa dọc cho nội dung bên trong */
   gap: 12px;
   padding: 18px 24px;
   min-width: 0;
   border-radius: 32px;
   background: rgba(249, 250, 251, 0.92);
   border: 1px solid rgba(226, 232, 240, 0.6);
-}
-
-.widget-icon {
-  font-size: 20px;
-  color: #c08a19;
-  flex-shrink: 0;
-}
-
-.widget-form-item {
-  flex: 1;
-  margin: 0;
-}
-
-.widget-range-picker {
-  width: 100%;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-}
-
-.widget-range-picker .ant-picker-selector {
-  background: transparent;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.widget-range-picker .ant-picker-input > input {
-  border: none;
-  padding: 0;
-  font-size: 16px;
-  color: #333;
-}
-
-.widget-range-picker .ant-picker-active-bar {
-  background: #c08a19;
-}
-
-.widget-range-picker .ant-picker-range-separator {
-  color: #999;
-  padding: 0 8px;
+  height: auto; /* Để flexbox tự xử lý chiều cao */
 }
 
 .widget-range-field,
@@ -86,22 +51,106 @@
   min-width: 0;
 }
 
+/* --- FIX: Căn chỉnh Form Item của Ant Design --- */
+.widget-form-item {
+  flex: 1;
+  margin: 0 !important; /* Quan trọng: Xóa margin dưới mặc định của Ant Form */
+  display: flex;
+  align-items: center;
+}
+
+/* Can thiệp sâu vào cấu trúc Ant Design để đảm bảo full width và căn giữa */
+.widget-form-item .ant-form-item-row,
+.widget-form-item .ant-form-item-control,
+.widget-form-item .ant-form-item-control-input,
+.widget-form-item .ant-form-item-control-input-content {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+/* --- FIX: Date Range Picker --- */
+.widget-range-picker {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important; /* Quan trọng: Bỏ padding để text không bị lệch */
+  height: auto !important;
+  display: flex;
+  align-items: center;
+}
+
+/* Loại bỏ border mặc định của Antd */
+.widget-range-picker .ant-picker-selector,
+.widget-range-picker.ant-picker-focused {
+  background: transparent;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Style cho text input ngày tháng */
+.widget-range-picker .ant-picker-input > input {
+  border: none;
+  padding: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+  height: auto;
+}
+
+/* Style thanh gạch chân khi active */
+.widget-range-picker .ant-picker-active-bar {
+  background: #c08a19;
+  bottom: -2px;
+}
+
+/* Mũi tên/Dấu gạch ngang giữa 2 ngày */
+.widget-range-picker .ant-picker-range-separator {
+  color: #999;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Icon lịch (nếu có) */
+.widget-range-picker .ant-picker-suffix {
+  color: #c08a19;
+  display: flex;
+  align-items: center;
+}
+
+/* Focus effect text */
+.widget-range-picker:focus-within .ant-picker-input > input {
+  color: #c08a19;
+}
+
+/* --- Guest Selector Text --- */
 .guest-selector {
   flex: 1;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: center; /* Căn giữa dọc */
   cursor: pointer;
   font-size: 16px;
+  font-weight: 500;
   color: #333;
+  line-height: 1.5;
+}
+
+.guest-selector:hover {
+  color: #c08a19;
 }
 
 .selector-arrow {
   color: #666;
-  font-size: 10px;
+  font-size: 12px;
   margin-left: 8px;
 }
 
+/* --- Submit Button --- */
 .widget-submit-wrapper {
   display: flex;
   align-items: center;
@@ -112,21 +161,23 @@
   border: none;
   border-radius: 50px;
   height: 60px;
-  padding: 0 20px;
+  padding: 0 24px;
   font-weight: 700;
   font-size: 16px;
   color: #fff;
   white-space: nowrap;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 10px 24px rgba(192, 138, 25, 0.3);
 }
 
 .widget-submit-button:hover {
-  transform: translateY(-2px) scale(1.01);
+  transform: translateY(-2px);
   box-shadow: 0 16px 32px rgba(192, 138, 25, 0.45);
+  background: linear-gradient(135deg, #d49a1e, #f5cb75);
 }
 
 .button-arrow {
@@ -134,10 +185,10 @@
   color: #fff;
 }
 
-/* Guest Popover */
+/* --- Guest Popover Content --- */
 .guest-popover {
-  min-width: 250px;
-  padding: 8px 0;
+  min-width: 280px;
+  padding: 8px 4px;
 }
 
 .guest-item {
@@ -148,125 +199,22 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
-.guest-item:last-child {
+.guest-item:first-child {
+  padding-top: 0;
+}
+
+.guest-item:last-of-type {
   border-bottom: none;
+  margin-bottom: 12px;
 }
 
 .guest-item span {
   font-weight: 500;
   color: #333;
+  font-size: 15px;
 }
 
-/* Responsive Design */
-/* Tablet & Mobile: đưa widget xuống dưới banner nhưng vẫn nổi */
-@media (max-width: 1023.98px) {
-  .booking-widget {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    transform: none;
-    padding: 0 16px;
-    margin: 0 auto;
-    max-width: 720px;
-    z-index: 10;
-  }
-
-  .widget-content-inline {
-    flex-direction: column;
-  }
-
-  .widget-field {
-    border-radius: 28px;
-  }
-
-  .widget-submit-wrapper {
-    width: 100%;
-  }
-
-  .widget-submit-button {
-    width: 100%;
-  }
-}
-
-/* Mobile First (< 768px) */
-@media (max-width: 767px) {
-  .booking-widget {
-    padding: 0 12px;
-    max-width: 100%;
-  }
-
-  .booking-widget-card {
-    border-radius: 24px;
-    padding: 16px;
-  }
-
-  .widget-content-inline {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 0;
-  }
-
-  .widget-field {
-    width: 100%;
-    padding: 14px 16px;
-    border-bottom: none;
-    border-radius: 18px;
-  }
-
-  .widget-submit-button {
-    width: 100%;
-    border-radius: 18px;
-    height: 52px;
-    padding: 0 24px;
-    font-size: 15px;
-  }
-
-  .guest-selector {
-    font-size: 14px;
-  }
-}
-
-/* Small Tablets (768px - 991px) */
-@media (min-width: 768px) and (max-width: 991px) {
-  .booking-widget {
-    max-width: 640px;
-  }
-
-  .booking-widget-card {
-    border-radius: 32px;
-  }
-
-  .widget-field {
-    padding: 18px 20px;
-  }
-
-  .widget-submit-button {
-    padding: 0 32px;
-    font-size: 15px;
-    height: 56px;
-  }
-}
-
-/* Desktop (≥ 992px) */
-@media (min-width: 992px) {
-  .booking-widget {
-    bottom: -50px;
-  }
-
-  .widget-field {
-    padding: 20px 24px;
-  }
-}
-
-/* Large Desktop (≥ 1200px) */
-@media (min-width: 1200px) {
-  .widget-field {
-    padding: 24px 32px;
-  }
-}
-
-/* Animation */
+/* --- Animations --- */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -278,20 +226,68 @@
   }
 }
 
-.booking-widget {
-  animation: slideUp 0.5s ease-out;
+/* --- Responsive Design --- */
+
+/* Tablet & Smaller Laptops */
+@media (max-width: 1023.98px) {
+  .booking-widget {
+    padding: 0 16px;
+    max-width: 720px;
+  }
+
+  .widget-content-inline {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .widget-field {
+    width: 100%;
+    border-radius: 16px; /* Bo góc ít hơn khi xếp chồng */
+    padding: 16px 20px;
+  }
+
+  .widget-submit-wrapper {
+    width: 100%;
+  }
+
+  .widget-submit-button {
+    width: 100%;
+    height: 56px;
+  }
 }
 
-/* Input focus states */
-.widget-range-picker:focus-within .ant-picker-input > input {
-  color: #c08a19;
+/* Mobile */
+@media (max-width: 767px) {
+  .booking-widget {
+    padding: 0 12px;
+  }
+
+  .booking-widget-card {
+    border-radius: 24px;
+    padding: 20px 16px;
+  }
+
+  .widget-content-inline {
+    gap: 12px;
+  }
+
+  .widget-field {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .widget-range-picker .ant-picker-input > input,
+  .guest-selector {
+    font-size: 15px;
+  }
+
+  .widget-submit-button {
+    height: 52px;
+    font-size: 15px;
+  }
 }
 
-.guest-selector:hover {
-  color: #c08a19;
-}
-
-/* Print styles */
+/* Print */
 @media print {
   .booking-widget {
     display: none;
