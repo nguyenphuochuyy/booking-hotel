@@ -81,15 +81,13 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   const initialRange = useMemo(() => {
     const initialCheckIn = propCheckIn || urlCheckIn
     const initialCheckOut = propCheckOut || urlCheckOut
-    const now = dayjs()
-    const cutoff = now.hour(14).minute(0).second(0).millisecond(0)
-    const earliestCheckIn = now.isAfter(cutoff) ? now.add(1, 'day').startOf('day') : now.startOf('day')
+    const today = dayjs().startOf('day')
 
-    let checkInValue = initialCheckIn ? dayjs(initialCheckIn) : earliestCheckIn
+    let checkInValue = initialCheckIn ? dayjs(initialCheckIn) : today
     let checkOutValue = initialCheckOut ? dayjs(initialCheckOut) : checkInValue.add(1, 'day')
 
-    if (checkInValue.isBefore(earliestCheckIn, 'day')) {
-      checkInValue = earliestCheckIn
+    if (checkInValue.isBefore(today, 'day')) {
+      checkInValue = today
     }
     if (!checkOutValue.isAfter(checkInValue, 'day')) {
       checkOutValue = checkInValue.add(1, 'day')
@@ -146,10 +144,8 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
 
   // Disable dates trước mốc nhận phòng sớm nhất (sau 14:00 thì là ngày mai)
   const disabledDate = (current) => {
-    const now = dayjs()
-    const cutoff = now.hour(14).minute(0).second(0).millisecond(0)
-    const earliestCheckIn = now.isAfter(cutoff) ? now.add(1, 'day').startOf('day') : now.startOf('day')
-    return current && current < earliestCheckIn
+    const today = dayjs().startOf('day')
+    return current && current < today
   }
 
   // Đảm bảo hiển thị đúng số
