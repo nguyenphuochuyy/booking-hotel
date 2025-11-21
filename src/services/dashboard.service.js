@@ -1,5 +1,17 @@
 import httpClient from './httpClient'
 
+const normalizeBookings = (bookings) => {
+  if (!Array.isArray(bookings)) return []
+  const bookingMap = new Map()
+  bookings.forEach((booking) => {
+    const key = booking?.booking_id
+    if (key) {
+      bookingMap.set(key, bookingMap.get(key) || booking)
+    }
+  })
+  return Array.from(bookingMap.values())
+}
+
 // ========== DASHBOARD STATISTICS SERVICES ==========
 
 /**
@@ -66,10 +78,11 @@ export const getTotalRooms = async () => {
 export const getTotalBookings = async () => {
   try {
     const response = await httpClient.get('/bookings', { 
-      params: { page: 1, limit: 1 } 
+      params: { page: 1, limit: 1000} 
     })
+    const uniqueBookings = normalizeBookings(response?.bookings || [])
     return {
-      total: response?.pagination?.totalItems || response?.bookings?.length || 0,
+      total: uniqueBookings.length,
       message: 'Thành công'
     }
   } catch (error) {
