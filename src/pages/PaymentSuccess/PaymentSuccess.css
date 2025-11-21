@@ -1,65 +1,257 @@
+
+
+:root {
+  --luxury-gold: #c08a19;
+  --luxury-bg: #f5f5f5;
+  --success-green: #52c41a;
+  --card-radius: 16px;
+  --shadow-card: 0 10px 30px rgba(0,0,0,0.08);
+}
+
 .payment-success-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 40px 0;
+  background-color: var(--luxury-bg);
+  padding: 40px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.payment-success-page .container {
-  max-width: 800px;
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container-narrow {
+  max-width: 650px; /* Làm hẹp lại để giống cái vé/thư mời */
   margin: 0 auto;
-  padding: 0 16px;
 }
 
-.payment-status-header {
-  background: #fff;
-  border-radius: 8px;
-  padding: 32px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Success Banner */
+.success-banner {
+  text-align: center;
+  margin-bottom: 30px;
+  animation: fadeInDown 0.6s ease-out;
 }
 
-.booking-info-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+.success-icon {
+  font-size: 64px;
+  color: var(--success-green);
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.2);
+  margin-bottom: 16px;
 }
 
-.booking-info-content {
-  padding: 8px 0;
+.success-title {
+  color: #1f2937 !important;
+  margin-bottom: 8px !important;
 }
 
-.info-row {
+.success-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+/* Luxury Card (The Ticket) */
+.luxury-card.booking-ticket {
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  border: none;
+  /* Hiệu ứng răng cưa (tùy chọn, nếu muốn giống vé) */
+  /* background-image: radial-gradient(circle at 0 50%, transparent 10px, #fff 11px), 
+                    radial-gradient(circle at 100% 50%, transparent 10px, #fff 11px);
+  background-size: 100% 100%; */
+}
+
+/* Ticket Header */
+.ticket-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+}
+.booking-code {
+  margin: 0 !important;
+  color: var(--luxury-gold) !important;
+  font-family: monospace;
+}
+.status-tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
 }
 
-.info-row:first-child {
-  padding-top: 0;
+.dashed-divider {
+  border-top: 2px dashed #f0f0f0 !important;
+  margin: 24px 0 !important;
 }
 
-.info-row:last-child {
-  padding-bottom: 0;
+/* Room Info */
+.room-image-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.room-thumb-large {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.room-name {
+  margin-bottom: 4px !important;
+  color: #1f2937;
+}
+.hotel-location {
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.room-meta-grid {
+  display: flex;
+  gap: 16px;
+}
+.meta-item {
+  background: #f9fafb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+/* Date Grid */
+.date-grid {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #eee;
+}
+.date-box {
+  flex: 1;
+}
+.text-right { text-align: right; }
+.date-val {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1f2937;
+  margin: 4px 0;
+}
+.night-count {
+  flex: 0 0 80px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--luxury-gold);
+  font-weight: 600;
+  position: relative;
+}
+.night-count .line {
+  height: 1px;
+  background: #e5e7eb;
+  margin-top: 4px;
+}
+
+/* Price Breakdown Section */
+.price-breakdown-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.price-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.price-detail-row.discount {
+  color: #52c41a;
+}
+
+.services-detail-list {
+  margin: 8px 0 12px 16px;
+  padding-left: 8px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.service-detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.price-row.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* Customer Info Section */
+.customer-info-section {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Actions */
+.ticket-actions {
+  margin-top: 32px;
+}
+
+.support-text {
+  text-align: center;
+  margin-top: 32px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 576px) {
   .payment-success-page {
-    padding: 20px 0;
+    padding: 20px 12px;
   }
-
-  .payment-status-header {
-    padding: 20px;
+  .room-thumb-large {
+    height: 180px;
+    margin-bottom: 16px;
   }
-
-  .payment-success-page .container {
-    max-width: 100%;
+  .date-grid {
+    padding: 16px;
   }
-
-  .info-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .date-val {
+    font-size: 14px;
   }
 }
-
