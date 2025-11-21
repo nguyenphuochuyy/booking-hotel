@@ -10,39 +10,37 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const { RangePicker } = DatePicker
 
-const GuestSelector = ({ adults, children, rooms, setAdults, setChildren, setRooms, onClose }) => (
-  <div className="guest-popover">
-    <div className="guest-item">
-      <span>Người lớn</span>
-      <Space>
-        <Button size="small" onClick={() => adults > 1 && setAdults(adults - 1)}>-</Button>
-        <span>{adults}</span>
-        <Button size="small" onClick={() => setAdults(adults + 1)}>+</Button>
-      </Space>
-    </div>
-    <div className="guest-item">
-      <span>Trẻ em</span>
-      <Space>
-        <Button size="small" onClick={() => children > 0 && setChildren(children - 1)}>-</Button>
-        <span>{children}</span>
-        <Button size="small" onClick={() => setChildren(children + 1)}>+</Button>
-      </Space>
-    </div>
-    <div className="guest-item">
-      <span>Phòng</span>
-      <Space>
-        <Button size="small" onClick={() => rooms > 1 && setRooms(rooms - 1)}>-</Button>
-        <span>{rooms}</span>
-        <Button size="small" onClick={() => setRooms(rooms + 1)}>+</Button>
-      </Space>
-    </div>
-    <Button type="primary" block onClick={onClose}>
-      Xác nhận
-    </Button>
-  </div>
-)
+const GuestSelector = ({ adults, rooms, setAdults, setRooms, onClose }) => {
+  // Đảm bảo giá trị là number trước khi tính toán
+  const currentAdults = Number(adults) || 1
+  const currentRooms = Number(rooms) || 1
 
-const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: propAdults, children: propChildren, rooms: propRooms }) => {
+  return (
+    <div className="guest-popover">
+      <div className="guest-item">
+        <span>Người lớn</span>
+        <Space>
+          <Button size="small" onClick={() => currentAdults > 1 && setAdults(currentAdults - 1)}>-</Button>
+          <span>{currentAdults}</span>
+          <Button size="small" onClick={() => setAdults(currentAdults + 1)}>+</Button>
+        </Space>
+      </div>
+      <div className="guest-item">
+        <span>Phòng</span>
+        <Space>
+          <Button size="small" onClick={() => currentRooms > 1 && setRooms(currentRooms - 1)}>-</Button>
+          <span>{currentRooms}</span>
+          <Button size="small" onClick={() => setRooms(currentRooms + 1)}>+</Button>
+        </Space>
+      </div>
+      <Button type="primary" block onClick={onClose}>
+        Xác nhận
+      </Button>
+    </div>
+  )
+}
+
+const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: propAdults, rooms: propRooms }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const [form] = Form.useForm()
@@ -54,32 +52,31 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   const urlCheckIn = searchParams.get('checkIn')
   const urlCheckOut = searchParams.get('checkOut')
   const urlAdults = searchParams.get('adults')
-  const urlChildren = searchParams.get('children')
+  // const urlChildren = searchParams.get('children')
   const urlRooms = searchParams.get('rooms')
   
   // Ưu tiên props, sau đó URL params, cuối cùng là default
-  const [adults, setAdults] = useState(
-    propAdults || (urlAdults ? parseInt(urlAdults, 10) : 1)
-  )
-  const [children, setChildren] = useState(
-    propChildren || (urlChildren ? parseInt(urlChildren, 10) : 0)
-  )
-  const [rooms, setRooms] = useState(
-    propRooms || (urlRooms ? parseInt(urlRooms, 1) : 1)
-  )
+  // Đảm bảo luôn là number
+  const [adults, setAdults] = useState(() => {
+    const value = propAdults || (urlAdults ? parseInt(urlAdults, 10) : 1)
+    return Number(value) || 1
+  })
+  const [rooms, setRooms] = useState(() => {
+    const value = propRooms || (urlRooms ? parseInt(urlRooms, 10) : 1)
+    return Number(value) || 1
+  })
   
   // Đồng bộ state với URL params khi URL thay đổi
   useEffect(() => {
     if (urlAdults && !propAdults) {
-      setAdults(parseInt(urlAdults, 10))
-    }
-    if (urlChildren && !propChildren) {
-      setChildren(parseInt(urlChildren, 10))
+      const value = parseInt(urlAdults, 10)
+      setAdults(Number(value) || 1)
     }
     if (urlRooms && !propRooms) {
-      setRooms(parseInt(urlRooms, 10))
+      const value = parseInt(urlRooms, 10)
+      setRooms(Number(value) || 1)
     }
-  }, [urlAdults, urlChildren, urlRooms, propAdults, propChildren, propRooms])
+  }, [urlAdults, urlRooms, propAdults, propRooms])
   
   const initialRange = useMemo(() => {
     const initialCheckIn = propCheckIn || urlCheckIn
@@ -121,12 +118,15 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
       const checkOut = checkOutValue.format('YYYY-MM-DD')
       
       // Navigate to hotels page with search parameters in URL
+      // Đảm bảo giá trị là number trước khi convert sang string
+      const adultsNum = Number(adults) || 1
+      const roomsNum = Number(rooms) || 1
       const params = new URLSearchParams({
         checkIn,
         checkOut,
-        adults: (adults || 1).toString(),
-        children: (children || 0).toString(),
-        rooms: (rooms || 1).toString()
+        adults: adultsNum.toString(),
+        children: '0', // Không có children trong widget này
+        rooms: roomsNum.toString()
       })
       
       // Nếu đang ở trang hotels, chỉ cập nhật URL params
@@ -152,39 +152,10 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
     return current && current < earliestCheckIn
   }
 
-  const guestContent = (
-    <div className="guest-popover">
-      <div className="guest-item">
-        <span>Người lớn</span>
-        <Space>
-          <Button size="small" onClick={() => adults > 1 && setAdults(adults - 1)}>-</Button>
-          <span>{adults}</span>
-          <Button size="small" onClick={() => setAdults(adults + 1)}>+</Button>
-        </Space>
-      </div>
-      <div className="guest-item">
-        <span>Trẻ em</span>
-        <Space>
-          <Button size="small" onClick={() => children > 0 && setChildren(children - 1)}>-</Button>
-          <span>{children}</span>
-          <Button size="small" onClick={() => setChildren(children + 1)}>+</Button>
-        </Space>
-      </div>
-      <div className="guest-item">
-        <span>Phòng</span>
-        <Space>
-          <Button size="small" onClick={() => rooms > 1 && setRooms(rooms - 1)}>-</Button>
-          <span>{rooms}</span>
-          <Button size="small" onClick={() => setRooms(rooms + 1)}>+</Button>
-        </Space>
-      </div>
-      <Button type="primary" block onClick={() => setGuestVisible(false)}>
-        Xác nhận
-      </Button>
-    </div>
-  )
-
-  const guestText = `${adults} Người lớn | ${children} Trẻ em | ${rooms} Phòng`
+  // Đảm bảo hiển thị đúng số
+  const adultsNum = Number(adults) || 1
+  const roomsNum = Number(rooms) || 1
+  const guestText = `${adultsNum} Người lớn | ${roomsNum} Phòng`
 
   return (
     <div className="booking-widget">
@@ -219,10 +190,8 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
               content={
                 <GuestSelector
                   adults={adults}
-                  children={children}
                   rooms={rooms}
                   setAdults={setAdults}
-                  setChildren={setChildren}
                   setRooms={setRooms}
                   onClose={() => setGuestVisible(false)}
                 />

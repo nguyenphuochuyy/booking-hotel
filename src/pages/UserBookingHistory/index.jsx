@@ -819,15 +819,6 @@ function UserBookingHistory() {
       <div className="booking-history-container">
         {/* Header */}
         <Card className="header-card" align="center" title = {"Lịch sử đặt phòng của bạn"}>
-
-          {/* <Row align="middle" justify="space-between">
-            <Col xs={24} sm={12}>
-              <Title level={2} className="page-title" >
-                Lịch sử đặt phòng của bạn
-              </Title>
-            </Col>
-        
-          </Row> */}
           <Row>
           <Col xs={24} sm={24} style={{ textAlign: screens.xs ? 'left' : 'right' }}>
               <Space wrap className="filter-buttons">
@@ -873,9 +864,9 @@ function UserBookingHistory() {
           open={detailModal.visible}
           title={
             detailModal.data ? (
-              <Space direction="vertical" size={0}>
+              <Space direction="vertical" size={1}>
                 <Text strong>Chi tiết booking</Text>
-                <Text type="secondary">Mã: {detailModal.data.id}</Text>
+                <Text>Mã: {detailModal.data.id}</Text>
               </Space>
             ) : 'Chi tiết booking'
           }
@@ -953,20 +944,25 @@ function UserBookingHistory() {
                   </div>
                   <div className="detail-card-divider"></div>
                   <div className="detail-card-content">
-                    <div className="detail-info-item">
+                    {/* <div className="detail-info-item">
                       <span className="detail-info-label">Khách sạn:</span>
                       <span className="detail-info-value">{detailModal.data.hotelName}</span>
-                    </div>
+                    </div> */}
                     <div className="detail-info-item">
                       <span className="detail-info-label">Loại phòng:</span>
                       <span className="detail-info-value">{detailModal.data.roomType}</span>
                     </div>
-                    {detailModal.data.roomNum && (
+                    <div className="detail-info-item">
+                      <span className="detail-info-label">Số khách:</span>
+                      <span className="detail-info-value">{detailModal.data.guests}</span>
+                    </div>
+                
+                    {/* {detailModal.data.roomNum && (
                       <div className="detail-info-item">
                         <span className="detail-info-label">Số phòng:</span>
                         <span className="detail-info-value">{detailModal.data.roomNum}</span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
@@ -1048,10 +1044,7 @@ function UserBookingHistory() {
                         <span className="detail-info-value">{detailModal.data.note}</span>
                       </div>
                     )}
-                    <div className="detail-info-item">
-                      <span className="detail-info-label">Số khách:</span>
-                      <span className="detail-info-value">{detailModal.data.guests}</span>
-                    </div>
+                  
                   </div>
                 </div>
 
