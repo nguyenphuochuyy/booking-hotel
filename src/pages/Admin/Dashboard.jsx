@@ -1,28 +1,3 @@
-const handleQuickCheckOut = async () => {
-  if (selectedCheckOutRowKeys.length === 0) {
-    message.warning('Vui lòng chọn ít nhất một booking để check-out')
-    return
-  }
-
-  try {
-    setQuickCheckOutLoading(true)
-    await Promise.all(
-      selectedCheckOutRowKeys.map((bookingId) =>
-        checkOutGuest(bookingId, { auto_release_room: true })
-      )
-    )
-    message.success('Đã check-out thành công cho các booking đã chọn')
-    const data = await getTodayCheckSchedules()
-    setTodayCheckIns(data.checkIns || [])
-    setTodayCheckOuts(data.checkOuts || [])
-    setSelectedCheckOutRowKeys([])
-  } catch (error) {
-    console.error('Error during quick check-out:', error)
-    message.error('Không thể check-out tự động cho các booking đã chọn')
-  } finally {
-    setQuickCheckOutLoading(false)
-  }
-}
 import React, { useState, useEffect, useMemo } from 'react'
 import {
   Row,
@@ -149,6 +124,22 @@ function Dashboard() {
     [bookingStatusData, bookingStatusTotal]
   )
 
+  const sortedCheckIns = useMemo(() => {
+    return [...todayCheckIns].sort((a, b) => {
+      const dateA = new Date(a.check_time || a.check_in_date || 0).getTime()
+      const dateB = new Date(b.check_time || b.check_in_date || 0).getTime()
+      return dateB - dateA
+    })
+  }, [todayCheckIns])
+
+  const sortedCheckOuts = useMemo(() => {
+    return [...todayCheckOuts].sort((a, b) => {
+      const dateA = new Date(a.check_time || a.check_out_date || 0).getTime()
+      const dateB = new Date(b.check_time || b.check_out_date || 0).getTime()
+      return dateB - dateA
+    })
+  }, [todayCheckOuts])
+
   const getPaymentStatusColor = (status) => {
     const colors = {
       paid: 'green',
@@ -237,6 +228,36 @@ function Dashboard() {
       message.error('Không thể check-in tự động cho các booking đã chọn')
     } finally {
       setQuickCheckInLoading(false)
+    }
+  }
+
+  const handleQuickCheckOut = async () => {
+    if (selectedCheckOutRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một booking để check-out')
+      return
+    }
+
+    try {
+      setQuickCheckOutLoading(true)
+      await Promise.all(
+        selectedCheckOutRowKeys.map(async (bookingId) => {
+          const booking = await getBookingById(bookingId)
+          if (booking?.booking?.booking_code) {
+            return checkOutGuest(booking.booking.booking_code)
+          }
+          return null
+        })
+      )
+      message.success('Đã check-out thành công cho các booking đã chọn')
+      const data = await getTodayCheckSchedules()
+      setTodayCheckIns(data.checkIns || [])
+      setTodayCheckOuts(data.checkOuts || [])
+      setSelectedCheckOutRowKeys([])
+    } catch (error) {
+      console.error('Error during quick check-out:', error)
+      message.error('Không thể check-out tự động cho các booking đã chọn')
+    } finally {
+      setQuickCheckOutLoading(false)
     }
   }
 
@@ -414,7 +435,7 @@ function Dashboard() {
         <>
             {/* Thống kê tổng quan */}
           <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} lg={5}>
+          <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
                   bordered={true}
@@ -425,7 +446,7 @@ function Dashboard() {
                   />
                 </Card>
               </Col>
-              <Col xs={24} sm={12} lg={5}>
+              <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
                     title="Công suất phòng"
@@ -447,7 +468,17 @@ function Dashboard() {
                 />
               </Card>
             </Col>
-           <Col xs={24} sm={12} lg={5}>
+            <Col xs={24} sm={12} lg={6}>
+              <Card>
+                <Statistic
+                    title="Khách hàng"
+                    value={stats.totalUsers}
+                    // prefix={<DollarOutlined />}
+                    valueStyle={{ color: 'gray' , fontWeight: 'bold'}}
+                />
+              </Card>
+            </Col>
+           <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
                   title="Doanh thu"
@@ -457,16 +488,7 @@ function Dashboard() {
                 />
               </Card>
             </Col>
-              <Col xs={24} sm={12} lg={5}>
-              <Card>
-                <Statistic
-                    title="Khách hàng"
-                    value={stats.totalUsers}
-                    // prefix={<DollarOutlined />}
-                    valueStyle={{ color: 'green' , fontWeight: 'bold'}}
-                />
-              </Card>
-              </Col>
+          
           </Row>
             {/* Biểu đồ doanh thu theo ngày */}
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
@@ -619,8 +641,8 @@ function Dashboard() {
                 >
                   <Table
                     columns={scheduleColumns}
-                    dataSource={todayCheckIns.map((item) => ({ ...item, key: item.booking_id }))}
-                    pagination={false}
+                    dataSource={sortedCheckIns.map((item) => ({ ...item, key: item.booking_id }))}
+                    pagination={{ pageSize: 5, showSizeChanger: false }}
                     size="small"
                     loading={scheduleLoading}
                     scroll={{ x: true }}
@@ -650,8 +672,8 @@ function Dashboard() {
                 >
                   <Table
                     columns={scheduleColumns}
-                    dataSource={todayCheckOuts.map((item) => ({ ...item, key: item.booking_id }))}
-                    pagination={false}
+                    dataSource={sortedCheckOuts.map((item) => ({ ...item, key: item.booking_id }))}
+                    pagination={{ pageSize: 5, showSizeChanger: false }}
                     size="small"
                     loading={scheduleLoading}
                     scroll={{ x: true }}

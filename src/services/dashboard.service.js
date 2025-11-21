@@ -409,7 +409,7 @@ export const getTodayCheckSchedules = async () => {
       .filter(
         (booking) =>
           isTodayOrTomorrow(booking.check_out_date) &&
-          !['cancelled'].includes(booking.booking_status)
+          booking.booking_status === 'checked_in'
       )
       .map((booking) => ({
         booking_id: booking.booking_id,
