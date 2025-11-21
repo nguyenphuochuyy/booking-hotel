@@ -99,7 +99,7 @@
 }
 
 .banner-hero-title {
-  font-size: clamp(32px, 5vw, 56px) !important;
+  font-size: clamp(30px, 5vw, 48px) !important;
   line-height: 1.2 !important;
   color: #fff !important;
   margin: 0 !important;

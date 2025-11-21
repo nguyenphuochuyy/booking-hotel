@@ -151,7 +151,7 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   // Đảm bảo hiển thị đúng số
   const adultsNum = Number(adults) || 1
   const roomsNum = Number(rooms) || 1
-  const guestText = `${adultsNum} Người lớn | ${roomsNum} Phòng`
+  const guestText = `${adultsNum} Khách | ${roomsNum} Phòng`
 
   return (
     <div className="booking-widget">

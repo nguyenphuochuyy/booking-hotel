@@ -420,7 +420,7 @@ const BookingConfirmation = () => {
                     THANH TOÁN NGAY
                   </Button>
                   <div className="policy-text">
-                    Bằng việc tiếp tục, bạn đồng ý với <Link to="/terms">Điều khoản</Link> & <Link to="/privacy">Chính sách</Link> của Bean Hotel.
+                    Bằng việc tiếp tục, bạn đồng ý với <Link to="/privacy-policy">Điều khoản</Link> & <Link to="/cancellation-policy">Chính sách</Link> của Bean Hotel.
                   </div>
                 </div>
 

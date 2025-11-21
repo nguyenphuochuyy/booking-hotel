@@ -80,8 +80,10 @@
   padding: 0 8px;
 }
 
-.widget-range-field {
-  min-width: 240px;
+.widget-range-field,
+.guest-field {
+  flex: 1;
+  min-width: 0;
 }
 
 .guest-selector {
