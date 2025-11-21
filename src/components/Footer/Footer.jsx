@@ -185,7 +185,7 @@ function AppFooter() {
                 Câu hỏi thường gặp
               </a>
 
-              <a href="/chinh-sach-huy" style={{ color: '#334155', display: 'block' }}>
+              <a href="/cancellation-policy" style={{ color: '#334155', display: 'block' }}>
                 <FileTextFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Chính sách hủy/đổi ngày
               </a>

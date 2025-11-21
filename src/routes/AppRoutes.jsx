@@ -15,6 +15,7 @@ import UserBookingHistory from '../pages/UserBookingHistory'
 import TermsOfService from '../pages/TermsOfService'
 import PrivacyPolicy from '../pages/PrivacyPolicy'
 import CookiePolicy from '../pages/CookiePolicy'
+import CancellationPolicy from '../pages/CancellationPolicy'
 import NotFound from '../pages/NotFound'
 import AccessDenied from '../pages/AccessDenied'
 import Dashboard from '../pages/Admin/Dashboard'
@@ -113,6 +114,7 @@ function AppRoutes() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/cancellation-policy" element={<CancellationPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 

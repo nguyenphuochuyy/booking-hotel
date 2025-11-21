@@ -1,0 +1,51 @@
+/* Hero Section mới với Background Gradient */
+.cancellation-hero-enhanced {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  padding: 80px 20px 100px; /* Padding dưới lớn để chừa chỗ cho card interative */
+  text-align: center;
+  color: white;
+}
+
+/* Interactive Card: Hiệu ứng nổi lên trên */
+.interactive-card {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Visual Timeline Cards */
+.step-card {
+  height: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.step-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+}
+
+.percent-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 auto;
+  background-color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cancellation-hero-enhanced {
+    padding: 60px 20px 80px;
+  }
+  
+  .step-card {
+    margin-bottom: 16px;
+  }
+}
