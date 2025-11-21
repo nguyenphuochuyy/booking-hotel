@@ -20,7 +20,13 @@ import Moments from '../../components/Moments/Moments'
 
 function Home() {
   const screens = useBreakpoint()
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
+  const scrollToBookingWidget = () => {
+    const widget = document.querySelector('.booking-widget-container')
+    if (widget) {
+      widget.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  }
   const {
     roomTypes, pagination, loading, error,
     search, setSearch, category, setCategory,
@@ -47,7 +53,27 @@ const AnimatedSection = ({ children }) => {
         <div className="banner-image-container">
           <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">
-        
+            <motion.div
+              className="banner-hero-content"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+            >
+              <Typography.Title level={1} className="banner-hero-title">
+                Trải Nghiệm Đẳng Cấp Thượng Lưu Tại Bean Hotel
+              </Typography.Title>
+              <Typography.Title level={3} className="banner-hero-subtitle">
+                Kỳ Nghỉ Trong Mơ Đang Chờ Bạn
+              </Typography.Title>
+              <Button
+                type="primary"
+                size="large"
+                className="banner-hero-cta"
+                onClick={scrollToBookingWidget}
+              >
+                Đặt phòng ngay
+              </Button>
+            </motion.div>
           </div>
         </div>
         

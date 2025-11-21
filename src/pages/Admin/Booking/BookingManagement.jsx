@@ -851,7 +851,7 @@ const BookingManagement = () => {
             <Statistic
               title="Tổng doanh thu"
               value={statistics.totalRevenue.toLocaleString('vi-VN')}
-              valueStyle={{ color: '#008000' ,fontWeight: 'bold' , fontSize: '24px' }}
+              valueStyle={{ color: '#008000' ,fontWeight: 'bold' , fontSize: '24px'}}
             />
           </Card>
         </Col>
