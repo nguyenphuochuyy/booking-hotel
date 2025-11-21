@@ -9,7 +9,8 @@ import {
   CalendarOutlined, ReloadOutlined, ExclamationCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
   UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined,
-  CustomerServiceFilled
+  CustomerServiceFilled,ClearOutlined, 
+  KeyOutlined
 } from '@ant-design/icons'
 import {
   getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
@@ -133,7 +134,7 @@ const BookingManagement = () => {
         message.success('Tạo đặt phòng thành công!')
         setIsModalVisible(false)
         walkInForm.resetFields()
-        fetchBookings(pagination.current, pagination.pageSize)
+        fetchBookings()
       }
     } catch (error) {
       if (error?.errorFields) return
@@ -143,16 +144,11 @@ const BookingManagement = () => {
     }
   }
 
-  // Fetch bookings data
-  const fetchBookings = async (page = 1, pageSize = 10, filters = {}) => {
+  // Fetch bookings data (client-side pagination)
+  const fetchBookings = async () => {
     setLoading(true)
     try {
-      const params = {
-        page,
-        limit: pageSize,
-        ...filters
-      }
-
+      const params = { page: 1, limit: 1000 }
       // Add date range filter
       if (dateRange && dateRange.length === 2) {
         params.check_in_date = dateRange[0].format('YYYY-MM-DD')
@@ -160,12 +156,12 @@ const BookingManagement = () => {
       }
 
       const response = await getAllBookings(params)
-      setBookings(response.bookings || [])
-      setPagination({
-        current: page,
-        pageSize,
-        total: response.pagination?.totalItems || 0
-      })
+      const data = response.bookings || []
+      setBookings(data)
+      setPagination(prev => ({
+        ...prev,
+        total: data.length
+      }))
     } catch (error) {
       console.error('Error fetching bookings:', error)
       message.error('Không thể tải danh sách đặt phòng')
@@ -210,6 +206,14 @@ const BookingManagement = () => {
     fetchRoomTypes()
     fetchUsers()
   }, [])
+
+  const hasActiveFilters = useMemo(() => {
+    const hasSearch = Boolean(searchText?.trim())
+    const hasStatus = Boolean(statusFilter)
+    const hasType = Boolean(typeFilter)
+    const hasDateRange = Boolean(dateRange && dateRange.length === 2)
+    return hasSearch || hasStatus || hasType || hasDateRange
+  }, [searchText, statusFilter, typeFilter, dateRange])
 
   // lọc danh sách đặt phòng theo từ khóa, trạng thái, loại đặt
   const filteredBookings = useMemo(() => {
@@ -339,7 +343,7 @@ const BookingManagement = () => {
       const response = await checkInGuest(bookingCode)
       if (response.statusCode === 200) {
         message.success('Check-in thành công!')
-        fetchBookings(pagination.current, pagination.pageSize)
+        fetchBookings()
       }
       else {
         const errorMessage = response?.message || 'Không thể check-in đặt phòng!'
@@ -364,7 +368,7 @@ const BookingManagement = () => {
       } else {
         message.error('Không thể check-out đặt phòng!')
       }
-      fetchBookings(pagination.current, pagination.pageSize)
+      fetchBookings()
     } catch (error) {
       console.error('Error checking out:', error)
       message.error('Không thể check-out đặt phòng!')
@@ -394,7 +398,6 @@ const BookingManagement = () => {
       // Lấy tên file từ response header hoặc đặt tên mặc định
       const bookingCode = selectedBooking?.booking_code || 'booking'
       link.download = `invoice-${bookingCode}.pdf`
-
       // Trigger download
       document.body.appendChild(link)
       link.click()
@@ -455,7 +458,7 @@ const BookingManagement = () => {
       message.success('Hủy đặt phòng thành công!')
       setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })
       setIsDetailModalVisible(false)
-      fetchBookings(pagination.current, pagination.pageSize)
+      fetchBookings()
     } catch (error) {
       console.error('Error cancelling booking:', error)
       message.error(error?.response?.data?.message || 'Không thể hủy đặt phòng!')
@@ -504,7 +507,7 @@ const BookingManagement = () => {
       }
       
       // Reload lại danh sách bookings để cập nhật payment_status
-      await fetchBookings(pagination.current, pagination.pageSize)
+      await fetchBookings()
     } catch (error) {
       console.error('Error marking refund completed:', error)
       
@@ -529,9 +532,9 @@ const BookingManagement = () => {
     }
   }
 
-  // Handle table change
+  // Handle table change (client-side pagination)
   const handleTableChange = (paginationInfo) => {
-    fetchBookings(paginationInfo.current, paginationInfo.pageSize)
+    setPagination(paginationInfo)
   }
 
   // Handle filter changes
@@ -539,7 +542,7 @@ const BookingManagement = () => {
     const filters = {}
     if (statusFilter) filters.status = statusFilter
     if (typeFilter) filters.type = typeFilter
-    fetchBookings(1, pagination.pageSize, filters)
+    fetchBookings()
   }
   // handle refresh
   const handleRefresh = () => {
@@ -549,7 +552,7 @@ const BookingManagement = () => {
     setSortBy(null)
     setSortOrder('asc')
     setDateRange(null)
-    fetchBookings(1, pagination.pageSize)
+    fetchBookings()
     message.success('Đã làm mới danh sách đặt phòng')
   }
   // lấy tag cho trạng thái đặt phòng
@@ -587,18 +590,29 @@ const BookingManagement = () => {
 
   // tính toán thống kê số lượng và doanh thu
   const statistics = useMemo(() => {
+    const dataSource = hasActiveFilters ? filteredBookings : bookings
     const stats = {
-      total: filteredBookings.length,
-      confirmed: filteredBookings.filter(b => b.booking_status === 'confirmed').length,
-      checkedIn: filteredBookings.filter(b => b.booking_status === 'checked_in').length,
-      checkedOut: filteredBookings.filter(b => b.booking_status === 'checked_out').length,
-      cancelled: filteredBookings.filter(b => b.booking_status === 'cancelled').length,
-      totalRevenue: filteredBookings
+      total: dataSource.length,
+      confirmed: dataSource.filter(b => b.booking_status === 'confirmed').length,
+      checkedIn: dataSource.filter(b => b.booking_status === 'checked_in').length,
+      checkedOut: dataSource.filter(b => b.booking_status === 'checked_out').length,
+      cancelled: dataSource.filter(b => b.booking_status === 'cancelled').length,
+      totalRevenue: dataSource
         .filter(b => b.payment_status === 'paid')
         .reduce((sum, b) => sum + (parseFloat(b.final_price) || 0), 0)
     }
     return stats
-  }, [filteredBookings])
+  }, [filteredBookings, bookings, hasActiveFilters])
+
+  // Đồng bộ tổng số record cho pagination sau khi lọc
+  useEffect(() => {
+    setPagination(prev => {
+      const total = filteredBookings.length
+      const maxPage = Math.max(1, Math.ceil(total / prev.pageSize))
+      const current = Math.min(prev.current, maxPage)
+      return { ...prev, total, current }
+    })
+  }, [filteredBookings.length])
 
   // cột cho bảng danh sách đặt phòng
   const columns = [
@@ -786,8 +800,8 @@ const BookingManagement = () => {
             <Statistic
               title="Tổng đặt phòng"
               value={statistics.total}
+              valueStyle={{ color: '#262626' , fontWeight: 'bold' , fontSize: '24px' }}
               prefix={<CalendarOutlined />}
-              valueStyle={{ color: '#722ed1' }}
             />
           </Card>
         </Col>
@@ -796,8 +810,8 @@ const BookingManagement = () => {
             <Statistic
               title="Đã xác nhận"
               value={statistics.confirmed}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+        valueStyle={{ color: '#1677ff' , fontWeight: 'bold' , fontSize: '24px' }}
+        prefix={<CheckCircleOutlined />}
             />
           </Card>
         </Col>
@@ -806,8 +820,9 @@ const BookingManagement = () => {
             <Statistic
               title="Đã nhận phòng"
               value={statistics.checkedIn}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#13c2c2' }}
+              valueStyle={{ color: '#13c2c2',fontWeight: 'bold' , fontSize: '24px'  }}
+              prefix={<KeyOutlined />}
+              
             />
           </Card>
         </Col>
@@ -816,8 +831,8 @@ const BookingManagement = () => {
             <Statistic
               title="Đã trả phòng"
               value={statistics.checkedOut}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              valueStyle={{ color: '#c08a19 ',fontWeight: 'bold' , fontSize: '24px'  }}
+              prefix={<ClearOutlined />}
             />
           </Card>
         </Col>
@@ -826,8 +841,8 @@ const BookingManagement = () => {
             <Statistic
               title="Đã hủy"
               value={statistics.cancelled}
+              valueStyle={{ color: '#CC0000',fontWeight: 'bold' , fontSize: '24px'  }}
               prefix={<CloseCircleOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>
@@ -836,8 +851,7 @@ const BookingManagement = () => {
             <Statistic
               title="Tổng doanh thu"
               value={formatPrice(statistics.totalRevenue)}
-              prefix={<CreditCardOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#008000' ,fontWeight: 'bold' , fontSize: '24px' }}
             />
           </Card>
         </Col>
@@ -1502,7 +1516,7 @@ const BookingManagement = () => {
                   // Refresh booking details
                   await handleViewDetails(selectedBooking.booking_id)
                   // Refresh danh sách bookings
-                  fetchBookings(pagination.current, pagination.pageSize)
+                  fetchBookings()
                 }
               } catch (e) {
                 console.error('Error adding services:', e)
@@ -1525,15 +1539,7 @@ const BookingManagement = () => {
             <div>
               {/* Payment type selector */}
               <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ marginRight: 8 }}>Loại thanh toán:</Text>
-                <Select
-                  value={paymentType}
-                  onChange={setPaymentType}
-                  style={{ width: 200 }}
-                >
-                  <Option value="postpaid">Thanh toán sau (Postpaid)</Option>
-                  <Option value="prepaid">Thanh toán trước (Prepaid)</Option>
-                </Select>
+           
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     {paymentType === 'postpaid' 
@@ -1668,7 +1674,7 @@ const BookingManagement = () => {
         onCancel={() => setIsCheckInModalVisible(false)}
         type="checkin"
         onSuccess={() => {
-          fetchBookings(pagination.current, pagination.pageSize)
+          fetchBookings()
         }}
       />
 
@@ -1678,7 +1684,7 @@ const BookingManagement = () => {
         onCancel={() => setIsCheckOutModalVisible(false)}
         type="checkout"
         onSuccess={() => {
-          fetchBookings(pagination.current, pagination.pageSize)
+          fetchBookings()
         }}
       />
 

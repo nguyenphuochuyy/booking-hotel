@@ -23,7 +23,7 @@ const handleQuickCheckOut = async () => {
     setQuickCheckOutLoading(false)
   }
 }
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Row,
   Col,
@@ -40,7 +40,6 @@ import {
   message
 } from 'antd'
 // import {  } from '@ant-design/charts'
-import { Pie, Column } from '@ant-design/plots';
 import {
   UserOutlined,
   HomeOutlined,
@@ -48,6 +47,20 @@ import {
   DollarOutlined,
   CalendarOutlined,
 } from '@ant-design/icons'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Rectangle
+} from 'recharts'
 import {
   getAllDashboardStats,
   getBookingStatusColor,
@@ -89,6 +102,52 @@ function Dashboard() {
     loading: false,
     data: null,
   })
+  const bookingStatusColors = {
+    'Đang ở': 'green',
+    'Đã xác nhận': '#1890fa',
+    'Chờ xác nhận': '#faad14',
+    'Đã trả phòng': '#c08a19',
+    'Đã hủy': '#CC0000'
+  }
+
+  const formatRevenueShort = (value) => {
+    if (!value) return '0'
+    const num = Number(value)
+    if (num >= 1000000) {
+      const tr = num / 1000000
+      return tr % 1 === 0 ? `${tr}tr` : `${tr.toFixed(1)}tr`
+    }
+    if (num >= 1000) {
+      const k = num / 1000
+      return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`
+    }
+    return num.toLocaleString('vi-VN')
+  }
+
+  const formatRevenueFull = (value = 0) =>
+    `${Number(value || 0).toLocaleString('vi-VN')} đ`
+
+  const revenueChartData = useMemo(
+    () =>
+      revenueByDay.map((item) => ({
+        date: item.label,
+        value: item.revenue || 0,
+      })),
+    [revenueByDay]
+  )
+
+  const bookingStatusChartData = useMemo(
+    () =>
+      bookingStatusData.map((item) => ({
+        ...item,
+        color: bookingStatusColors[item.type] || '#8c8c8c',
+        percent:
+          bookingStatusTotal > 0
+            ? ((item.value / bookingStatusTotal) * 100).toFixed(1)
+            : 0,
+      })),
+    [bookingStatusData, bookingStatusTotal]
+  )
 
   const getPaymentStatusColor = (status) => {
     const colors = {
@@ -342,39 +401,6 @@ function Dashboard() {
 
     loadSchedules()
   }, [])
-  // Config cho Biểu đồ Cột (Doanh thu)
-  const columnConfig = {
-    data: revenueByDay,
-    xField: 'label',
-    yField: 'revenue',
-    height: 300,
-    color: '#000',
-    columnStyle: {
-      radius: [4, 4, 0, 0],
-      fill: '#000',
-    },
-    xAxis: {
-      title: { text: 'Ngày', style: { fontSize: 14, fontWeight: 'bold' } },
-      label: { autoRotate: false, style: { fontSize: 12 } },
-    },
-    yAxis: {
-      title: { text: 'Doanh thu', style: { fontSize: 14, fontWeight: 'bold' } },
-      label: {
-        formatter: (value) => {
-          const val = Number(value);
-          if (val >= 1000000) return `${(val / 1000000).toFixed(1)}tr`;
-          if (val >= 1000) return `${(val / 1000).toFixed(1)}k`;
-          return val;
-        },
-        style: { fontSize: 12 },
-      },
-    },
-    tooltip: {
-      formatter: (datum) => {
-        return { name: 'Doanh thu', value: `${Number(datum.revenue).toLocaleString('vi-VN')} đ` };
-      },
-    },
-  };
   return (
     <>
     <div style={{ padding: 24 }}>
@@ -456,17 +482,46 @@ function Dashboard() {
                       <Spin size="large" />
                       <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu biểu đồ...</p>
                           </div>
-                  ) : revenueByDay.length > 0 ? (
-
-                    <div style={{ width: '100%' }}>
-                      <Column {...columnConfig} />
-                        </div>
-                        
-                  ) : (
+                  ) : revenueChartData.length > 0 ? (
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={revenueChartData}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 12 }}
+                            interval={0}
+                          />
+                          <YAxis
+                            width={80}
+                            tickFormatter={formatRevenueShort}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <RechartsTooltip
+                            formatter={(value) => [
+                              formatRevenueFull(value),
+                              'Doanh thu',
+                            ]}
+                          />
+                          <RechartsLegend />
+                          <Bar
+                            dataKey="value"
+                            name="Doanh thu"
+                            fill="#1890ff"
+                            radius={[8, 8, 0, 0]}
+                            activeBar={<Rectangle fill="#0d6efd" />}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                  </div>
+                ) : (
                     <Empty description="Chưa có dữ liệu doanh thu" />
-                  )}
-                </Card>
-              </Col>
+                )}
+              </Card>
+            </Col>
               <Col xs={24} lg={12}>
                 <Card
                   title="Thống kê trạng thái đặt phòng"
@@ -478,63 +533,67 @@ function Dashboard() {
                     <div style={{ textAlign: 'center', padding: '60px 0' }}>
                       <Spin size="large" />
                       <p style={{ marginTop: '16px', color: '#666' }}>Đang tải dữ liệu...</p>
-                        </div>
-                  ) : bookingStatusData.length > 0 ? (
-                    <Pie
-                      appendPadding={10}
-                      data={bookingStatusData}
-                      angleField="value"
-                      colorField="type"
-                      radius={0.8}
-                      innerRadius={0.5}
-                      color={({ type }) => {
-                        if (type === 'Đang ở') return '#f5222d'
-                        if (type === 'Đã xác nhận') return '#1890fa'
-                        if (type === 'Chờ xác nhận') return '#faad14'
-                        if (type === 'Đã trả phòng') return '#52c41a'
-                        return '#8c8c8c'
-                      }}
-                      label={{
-                        text: 'value',
-                        style: {
-                          fontWeight: 'bold',
-                        },
-                      }}
-                      interactions={[
-                        { type: 'element-selected' },
-                        { type: 'element-active' }
-                      ]}
-                      legend={{
-                        color: {
-                          title: false,
-                          position: 'right',
-                          rowPadding: 5,
-                        },
-                      }}
-                      statistic={{
-                        title: {
-                          customHtml: () => (
-                            `<div style="font-size:14px;color:#8c8c8c;">Tổng booking</div>`
-                          ),
-                        },
-                        content: {
-                          customHtml: () => (
-                            `<div style="font-size:18px;font-weight:bold;">${bookingStatusTotal || 0}</div>`
-                          ),
-                        },
-                      }}
-                      tooltip={{
-                        formatter: (datum) => {
-                          const percent = ((datum.value / (bookingStatusTotal || 1)) * 100).toFixed(1)
-                          return {
-                            name: datum.type,
-                            value: `${datum.value} booking (${percent}%)`,
-                          }
-                        },
-                      }}
-
-                    />
-                  ) : (
+                  </div>
+                  ) : bookingStatusChartData.length > 0 ? (
+                    <div style={{ width: '100%', height: 320, position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={bookingStatusChartData}
+                            dataKey="value"
+                            nameKey="type"
+                            innerRadius="55%"
+                            outerRadius="80%"
+                            paddingAngle={2}
+                            labelLine={false}
+                            label={({ percent }) =>
+                              `${(percent)}%`
+                            }
+                          >
+                            {bookingStatusChartData.map((entry) => (
+                              <Cell
+                                key={`cell-${entry.type}`}
+                                fill={entry.color}
+                              />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip
+                            formatter={(value, name) => [
+                              `${value} booking (${
+                                bookingStatusTotal
+                                  ? ((value / bookingStatusTotal) * 100).toFixed(
+                                      1
+                                    )
+                                  : 0
+                              }%)`,
+                              name,
+                            ]}
+                          />
+                          <RechartsLegend
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div
+                        style={{ 
+                          position: 'absolute',
+                          top: 0,  
+                          left: 0,
+                          textAlign: 'center',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <div style={{ color: '#8c8c8c', fontSize: 14 }}>
+                          Tổng booking
+                          </div>
+                        <div style={{ fontWeight: 'bold', fontSize: 20 }}>
+                          {bookingStatusTotal || 0}
+                          </div>
+                      </div>
+                  </div>
+                ) : (
                     <Empty description="Chưa có dữ liệu booking" />
                   )}
                 </Card>
@@ -603,7 +662,7 @@ function Dashboard() {
                     locale={{ emptyText: 'Không có khách check-out hôm nay' }}
                   />
                 </Card>
-              </Col>
+            </Col>
             </Row>
             {/* Đặt phòng mới nhất */}
             <Row style={{ marginTop: 24 }}>
