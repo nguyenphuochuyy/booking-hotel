@@ -391,11 +391,16 @@ export const getTodayCheckSchedules = async () => {
       return diff >= 0 && diff <= 24 * 60 * 60 * 1000
     }
     const checkIns = bookings
-      .filter(
-        (booking) =>
-          isTodayOrTomorrow(booking.check_in_date) &&
-          booking.booking_status === 'confirmed'
-      )
+      .filter((booking) => {
+        if (!booking?.check_in_date) return false
+        const date = new Date(booking.check_in_date)
+        if (isNaN(date.getTime())) return false
+        const isTodayCheckIn =
+          date.getFullYear() === todayYear &&
+          date.getMonth() === todayMonth &&
+          date.getDate() === todayDay
+        return isTodayCheckIn && booking.booking_status === 'confirmed'
+      })
       .map((booking) => ({
         booking_id: booking.booking_id,
         booking_code: booking.booking_code || `BK-${booking.booking_id}`,
