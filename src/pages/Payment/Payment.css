@@ -26,10 +26,7 @@
   max-width: 800px;
   margin: 0 auto 40px auto;
 }
-.steps-wrapper .ant-steps-item-process .ant-steps-item-icon {
-  background-color: var(--luxury-gold) !important;
-  border-color: var(--luxury-gold) !important;
-}
+
 .steps-wrapper .ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
   color: var(--luxury-gold) !important;
 }
