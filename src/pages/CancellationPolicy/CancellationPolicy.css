@@ -1,51 +1,133 @@
-/* Hero Section mới với Background Gradient */
-.cancellation-hero-enhanced {
-  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-  padding: 80px 20px 100px; /* Padding dưới lớn để chừa chỗ cho card interative */
-  text-align: center;
-  color: white;
+.cancellation-container {
+  background: #f5f7fb;
+  min-height: 100vh;
+  padding-bottom: 60px;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Interactive Card: Hiệu ứng nổi lên trên */
-.interactive-card {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  border-radius: 16px;
+/* Hero Section */
+.cancellation-hero-enhanced {
+  background: radial-gradient(circle at top left, #f2c66d, #c08a19) no-repeat;
+  padding: 90px 24px 120px;
+  text-align: center;
+  position: relative;
   overflow: hidden;
 }
 
-/* Visual Timeline Cards */
+.cancellation-hero-enhanced::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("https://www.transparenttextures.com/patterns/white-diamond.png");
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.cancellation-content {
+  max-width: 1200px;
+  margin: -60px auto 0;
+  padding: 0 16px;
+}
+
+/* Interactive Card */
+.interactive-card {
+  border-radius: 22px;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: #ffffff;
+}
+
+/* Cards General */
+.highlight-card,
+.policy-card,
+.step-card {
+  border-radius: 20px;
+  border: none;
+  background: #fff;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.highlight-card .ant-typography,
+.policy-card .ant-typography {
+  margin-bottom: 0;
+}
+
+/* Visual Steps */
 .step-card {
   height: 100%;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .step-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
 .percent-circle {
-  width: 80px;
-  height: 80px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
-  border: 3px solid;
+  border: 4px solid;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   margin: 0 auto;
-  background-color: #fff;
+  background: #fff;
 }
 
-/* Responsive adjustments */
+.policy-list {
+  padding-left: 18px;
+  margin-bottom: 0;
+  color: #4b5563;
+}
+
+.policy-list li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+/* Timeline */
+.visual-timeline-container {
+  padding: 20px;
+}
+
+.policy-timeline .ant-timeline-item-content {
+  margin-left: 25px;
+  width: calc(100% - 25px);
+}
+
+.timeline-summary {
+  display: inline-block;
+  background-color: #fff7e6;
+  color: #c08a19;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.policy-card .ant-typography-secondary {
+  color: #4b5563 !important;
+}
+
+@media (max-width: 992px) {
+  .cancellation-content {
+    margin-top: -40px;
+  }
+}
+
 @media (max-width: 768px) {
   .cancellation-hero-enhanced {
-    padding: 60px 20px 80px;
+    padding: 60px 16px 90px;
   }
-  
+
   .step-card {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+  }
+
+  .interactive-card {
+    padding: 20px 10px;
   }
 }
