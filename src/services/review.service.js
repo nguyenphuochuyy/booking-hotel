@@ -68,3 +68,18 @@ export const updateReview = async (reviewId, formData) => {
     throw error
   }
 }
+
+/**
+ * User xóa review của mình
+ * @param {number|string} reviewId - Review ID
+ * @returns {Promise}
+ */
+export const deleteReview = async (reviewId) => {
+  try {
+    const response = await httpClient.delete(`/reviews/${reviewId}`)
+    return response?.data || response
+  } catch (error) {
+    console.error('Error deleting review:', error)
+    throw error
+  }
+}

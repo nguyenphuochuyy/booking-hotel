@@ -24,7 +24,8 @@ import {
   Avatar,
   Pagination,
   Upload,
-  Form
+  Form,
+  Dropdown
 } from 'antd'
 import {
   HomeOutlined,
@@ -41,17 +42,21 @@ import {
   MessageOutlined,
   ExclamationCircleOutlined,
   EditOutlined,
-  PlusOutlined
+  PlusOutlined,
+  CustomerServiceOutlined,
+  MoreOutlined,
+  DeleteOutlined
 } from '@ant-design/icons'
 import { useRoomTypes } from '../../hooks/roomtype'
 import { useNavigate, useLocation } from 'react-router-dom'
 import formatPrice from '../../utils/formatPrice'
 import BookingWidget from '../../components/BookingWidget'
 import { searchAvailableRooms } from '../../services/booking.service'
-import { getReviewsByRoomType, updateReview } from '../../services/review.service'
+import { getReviewsByRoomType, updateReview, deleteReview } from '../../services/review.service'
 import { getRoomTypeById } from '../../services/roomtype.service'
 import { message } from 'antd'
 import { useAuth } from '../../context/AuthContext'
+import formatDateTime from '../../utils/formatDateTime'
 const { Title, Text } = Typography
 const { Option } = Select
 const { Search } = Input
@@ -302,7 +307,7 @@ function Hotels() {
       if ((room.sold_out || room.available_rooms === 0) && (price == null)) return true
       if (price == null && (room.available_rooms > 0 || !room.sold_out)) return true
       if (price != null) {
-        return price >= priceRange[0] && price <= priceRange[1]
+      return price >= priceRange[0] && price <= priceRange[1]
       }
       return false
     })
@@ -388,7 +393,7 @@ function Hotels() {
   }
   const handleIncreaseRooms = () => {
     if (numRooms < 10) { setNumRooms(numRooms + 1); } else { message.warning('Số lượng phòng tối đa là 10'); }
-  }
+    }
   const handleBookNow = () => {
     if (!selectedRoom) return
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
@@ -499,6 +504,24 @@ function Hotels() {
       message.error(errorMessage)
     } finally {
       setEditReviewModal(prev => ({ ...prev, loading: false }))
+    }
+  }
+
+  // Hàm xóa review
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await deleteReview(reviewId)
+      message.success('Xóa đánh giá thành công!')
+      
+      // Reload reviews
+      const roomTypeId = roomInModal?.room_type_id || roomInModal?.room_type?.room_type_id
+      if (roomTypeId) {
+        await loadReviews(roomTypeId, reviewsPagination.current)
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể xóa đánh giá. Vui lòng thử lại.'
+      message.error(errorMessage)
     }
   }
   const handleSelectFromModal = () => {
@@ -613,8 +636,8 @@ function Hotels() {
                             <div className="rate-info" style={{ marginBottom: '16px' }}>
                               <Text type="warning" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}>
                                 <ExclamationCircleOutlined /> Có tính phí hủy
-                              </Text>
-                            </div>
+                                  </Text>
+                              </div>
                             {/* ------------------------------------- */}
 
                             <div className="room-price-action">
@@ -778,7 +801,7 @@ function Hotels() {
                     <Col xs={24} md={14}>
                       <div style={{ paddingRight: '8px' }}>
                         {/* Mô tả */}
-                        {modalDescription && (
+                      {modalDescription && (
                           <div style={{ marginBottom: '24px' }}>
                             <Title level={5}>Mô tả</Title>
                             <Text style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', whiteSpace: 'pre-line', display: 'block' }}>
@@ -787,47 +810,47 @@ function Hotels() {
                           </div>
                         )}
 
-                        <Divider />
+                      <Divider />
 
                         {/* Thông số phòng (Grid nhỏ) */}
                         <div style={{ marginBottom: '24px' }}>
-                          <Title level={5}>Thông số phòng</Title>
-                          <Row gutter={[16, 16]}>
+                        <Title level={5}>Thông số phòng</Title>
+                        <Row gutter={[16, 16]}>
                             <Col span={12}>
                               <Space>
                                 <UserOutlined style={{ color: '#9ca3af' }} />
-                                <div>
+                              <div>
                                   <Text type="secondary" style={{ fontSize: '12px' }}>Sức chứa</Text>
                                   <div><Text strong>{modalCapacity || 2} người</Text></div>
-                                </div>
-                              </Space>
-                            </Col>
+                              </div>
+                            </Space>
+                          </Col>
                             <Col span={12}>
                               <Space>
                                 <ExpandOutlined style={{ color: '#9ca3af' }} />
-                                <div>
+                              <div>
                                   <Text type="secondary" style={{ fontSize: '12px' }}>Diện tích</Text>
                                   <div><Text strong>{modalArea || 0}m²</Text></div>
-                                </div>
-                              </Space>
-                            </Col>
+                              </div>
+                            </Space>
+                          </Col>
                             <Col span={24}>
                               <Space>
                                 <ExclamationCircleOutlined style={{ color: '#9ca3af' }} />
-                                <div>
+                              <div>
                                   <Text type="secondary" style={{ fontSize: '12px' }}>Chính sách</Text>
                                   <div><Text strong>Có tính phí hủy & Không hút thuốc</Text></div>
-                                </div>
-                              </Space>
-                            </Col>
-                          </Row>
-                        </div>
+                              </div>
+                            </Space>
+                          </Col>
+                        </Row>
+                      </div>
 
-                        <Divider />
+                      <Divider />
 
                         {/* Tiện nghi */}
                         <div style={{ marginBottom: '24px' }}>
-                          <Title level={5}>Tiện nghi</Title>
+                        <Title level={5}>Tiện nghi</Title>
                           {modalAmenities && modalAmenities.length > 0 ? (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                               {modalAmenities.map((item, idx) => (
@@ -837,122 +860,194 @@ function Hotels() {
                           ) : (
                             <Text type="secondary">Đang cập nhật tiện nghi</Text>
                           )}
-                        </div>
+                      </div>
 
-                        <Divider />
+                      <Divider />
 
-                        {/* Reviews Section */}
+                      {/* Reviews Section */}
                         <div style={{ marginTop: '24px' }}>
-                          <Title level={5} style={{ marginBottom: '16px' }}>
-                            <MessageOutlined style={{ marginRight: '8px' }} />
+                        <Title level={5} style={{ marginBottom: '16px' }}>
+                          <MessageOutlined style={{ marginRight: '8px' }} />
                             Đánh giá từ khách hàng ({reviewsPagination.total})
-                          </Title>
+                        </Title>
 
-                          {reviewsLoading ? (
+                        {reviewsLoading ? (
                             <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>
-                          ) : reviews.length === 0 ? (
+                        ) : reviews.length === 0 ? (
                             <Empty description="Chưa có đánh giá nào" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                           ) : (
                             <div className="reviews-list-container">
                               
                               <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                                {reviews.map((review) => (
-                                  <div key={review.review_id} className="review-item" style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px', position: 'relative' }}>
-                                    {/* Nút Edit - chỉ hiển thị nếu user là chủ sở hữu */}
-                                    {user && user.user_id === review.user?.user_id && (
-                                      <Button
-                                        type="text"
-                                        icon={<EditOutlined />}
-                                        onClick={() => handleEditReview(review.review_id)}
-                                        style={{
-                                          position: 'absolute',
-                                          top: 0,
-                                          right: 0,
-                                          zIndex: 1
-                                        }}
-                                        size="small"
-                                      >
-                                      
-                                      </Button>
-                                    )}
-                                    
-                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                      {/* Avatar User */}
-                                      <Avatar
-                                        style={{ backgroundColor: '#c08a19', flexShrink: 0 }}
-                                        size="large"
-                                      >
-                                        {review.user?.full_name?.charAt(0)?.toUpperCase() || 'K'}
-                                      </Avatar>
+                                {reviews.map((review) => {
+                                  const isOwner = user && user.user_id === review.user?.user_id
+                                  
+                                  // Menu items cho dropdown
+                                  const menuItems = [
+                                    {
+                                      key: 'edit',
+                                      label: (
+                                        <Space>
+                                          <EditOutlined />
+                                          <span>Sửa</span>
+                                        </Space>
+                                      ),
+                                      onClick: () => handleEditReview(review.review_id)
+                                    },
+                                    {
+                                      key: 'delete',
+                                      label: (
+                                        <Space style={{ color: '#ff4d4f' }}>
+                                          <DeleteOutlined />
+                                          <span>Xóa</span>
+                                        </Space>
+                                      ),
+                                      danger: true,
+                                      onClick: () => {
+                                        Modal.confirm({
+                                          title: 'Xóa đánh giá',
+                                          content: 'Bạn có chắc chắn muốn xóa đánh giá này không?',
+                                          okText: 'Xóa',
+                                          cancelText: 'Hủy',
+                                          okType: 'danger',
+                                          onOk: () => handleDeleteReview(review.review_id)
+                                        })
+                                      }
+                                    }
+                                  ]
 
-                                      <div style={{ flex: 1 }}>
-                                     
-                                        {/* Tên + Rate + Ngày */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginRight: user && user.user_id === review.user?.user_id ? '60px' : '0' }}>
-                                          <div>
-                                            <Text strong style={{ fontSize: '14px', display: 'block' }}>
-                                              {review.user?.full_name || 'Khách hàng ẩn danh'}
-                                            </Text>
-                                            <Rate disabled value={review.rating} style={{ fontSize: '12px', color: '#fadb14' }} />
-                                          </div>
-                                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                                            {formatDate(review.created_at)}
+                                  return (
+                                    <div key={review.review_id} className="review-item" style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px', position: 'relative' }}>
+                                      {/* Dropdown menu 3 chấm - chỉ hiển thị nếu user là chủ sở hữu */}
+                                      {isOwner && (
+                                        <Dropdown
+                                          menu={{ items: menuItems }}
+                                          trigger={['click']}
+                                          placement="bottomRight"
+                                        >
+                                          <Button
+                                            type="text"
+                                            icon={<MoreOutlined />}
+                                            style={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              right: 0,
+                                              zIndex: 1,
+                                              fontSize: '18px',
+                                              color: '#8c8c8c'
+                                            }}
+                                            size="small"
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        </Dropdown>
+                                      )}
+                                      
+                                  <div style={{ display: 'flex', gap: '12px' }}>
+                                        {/* Avatar User */}
+                                    <Avatar
+                                      style={{ backgroundColor: '#c08a19', flexShrink: 0 }}
+                                      size="large"
+                                    >
+                                          {review.user?.full_name?.charAt(0)?.toUpperCase() || 'K'}
+                                    </Avatar>
+
+                                    <div style={{ flex: 1 }}>
+                                       
+                                          {/* Tên + Rate + Ngày */}
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginRight: isOwner ? '40px' : '0' }}>
+                                        <div>
+                                              <Text strong style={{ fontSize: '14px', display: 'block' }}>
+                                                {review.user?.full_name || 'Khách hàng ẩn danh'}
                                           </Text>
+                                              <Rate disabled value={review.rating} style={{ fontSize: '12px', color: '#fadb14' }} />
                                         </div>
+                                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                                            {formatDateTime(review.created_at)}
+                                          </Text>
+                                      </div>
 
                                         {/* Nội dung Comment */}
-                                        {review.comment && (
+                                      {review.comment && (
                                           <div style={{ marginTop: '8px' }}>
                                             <Text style={{ color: '#4b5563', fontSize: '14px', lineHeight: '1.5' }}>
-                                              {review.comment}
-                                            </Text>
+                                          {review.comment}
+                                        </Text>
+                                          </div>
+                                      )}
+
+                                        {/* Ảnh Review (nếu có) */}
+                                      {review.images && Array.isArray(review.images) && review.images.length > 0 && (
+                                          <div style={{ marginTop: '12px' }}>
+                                          <Image.PreviewGroup>
+                                              <Space size={8} wrap>
+                                                {review.images.map((img, idx) => (
+                                              <Image
+                                                key={idx}
+                                                src={img}
+                                                    alt="Review img"
+                                                width={60}
+                                                height={60}
+                                                    style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                                              />
+                                            ))}
+                                              </Space>
+                                          </Image.PreviewGroup>
                                           </div>
                                         )}
 
-                                        {/* Ảnh Review (nếu có) */}
-                                        {review.images && Array.isArray(review.images) && review.images.length > 0 && (
-                                          <div style={{ marginTop: '12px' }}>
-                                            <Image.PreviewGroup>
-                                              <Space size={8} wrap>
-                                                {review.images.map((img, idx) => (
-                                                  <Image
-                                                    key={idx}
-                                                    src={img}
-                                                    alt="Review img"
-                                                    width={60}
-                                                    height={60}
-                                                    style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb' }}
-                                                  />
-                                                ))}
-                                              </Space>
-                                            </Image.PreviewGroup>
-                                          </div>
+                                        {/* Phản hồi của admin (nếu có) */}
+                                        {(review.reply || review.admin_reply) && (
+                                          <div style={{ 
+                                            marginTop: '16px',
+                                            padding: '12px 16px',
+                                            background: '#f0f2f5',
+                                            borderRadius: '8px',
+                                            borderLeft: '4px solid #1890ff'
+                                          }}>
+                                            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <CustomerServiceOutlined style={{ color: '#1890ff', fontSize: '16px' }} />
+                                                <Text strong style={{ fontSize: '13px', color: '#1890ff' }}>
+                                                  Phản hồi từ quản trị viên
+                                                </Text>
+                                                {review.reply_at && (
+                                                  <Text type="secondary" style={{ fontSize: '11px', marginLeft: 'auto' }}>
+                                                    {formatDateTime(review.reply_at)}
+                                                  </Text>
+                                                )}
+                                              </div>
+                                              <Text style={{ fontSize: '13px', lineHeight: '1.6', color: '#333', display: 'block', marginTop: '4px' }}>
+                                                {review.reply || review.admin_reply}
+                                              </Text>
+                                            </Space>
+                                        </div>
                                         )}
                                       </div>
                                     </div>
                                   </div>
-                                ))}
-                              </Space>
+                                  )
+                                })}
+                            </Space>
 
                               {/* Phân trang (nếu nhiều review) */}
-                              {reviewsPagination.total > reviewsPagination.pageSize && (
-                                <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                                  <Pagination
+                            {reviewsPagination.total > reviewsPagination.pageSize && (
+                              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                <Pagination
                                     simple
-                                    current={reviewsPagination.current}
-                                    pageSize={reviewsPagination.pageSize}
-                                    total={reviewsPagination.total}
-                                    onChange={(page) => {
-                                      const roomTypeId = roomInModal?.room_type_id || roomInModal?.room_type?.room_type_id
-                                      if (roomTypeId) {
-                                        loadReviews(roomTypeId, page)
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              )}
+                                  current={reviewsPagination.current}
+                                  pageSize={reviewsPagination.pageSize}
+                                  total={reviewsPagination.total}
+                                  onChange={(page) => {
+                                    const roomTypeId = roomInModal?.room_type_id || roomInModal?.room_type?.room_type_id
+                                    if (roomTypeId) {
+                                      loadReviews(roomTypeId, page)
+                                    }
+                                  }}
+                                />
+                              </div>
+                            )}
                             </div>
-                          )}
+                        )}
                         </div>
                         {/* Khoảng trống để không bị che bởi footer sticky trên mobile nếu cần */}
                         <div style={{ height: '60px' }}></div>
@@ -965,28 +1060,28 @@ function Hotels() {
 
                         {/* Carousel Ảnh */}
                         <div className="modal-image-section" style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                          {modalImages && modalImages.length > 0 ? (
-                            <Image.PreviewGroup>
+                        {modalImages && modalImages.length > 0 ? (
+                          <Image.PreviewGroup>
                               <Carousel autoplay effect="fade" dots={{ className: 'custom-dots' }}>
-                                {modalImages.map((img, index) => (
+                              {modalImages.map((img, index) => (
                                   <div key={index}>
-                                    <Image
-                                      src={img}
+                                  <Image
+                                    src={img}
                                       alt={`Room ${index}`}
                                       style={{ width: '100%', height: '250px', objectFit: 'cover' }}
                                       preview={{ mask: 'Xem ảnh lớn' }}
-                                    />
-                                  </div>
-                                ))}
-                              </Carousel>
-                            </Image.PreviewGroup>
-                          ) : (
+                                  />
+                                </div>
+                              ))}
+                            </Carousel>
+                          </Image.PreviewGroup>
+                        ) : (
                             <div style={{ width: '100%', height: '250px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#999' }}>
                               <EnvironmentOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
                               <Text type="secondary">Chưa có hình ảnh</Text>
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
+                      </div>
 
                         {/* Card thông tin giá */}
                         <Card bordered={false} style={{ background: '#f9fafb', borderRadius: '12px' }}>
@@ -994,45 +1089,45 @@ function Hotels() {
                             <Text type="secondary">Giá phòng cho {numNights} đêm</Text>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
                               <Title level={2} style={{ margin: 0, color: '#c08a19' }}>
-                                {formatPrice(modalPrice * numRooms * numNights)}
+                            {formatPrice(modalPrice * numRooms * numNights)}
                               </Title>
                             </div>
                             <Text style={{ fontSize: '12px', color: '#6b7280' }}>
                               ({formatPrice(modalPrice)} / đêm x {numRooms} phòng)
-                            </Text>
-                          </div>
+                          </Text>
+                        </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {checkIn && checkOut ? (
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                                 <Text strong>Ngày nhận:</Text>
                                 <Text>{formatDate(checkIn)}</Text>
-                              </div>
+                        </div>
                             ) : null}
                             {checkIn && checkOut ? (
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                                 <Text strong>Ngày trả:</Text>
                                 <Text>{formatDate(checkOut)}</Text>
-                              </div>
+                      </div>
                             ) : null}
                           </div>
 
                           <Divider style={{ margin: '16px 0' }} />
 
-                          <Button
-                            type="primary"
-                            size="large"
+                        <Button
+                          type="primary"
+                          size="large"
                             block
                             style={{ height: '48px', fontWeight: 600, fontSize: '16px' }}
-                            onClick={handleSelectFromModal}
-                            disabled={checkIn && checkOut && (roomInModal?.sold_out === true)}
-                          >
+                          onClick={handleSelectFromModal}
+                          disabled={checkIn && checkOut && (roomInModal?.sold_out === true)}
+                        >
                             {checkIn && checkOut && (roomInModal?.sold_out === true) ? 'Tạm hết phòng' : 'Chọn phòng này'}
-                          </Button>
+                        </Button>
                         </Card>
                       </div>
-                    </Col>
-                  </Row>
+                      </Col>
+                    </Row>
 
                   {/* Footer Sticky Mobile Only - Nếu màn hình nhỏ, hiển thị nút ở dưới cùng */}
                   <div className="modal-footer-mobile-only">

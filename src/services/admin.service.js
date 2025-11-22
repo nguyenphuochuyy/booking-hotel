@@ -1,5 +1,5 @@
 import http from './httpClient'
-import { ADMIN, WALK_IN, buildUrl } from '../constants/apiEndpoints'
+import { ADMIN, WALK_IN, REVIEWS, buildUrl } from '../constants/apiEndpoints'
 
 // ==================== USER MANAGEMENT ====================
 
@@ -325,6 +325,39 @@ export async function getAllPromotions(params = {}) {
  */
 export async function getAllReviews(params = {}) {
   return http.get('/reviews/admin/all', { params })
+}
+
+/**
+ * Admin phản hồi đánh giá
+ * @param {number|string} reviewId - Review ID
+ * @param {string} reply - Nội dung phản hồi
+ * @returns {Promise}
+ */
+export async function replyToReview(reviewId, reply) {
+  const url = buildUrl(REVIEWS.REPLY, { id: reviewId })
+  return http.post(url, { reply })
+}
+
+/**
+ * Admin cập nhật đánh giá (có thể cập nhật bất kỳ đánh giá nào)
+ * @param {number|string} reviewId - Review ID
+ * @param {FormData} formData - FormData chứa rating, comment, images
+ * @returns {Promise}
+ */
+export async function updateReview(reviewId, formData) {
+  const url = buildUrl(REVIEWS.UPDATE, { id: reviewId })
+  // KHÔNG set Content-Type header - để Axios tự động xử lý FormData và thêm boundary
+  return http.put(url, formData)
+}
+
+/**
+ * Admin xóa đánh giá (có thể xóa bất kỳ đánh giá nào)
+ * @param {number|string} reviewId - Review ID
+ * @returns {Promise}
+ */
+export async function deleteReview(reviewId) {
+  const url = buildUrl(REVIEWS.DELETE, { id: reviewId })
+  return http.delete(url)
 }
 
 /**
@@ -681,6 +714,9 @@ export default {
   deletePromotion,
   // Reviews
   getAllReviews,
+  replyToReview,
+  updateReview,
+  deleteReview,
   // Posts
   getAllPosts,
   getPostById,

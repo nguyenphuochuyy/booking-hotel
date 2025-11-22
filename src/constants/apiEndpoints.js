@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     UPDATE: '/reviews/:id',
     DELETE: '/reviews/:id',
     BY_HOTEL: '/hotels/:id/reviews',
+    REPLY: '/reviews/:id/reply',
   },
 
   // Payments

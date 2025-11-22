@@ -1,20 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { 
+import {
   Table, Button, Space, Modal, message, 
   Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip, 
-  Typography, Divider, Empty, Spin, Select, Input, Rate, Image, Avatar
+  Typography, Divider, Empty, Spin, Select, Input, Rate, Image, Avatar,
+  Upload
 } from 'antd'
 import { 
   ReloadOutlined, SearchOutlined, ExclamationCircleOutlined,
   StarOutlined, MessageOutlined, UserOutlined, EyeOutlined,
-  DeleteOutlined, FilterOutlined, SortAscendingOutlined
+  DeleteOutlined, FilterOutlined, SortAscendingOutlined, SendOutlined,
+  EditOutlined, PlusOutlined
 } from '@ant-design/icons'
-import { getAllReviews } from '../../../services/admin.service'
+import { getAllReviews, replyToReview, updateReview, deleteReview } from '../../../services/admin.service'
 import './review.css'
-import dayjs from 'dayjs'
+import formatDateTime from '../../../utils/formatDateTime'
 
 const { Title, Text } = Typography
 const { Option } = Select
+const { TextArea } = Input
 
 const ReviewManagement = () => {
   const [reviews, setReviews] = useState([])
@@ -29,6 +32,14 @@ const ReviewManagement = () => {
     total: 0
   })
   const [detailModal, setDetailModal] = useState({ visible: false, review: null })
+  const [replyModal, setReplyModal] = useState({ visible: false, reviewId: null, loading: false })
+  const [replyText, setReplyText] = useState('')
+  const [editModal, setEditModal] = useState({ visible: false, review: null, loading: false })
+  const [editForm, setEditForm] = useState({
+    rating: 5,
+    comment: '',
+    images: []
+  })
 
   // Fetch reviews data
   const fetchReviews = async (page = 1, pageSize = 10) => {
@@ -172,15 +183,102 @@ const ReviewManagement = () => {
     fetchReviews(paginationInfo.current, paginationInfo.pageSize)
   }
 
-  // Handle delete review (if needed - currently not in API, but placeholder)
+  // Handle delete review
   const handleDelete = async (reviewId) => {
     try {
-      // await deleteReview(reviewId)
+      await deleteReview(reviewId)
       message.success('Xóa đánh giá thành công!')
       fetchReviews(pagination.current, pagination.pageSize)
+      
+      // Đóng detail modal nếu đang mở review bị xóa
+      if (detailModal.visible && detailModal.review?.review_id === reviewId) {
+        setDetailModal({ visible: false, review: null })
+      }
     } catch (error) {
       console.error('Error deleting review:', error)
-      message.error('Không thể xóa đánh giá!')
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể xóa đánh giá!'
+      message.error(errorMessage)
+    }
+  }
+
+  // Handle mở modal edit
+  const handleOpenEditModal = (review) => {
+    // Convert images URLs to Upload file format
+    const imageFiles = (review.images || []).map((img, index) => ({
+      uid: `existing-${index}`,
+      name: `image-${index}.jpg`,
+      status: 'done',
+      url: img,
+      thumbUrl: img
+    }))
+    
+    setEditForm({
+      rating: review.rating || 5,
+      comment: review.comment || '',
+      images: imageFiles
+    })
+    setEditModal({
+      visible: true,
+      review: review,
+      loading: false
+    })
+  }
+
+  // Handle cập nhật review
+  const handleUpdateReview = async () => {
+    if (!editModal.review) return
+    
+    if (!editForm.rating || editForm.rating < 1) {
+      message.warning('Vui lòng chọn số sao đánh giá')
+      return
+    }
+    
+    setEditModal(prev => ({ ...prev, loading: true }))
+    try {
+      // Lấy các file mới từ fileList (chỉ file có originFileObj)
+      const newImageFiles = editForm.images
+        .filter(file => file.originFileObj)
+        .map(file => file.originFileObj)
+      
+      // Tạo FormData để gửi
+      const formData = new FormData()
+      formData.append('rating', editForm.rating)
+      formData.append('comment', editForm.comment.trim() || '')
+      
+      // Append existing images (nếu có)
+      editForm.images.forEach((file) => {
+        if (!file.originFileObj && file.url) {
+          formData.append('existingImages', file.url)
+        }
+      })
+      
+      // Append new image files (nếu có)
+      newImageFiles.forEach((file) => {
+        formData.append('images', file)
+      })
+      
+      await updateReview(editModal.review.review_id, formData)
+      
+      message.success('Cập nhật đánh giá thành công!')
+      
+      // Đóng modal và reset form
+      setEditModal({ visible: false, review: null, loading: false })
+      setEditForm({ rating: 5, comment: '', images: [] })
+      
+      // Reload reviews
+      await fetchReviews(pagination.current, pagination.pageSize)
+      
+      // Cập nhật detail modal nếu đang mở
+      if (detailModal.visible && detailModal.review?.review_id === editModal.review.review_id) {
+        await fetchReviews(pagination.current, pagination.pageSize)
+        // Reload sẽ tự động cập nhật detail modal khi user mở lại
+      }
+    } catch (error) {
+      console.error('Error updating review:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể cập nhật đánh giá. Vui lòng thử lại.'
+      message.error(errorMessage)
+    } finally {
+      setEditModal(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -191,10 +289,49 @@ const ReviewManagement = () => {
     return '#ff4d4f'
   }
 
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    return dayjs(dateString).format('DD/MM/YYYY HH:mm')
+
+  // Handle mở modal phản hồi
+  const handleOpenReplyModal = (review) => {
+    // Backend sử dụng field 'reply', không phải 'admin_reply'
+    setReplyText(review.reply || review.admin_reply || '')
+    setReplyModal({ visible: true, reviewId: review.review_id, loading: false })
+  }
+
+  // Handle gửi phản hồi
+  const handleSubmitReply = async () => {
+    if (!replyText.trim()) {
+      message.warning('Vui lòng nhập nội dung phản hồi')
+      return
+    }
+
+    setReplyModal(prev => ({ ...prev, loading: true }))
+    try {
+      const response = await replyToReview(replyModal.reviewId, replyText.trim())
+      message.success('Phản hồi đánh giá thành công!')
+      // Đóng modal reply
+      setReplyModal({ visible: false, reviewId: null, loading: false })
+      setReplyText('')
+      // Reload reviews để cập nhật danh sách
+      await fetchReviews(pagination.current, pagination.pageSize)
+      // Cập nhật review trong detail modal nếu đang mở
+      if (detailModal.visible && detailModal.review?.review_id === replyModal.reviewId) {
+        // Sử dụng review từ response nếu có, nếu không thì cập nhật thủ công
+        // Backend trả về field 'reply', không phải 'admin_reply'
+        const updatedReview = response?.review || response?.data?.review || {
+          ...detailModal.review,
+          reply: replyText.trim(),
+          admin_reply: replyText.trim(), // Giữ lại để tương thích
+          reply_at: new Date().toISOString()
+        }
+        setDetailModal({ ...detailModal, review: updatedReview })
+      }
+    } catch (error) {
+      console.error('Error replying to review:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể gửi phản hồi. Vui lòng thử lại.'
+      message.error(errorMessage)
+    } finally {
+      setReplyModal(prev => ({ ...prev, loading: false }))
+    }
   }
 
   // Table columns
@@ -323,26 +460,51 @@ const ReviewManagement = () => {
       key: 'created_at',
       width: 150,
       render: (date) => (
-        <Text style={{ fontSize: '13px' }}>{formatDate(date)}</Text>
+        <Text style={{ fontSize: '13px' }}>{formatDateTime(date)}</Text>
       ),
       sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at)
     },
     {
       title: 'Hành động',
       key: 'actions',
-      width: 120,
+      width: 200,
       fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space>
           <Tooltip title="Xem chi tiết">
             <Button
-              type="text"
+              type="primary"
               icon={<EyeOutlined />}
+              size="small"
               onClick={() => setDetailModal({ visible: true, review: record })}
-              className="action-button view-button"
             />
           </Tooltip>
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              type="default"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => handleOpenEditModal(record)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Xóa đánh giá"
+            description="Bạn có chắc chắn muốn xóa đánh giá này không?"
+            onConfirm={() => handleDelete(record.review_id)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Tooltip title="Xóa">
+              <Button
+                type="primary"
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       )
     }
@@ -515,6 +677,43 @@ const ReviewManagement = () => {
         footer={[
           <Button key="close" onClick={() => setDetailModal({ visible: false, review: null })}>
             Đóng
+          </Button>,
+          <Button
+            key="edit"
+            icon={<EditOutlined />}
+            onClick={() => {
+              handleOpenEditModal(detailModal.review)
+              setDetailModal({ visible: false, review: null })
+            }}
+          >
+            Chỉnh sửa
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="Xóa đánh giá"
+            description="Bạn có chắc chắn muốn xóa đánh giá này không?"
+            onConfirm={() => {
+              handleDelete(detailModal.review?.review_id)
+              setDetailModal({ visible: false, review: null })
+            }}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+            >
+              Xóa
+            </Button>
+          </Popconfirm>,
+          <Button
+            key="reply"
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={() => handleOpenReplyModal(detailModal.review)}
+          >
+            {detailModal.review?.reply || detailModal.review?.admin_reply ? 'Sửa phản hồi' : 'Phản hồi'}
           </Button>
         ]}
         width={800}
@@ -555,12 +754,12 @@ const ReviewManagement = () => {
                   </div>
                   <div>
                     <Text strong>Ngày đánh giá: </Text>
-                    <Text>{formatDate(detailModal.review.created_at)}</Text>
+                    <Text>{formatDateTime(detailModal.review.created_at)}</Text>
                   </div>
                   {detailModal.review.updated_at && detailModal.review.updated_at !== detailModal.review.created_at && (
                     <div>
                       <Text strong>Cập nhật lúc: </Text>
-                      <Text>{formatDate(detailModal.review.updated_at)}</Text>
+                      <Text>{formatDateTime(detailModal.review.updated_at)}</Text>
                     </div>
                   )}
                 </Space>
@@ -603,8 +802,213 @@ const ReviewManagement = () => {
                 </div>
               </>
             )}
+
+            {/* Phản hồi của admin (nếu có) */}
+            {(detailModal.review.reply || detailModal.review.admin_reply) && (
+              <>
+                <Divider />
+                <div style={{ 
+                  background: '#f0f2f5', 
+                  padding: '16px', 
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #1890ff'
+                }}>
+                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title level={5} style={{ margin: 0 }}>
+                        <MessageOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                        Phản hồi từ quản trị viên
+                      </Title>
+                      {detailModal.review.reply_at && (
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {formatDateTime(detailModal.review.reply_at)}
+                        </Text>
+                      )}
+                    </div>
+                    <Text style={{ fontSize: '14px', lineHeight: '1.8', color: '#333' }}>
+                      {detailModal.review.reply || detailModal.review.admin_reply}
+                    </Text>
+                  </Space>
+                </div>
+              </>
+            )}
           </div>
         )}
+      </Modal>
+
+      {/* Modal Phản hồi */}
+      <Modal
+        title={
+          <Space>
+            <SendOutlined />
+            <span>{replyModal.reviewId && (detailModal.review?.reply || detailModal.review?.admin_reply) ? 'Sửa phản hồi' : 'Phản hồi đánh giá'}</span>
+          </Space>
+        }
+        open={replyModal.visible}
+        onCancel={() => {
+          setReplyModal({ visible: false, reviewId: null, loading: false })
+          setReplyText('')
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setReplyModal({ visible: false, reviewId: null, loading: false })
+              setReplyText('')
+            }}
+          >
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            icon={<SendOutlined />}
+            loading={replyModal.loading}
+            onClick={handleSubmitReply}
+            disabled={!replyText.trim()}
+          >
+            Gửi phản hồi
+          </Button>
+        ]}
+        width={600}
+        centered
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Nội dung phản hồi <Text type="danger">*</Text>
+            </Text>
+            <TextArea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Nhập nội dung phản hồi cho khách hàng..."
+              rows={6}
+              maxLength={1000}
+              showCount
+            />
+          </div>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            Phản hồi của bạn sẽ được hiển thị công khai dưới đánh giá này.
+          </Text>
+        </Space>
+      </Modal>
+
+      {/* Modal Chỉnh sửa Review */}
+      <Modal
+        title={
+          <Space>
+            <EditOutlined />
+            <span>Chỉnh sửa đánh giá</span>
+          </Space>
+        }
+        open={editModal.visible}
+        onCancel={() => {
+          setEditModal({ visible: false, review: null, loading: false })
+          setEditForm({ rating: 5, comment: '', images: [] })
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setEditModal({ visible: false, review: null, loading: false })
+              setEditForm({ rating: 5, comment: '', images: [] })
+            }}
+          >
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={editModal.loading}
+            onClick={handleUpdateReview}
+            disabled={!editForm.rating || editForm.rating < 1}
+          >
+            Cập nhật
+          </Button>
+        ]}
+        width={600}
+        centered
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Đánh giá <Text type="danger">*</Text>
+            </Text>
+            <Rate
+              value={editForm.rating}
+              onChange={(value) => setEditForm(prev => ({ ...prev, rating: value }))}
+              style={{ fontSize: '24px' }}
+            />
+            <Text type="secondary" style={{ display: 'block', marginTop: '4px', fontSize: '12px' }}>
+              {editForm.rating === 1 && 'Rất không hài lòng'}
+              {editForm.rating === 2 && 'Không hài lòng'}
+              {editForm.rating === 3 && 'Bình thường'}
+              {editForm.rating === 4 && 'Hài lòng'}
+              {editForm.rating === 5 && 'Rất hài lòng'}
+            </Text>
+          </div>
+
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Nội dung đánh giá
+            </Text>
+            <TextArea
+              value={editForm.comment}
+              onChange={(e) => setEditForm(prev => ({ ...prev, comment: e.target.value }))}
+              placeholder="Nhập nội dung đánh giá..."
+              rows={6}
+              maxLength={1000}
+              showCount
+            />
+          </div>
+
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Hình ảnh đính kèm (tối đa 10 ảnh)
+            </Text>
+            <Upload
+              listType="picture-card"
+              fileList={editForm.images}
+              onChange={({ fileList }) => {
+                const validFiles = fileList.filter(file => {
+                  if (file.originFileObj) return true
+                  return file.url || file.thumbUrl
+                })
+                setEditForm(prev => ({
+                  ...prev,
+                  images: validFiles.slice(0, 10)
+                }))
+              }}
+              beforeUpload={(file) => {
+                const isImage = file.type.startsWith('image/')
+                if (!isImage) {
+                  message.error('Chỉ có thể upload file ảnh!')
+                  return false
+                }
+                const isLt5M = file.size / 1024 / 1024 < 5
+                if (!isLt5M) {
+                  message.error('Ảnh phải nhỏ hơn 5MB!')
+                  return false
+                }
+                return false
+              }}
+              onRemove={(file) => {
+                setEditForm(prev => ({
+                  ...prev,
+                  images: prev.images.filter(img => img.uid !== file.uid)
+                }))
+              }}
+              accept="image/*"
+            >
+              {editForm.images.length < 10 && (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+          </div>
+        </Space>
       </Modal>
     </div>
   )
