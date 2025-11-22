@@ -64,6 +64,18 @@ export async function exportRevenueReportPDF(startDate, endDate) {
 }
 
 /**
+ * Xuất báo cáo thuế Excel
+ * @param {string} startDate - Ngày bắt đầu (format: YYYY-MM-DD)
+ * @param {string} endDate - Ngày kết thúc (format: YYYY-MM-DD)
+ * @returns {Promise<Blob>} Excel file blob
+ */
+export async function exportTaxReport(startDate, endDate) {
+  const baseUrl = getBaseUrl()
+  const url = `${baseUrl}/reports/tax?start_date=${startDate}&end_date=${endDate}`
+  return downloadFileFromAPI(url)
+}
+
+/**
  * Xuất báo cáo công suất phòng Excel
  * @param {string} startDate - Ngày bắt đầu (format: YYYY-MM-DD)
  * @param {string} endDate - Ngày kết thúc (format: YYYY-MM-DD)

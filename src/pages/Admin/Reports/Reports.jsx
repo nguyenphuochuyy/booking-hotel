@@ -1,22 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statistic, Select } from 'antd'
-import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined } from '@ant-design/icons'
+import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons'
 import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import httpClient from '../../../services/httpClient'
 import { getAllRoomTypes } from '../../../services/admin.service'
-import { exportRevenueReportExcel, exportRevenueReportPDF, downloadBlob, getMonthlyRevenue, getDailyRevenue } from '../../../services/report.service'
+import { exportRevenueReportExcel, exportRevenueReportPDF, exportTaxReport, downloadBlob, getMonthlyRevenue, getDailyRevenue } from '../../../services/report.service'
 import dayjs from 'dayjs'
 const { RangePicker } = DatePicker
 const { Text } = Typography
 const { Option } = Select
 
 function Reports() {
-  const [loading, setLoading] = useState(false)
+  const [excelLoading, setExcelLoading] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [taxLoading, setTaxLoading] = useState(false)
 
   // Hàm xuất báo cáo Excel
   const handleExportExcel = async () => {
     try {
-      setLoading(true)
+      setExcelLoading(true)
 
       if (!range || range.length !== 2) {
         message.warning('Vui lòng chọn khoảng thời gian để xuất báo cáo Excel')
@@ -34,14 +36,14 @@ function Reports() {
       console.error('Error exporting Excel:', error)
       message.error(error.message || 'Có lỗi xảy ra khi xuất báo cáo Excel')
     } finally {
-      setLoading(false)
+      setExcelLoading(false)
     }
   }
 
   // Hàm xuất báo cáo PDF
   const handleExportPDF = async () => {
     try {
-      setLoading(true)
+      setPdfLoading(true)
 
       if (!range || range.length !== 2) {
         message.warning('Vui lòng chọn khoảng thời gian để xuất báo cáo PDF')
@@ -59,7 +61,33 @@ function Reports() {
       console.error('Error exporting PDF:', error)
       message.error(error.message || 'Có lỗi xảy ra khi xuất báo cáo PDF')
     } finally {
-      setLoading(false)
+      setPdfLoading(false)
+    }
+  }
+
+  // Hàm xuất báo cáo thuế
+  const handleExportTax = async () => {
+    try {
+      setTaxLoading(true)
+
+      if (!range || range.length !== 2) {
+        message.warning('Vui lòng chọn khoảng thời gian để xuất báo cáo thuế')
+        return
+      }
+
+      const [s, e] = range
+      const start_date = s.format('YYYY-MM-DD')
+      const end_date = e.format('YYYY-MM-DD')
+
+      const blob = await exportTaxReport(start_date, end_date)
+      downloadBlob(blob, `bao-cao-thue-${start_date}-${end_date}.xlsx`)
+      message.success('Đã xuất báo cáo thuế thành công!')
+    } catch (error) {
+      console.error('Error exporting tax report:', error)
+      const errorMessage = error?.message || error?.response?.data?.message || 'Có lỗi xảy ra khi xuất báo cáo thuế'
+      message.error(errorMessage)
+    } finally {
+      setTaxLoading(false)
     }
   }
 
@@ -366,7 +394,7 @@ function Reports() {
                 style={{ marginRight: 14 }}
                 type="primary"
                 icon={<FileExcelOutlined />}
-                loading={loading}
+                loading={excelLoading}
                 onClick={handleExportExcel}
               >
                 Xuất Excel
@@ -374,12 +402,21 @@ function Reports() {
               <Button
                 style={{ marginRight: 14 }}
                 icon={<FilePdfOutlined />}
-                loading={loading}
+                loading={pdfLoading}
                 onClick={handleExportPDF}
               >
                 Xuất PDF
               </Button>
-              <Button icon={<ReloadOutlined />} loading={calcLoading || loading} onClick={async () => {
+              <Button
+                style={{ marginRight: 14 }}
+                type="default"
+                icon={<FileTextOutlined />}
+                loading={taxLoading}
+                onClick={handleExportTax}
+              >
+                Xuất báo cáo thuế
+              </Button>
+              <Button icon={<ReloadOutlined />} loading={calcLoading} onClick={async () => {
                 // Reset tất cả filter
                 setRange(null)
                 setSelectedRoomTypeId(null)
@@ -390,12 +427,12 @@ function Reports() {
               <Space wrap>
                 <Space>
                   <Text strong>Khoảng thời gian:</Text>
-                  <RangePicker
-                    value={range}
-                    onChange={(v) => {
+                  <RangePicker 
+                    value={range} 
+                    onChange={(v) => { 
                       setRange(v && v.length === 2 ? v : null)
-                    }}
-                    allowClear
+                    }} 
+                    allowClear 
                     placeholder={['Từ ngày', 'Đến ngày']}
                   />
                 </Space>
