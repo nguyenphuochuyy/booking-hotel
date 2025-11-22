@@ -368,6 +368,10 @@ export const getBookingStatusStats = async () => {
 
 /**
  * Lấy danh sách khách sẽ check-in / check-out hôm nay
+ * 
+ * Logic:
+ * - Check-ins: Chỉ lấy booking có status='confirmed' và check_in_date = hôm nay
+ * - Check-outs: Chỉ lấy booking có status='checked_in' và check_out_date = hôm nay hoặc ngày mai
  */
 export const getTodayCheckSchedules = async () => {
   try {
@@ -375,31 +379,62 @@ export const getTodayCheckSchedules = async () => {
       params: { page: 1, limit: 1000 },
     })
 
-    const bookings = Array.isArray(response?.bookings) ? response.bookings : []
-    const today = new Date()
-    const todayDay = today.getDate()
-    const todayMonth = today.getMonth()
-    const todayYear = today.getFullYear()
+    const bookings = normalizeBookings(Array.isArray(response?.bookings) ? response.bookings : [])
+    
+    // Lấy ngày hôm nay theo timezone Việt Nam (YYYY-MM-DD)
+    const now = new Date()
+    const vietnamOffset = 7 * 60 // UTC+7 (phút)
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000)
+    const vietnamTime = new Date(utcTime + (vietnamOffset * 60000))
+    
+    const todayStr = vietnamTime.toISOString().split('T')[0] // YYYY-MM-DD
+    
+    // Ngày mai
+    const tomorrow = new Date(vietnamTime)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowStr = tomorrow.toISOString().split('T')[0] // YYYY-MM-DD
 
-    const isTodayOrTomorrow = (dateString) => {
+    // Helper: So sánh date string (YYYY-MM-DD) với hôm nay
+    const isToday = (dateString) => {
       if (!dateString) return false
+      // Nếu dateString đã là format YYYY-MM-DD, dùng trực tiếp
+      if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString === todayStr
+      }
+      // Nếu là Date object hoặc format khác, parse lại
       const date = new Date(dateString)
       if (isNaN(date.getTime())) return false
-      const diff =
-        new Date(date.getFullYear(), date.getMonth(), date.getDate()) -
-        new Date(todayYear, todayMonth, todayDay)
-      return diff >= 0 && diff <= 24 * 60 * 60 * 1000
+      const dateStr = date.toISOString().split('T')[0]
+      return dateStr === todayStr
     }
+
+    // Helper: So sánh date string với hôm nay hoặc ngày mai
+    const isTodayOrTomorrow = (dateString) => {
+      if (!dateString) return false
+      let dateStr = dateString
+      // Nếu chưa phải format YYYY-MM-DD, parse lại
+      if (typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        const date = new Date(dateString)
+        if (isNaN(date.getTime())) return false
+        dateStr = date.toISOString().split('T')[0]
+      }
+      return dateStr === todayStr || dateStr === tomorrowStr
+    }
+
+    // Filter check-ins: status='confirmed' và check_in_date = hôm nay
     const checkIns = bookings
       .filter((booking) => {
         if (!booking?.check_in_date) return false
-        const date = new Date(booking.check_in_date)
-        if (isNaN(date.getTime())) return false
-        const isTodayCheckIn =
-          date.getFullYear() === todayYear &&
-          date.getMonth() === todayMonth &&
-          date.getDate() === todayDay
-        return isTodayCheckIn && booking.booking_status === 'confirmed'
+        return (
+          booking.booking_status === 'confirmed' &&
+          isToday(booking.check_in_date)
+        )
+      })
+      .sort((a, b) => {
+        // Sắp xếp theo thời gian tạo (mới nhất trước)
+        const dateA = new Date(a.created_at || 0).getTime()
+        const dateB = new Date(b.created_at || 0).getTime()
+        return dateB - dateA
       })
       .map((booking) => ({
         booking_id: booking.booking_id,
@@ -410,12 +445,21 @@ export const getTodayCheckSchedules = async () => {
         booking_status: booking.booking_status,
       }))
 
+    // Filter check-outs: status='checked_in' và check_out_date = hôm nay hoặc ngày mai
     const checkOuts = bookings
-      .filter(
-        (booking) =>
-          isTodayOrTomorrow(booking.check_out_date) &&
-          booking.booking_status === 'checked_in'
-      )
+      .filter((booking) => {
+        if (!booking?.check_out_date) return false
+        return (
+          booking.booking_status === 'checked_in' &&
+          isTodayOrTomorrow(booking.check_out_date)
+        )
+      })
+      .sort((a, b) => {
+        // Sắp xếp theo thời gian tạo (mới nhất trước)
+        const dateA = new Date(a.created_at || 0).getTime()
+        const dateB = new Date(b.created_at || 0).getTime()
+        return dateB - dateA
+      })
       .map((booking) => ({
         booking_id: booking.booking_id,
         booking_code: booking.booking_code || `BK-${booking.booking_id}`,

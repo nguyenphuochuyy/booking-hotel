@@ -52,4 +52,19 @@ export const createReview = async (reviewData) => {
     throw error
   }
 }
-
+/**
+ * User cập nhật review của mình
+ * @param {number|string} reviewId - Review ID
+ * @param {FormData} formData - FormData chứa rating, comment, images (files)
+ * @returns {Promise}
+ */
+export const updateReview = async (reviewId, formData) => {
+  try {
+    // Không set Content-Type header, httpClient sẽ tự động xử lý FormData và thêm boundary
+    const response = await httpClient.put(`/reviews/${reviewId}`, formData)
+    return response?.data || response
+  } catch (error) {
+    console.error('Error updating review:', error)
+    throw error
+  }
+}

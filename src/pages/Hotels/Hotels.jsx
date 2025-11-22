@@ -22,7 +22,9 @@ import {
   Image,
   Rate,
   Avatar,
-  Pagination
+  Pagination,
+  Upload,
+  Form
 } from 'antd'
 import {
   HomeOutlined,
@@ -37,20 +39,23 @@ import {
   EyeOutlined,
   CheckCircleOutlined,
   MessageOutlined,
-  ExclamationCircleOutlined // Import thêm icon này
+  ExclamationCircleOutlined,
+  EditOutlined,
+  PlusOutlined
 } from '@ant-design/icons'
 import { useRoomTypes } from '../../hooks/roomtype'
 import { useNavigate, useLocation } from 'react-router-dom'
 import formatPrice from '../../utils/formatPrice'
 import BookingWidget from '../../components/BookingWidget'
 import { searchAvailableRooms } from '../../services/booking.service'
-import { getReviewsByRoomType } from '../../services/review.service'
+import { getReviewsByRoomType, updateReview } from '../../services/review.service'
 import { getRoomTypeById } from '../../services/roomtype.service'
 import { message } from 'antd'
+import { useAuth } from '../../context/AuthContext'
 const { Title, Text } = Typography
 const { Option } = Select
 const { Search } = Input
-
+const { TextArea } = Input
 // ... (Giữ nguyên các hàm helper formatDate, getFirstTwoSentences)
 const formatDate = (dateString) => {
   if (!dateString) return ''
@@ -72,6 +77,7 @@ const getFirstTwoSentences = (text) => {
 function Hotels() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
   const { roomTypes, loading: roomTypesLoading, error, search, setSearch, category, setCategory } = useRoomTypes({
     limit: 1000
   })
@@ -141,6 +147,18 @@ function Hotels() {
     current: 1,
     pageSize: 5,
     total: 0
+  })
+
+  // State cho edit review modal
+  const [editReviewModal, setEditReviewModal] = useState({
+    visible: false,
+    review: null,
+    loading: false
+  })
+  const [editReviewForm, setEditReviewForm] = useState({
+    rating: 5,
+    comment: '',
+    images: []
   })
 
   const numNights = useMemo(() => {
@@ -407,6 +425,82 @@ function Hotels() {
     } catch (error) { console.error('Error loading reviews:', error); setReviews([]); } finally { setReviewsLoading(false) }
   }
   const handleCloseModal = () => { setIsModalVisible(false); setRoomInModal(null); setReviews([]); setReviewsPagination({ current: 1, pageSize: 5, total: 0 }); }
+
+  // Hàm mở modal edit review
+  const handleEditReview = (reviewId) => {
+    const review = reviews.find(r => r.review_id === reviewId)
+    if (!review) return
+    
+    // Convert images URLs to Upload file format
+    const imageFiles = (review.images || []).map((img, index) => ({
+      uid: `existing-${index}`,
+      name: `image-${index}.jpg`,
+      status: 'done',
+      url: img,
+      thumbUrl: img
+    }))
+    
+    setEditReviewForm({
+      rating: review.rating || 5,
+      comment: review.comment || '',
+      images: imageFiles
+    })
+    setEditReviewModal({
+      visible: true,
+      review: review,
+      loading: false
+    })
+  }
+
+  // Hàm cập nhật review
+  const handleUpdateReview = async () => {
+    if (!editReviewModal.review) return
+    
+    if (!editReviewForm.rating || editReviewForm.rating < 1) {
+      message.warning('Vui lòng chọn số sao đánh giá')
+      return
+    }
+    
+    setEditReviewModal(prev => ({ ...prev, loading: true }))
+    try {
+      // Lấy các file mới từ fileList (chỉ file có originFileObj)
+      const newImageFiles = editReviewForm.images
+        .filter(file => file.originFileObj)
+        .map(file => file.originFileObj)
+      
+      // Tạo FormData để gửi
+      const formData = new FormData()
+      formData.append('rating', editReviewForm.rating)
+      formData.append('comment', editReviewForm.comment.trim() || '')
+      
+      // Append new image files (nếu có)
+      // Lưu ý: Backend sẽ xóa tất cả ảnh cũ và thay bằng ảnh mới nếu có req.files
+      // Nếu không có ảnh mới, backend sẽ giữ nguyên ảnh cũ
+      newImageFiles.forEach((file) => {
+        formData.append('images', file)
+      })
+      
+      await updateReview(editReviewModal.review.review_id, formData)
+      
+      message.success('Cập nhật đánh giá thành công!')
+      
+      // Đóng modal và reset form
+      setEditReviewModal({ visible: false, review: null, loading: false })
+      setEditReviewForm({ rating: 5, comment: '', images: [] })
+      
+      // Reload reviews
+      const roomTypeId = roomInModal?.room_type_id || roomInModal?.room_type?.room_type_id
+      if (roomTypeId) {
+        await loadReviews(roomTypeId, reviewsPagination.current)
+      }
+    } catch (error) {
+      console.error('Error updating review:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Không thể cập nhật đánh giá. Vui lòng thử lại.'
+      message.error(errorMessage)
+    } finally {
+      setEditReviewModal(prev => ({ ...prev, loading: false }))
+    }
+  }
   const handleSelectFromModal = () => {
     if (!roomInModal) return
     const normalized = normalizeRoomData(roomInModal)
@@ -760,9 +854,28 @@ function Hotels() {
                             <Empty description="Chưa có đánh giá nào" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                           ) : (
                             <div className="reviews-list-container">
+                              
                               <Space direction="vertical" size="large" style={{ width: '100%' }}>
                                 {reviews.map((review) => (
-                                  <div key={review.review_id} className="review-item" style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px' }}>
+                                  <div key={review.review_id} className="review-item" style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '16px', position: 'relative' }}>
+                                    {/* Nút Edit - chỉ hiển thị nếu user là chủ sở hữu */}
+                                    {user && user.user_id === review.user?.user_id && (
+                                      <Button
+                                        type="text"
+                                        icon={<EditOutlined />}
+                                        onClick={() => handleEditReview(review.review_id)}
+                                        style={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          right: 0,
+                                          zIndex: 1
+                                        }}
+                                        size="small"
+                                      >
+                                      
+                                      </Button>
+                                    )}
+                                    
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                       {/* Avatar User */}
                                       <Avatar
@@ -773,8 +886,9 @@ function Hotels() {
                                       </Avatar>
 
                                       <div style={{ flex: 1 }}>
+                                     
                                         {/* Tên + Rate + Ngày */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginRight: user && user.user_id === review.user?.user_id ? '60px' : '0' }}>
                                           <div>
                                             <Text strong style={{ fontSize: '14px', display: 'block' }}>
                                               {review.user?.full_name || 'Khách hàng ẩn danh'}
@@ -933,6 +1047,125 @@ function Hotels() {
 
       <Modal open={isLoginModalVisible} onCancel={() => setIsLoginModalVisible(false)} footer={[<Button key="cancel" onClick={() => setIsLoginModalVisible(false)}>Đóng</Button>, <Button key="login" type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>]} title="Yêu cầu đăng nhập" centered>
         <Text>Vui lòng đăng nhập để tiếp tục đặt phòng.</Text>
+      </Modal>
+
+      {/* Modal Edit Review */}
+      <Modal
+        open={editReviewModal.visible}
+        title="Sửa đánh giá"
+        onCancel={() => {
+          setEditReviewModal({ visible: false, review: null, loading: false })
+          setEditReviewForm({ rating: 5, comment: '', images: [] })
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setEditReviewModal({ visible: false, review: null, loading: false })
+              setEditReviewForm({ rating: 5, comment: '', images: [] })
+            }}
+          >
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={editReviewModal.loading}
+            onClick={handleUpdateReview}
+            disabled={!editReviewForm.rating || editReviewForm.rating < 1}
+          >
+            Cập nhật
+          </Button>
+        ]}
+        width={600}
+        centered
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Đánh giá của bạn <Text type="danger">*</Text>
+            </Text>
+            <Rate
+              value={editReviewForm.rating}
+              onChange={(value) => setEditReviewForm(prev => ({ ...prev, rating: value }))}
+              style={{ fontSize: '24px' }}
+            />
+            <Text type="secondary" style={{ display: 'block', marginTop: '4px', fontSize: '12px' }}>
+              {editReviewForm.rating === 1 && 'Rất không hài lòng'}
+              {editReviewForm.rating === 2 && 'Không hài lòng'}
+              {editReviewForm.rating === 3 && 'Bình thường'}
+              {editReviewForm.rating === 4 && 'Hài lòng'}
+              {editReviewForm.rating === 5 && 'Rất hài lòng'}
+            </Text>
+          </div>
+
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Nội dung đánh giá
+            </Text>
+            <TextArea
+              value={editReviewForm.comment}
+              onChange={(e) => setEditReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+              placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ và phòng ở..."
+              rows={6}
+              maxLength={1000}
+              showCount
+            />
+          </div>
+
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Hình ảnh đính kèm (tối đa 5 ảnh)
+            </Text>
+            <Upload
+              listType="picture-card"
+              fileList={editReviewForm.images}
+              onChange={({ fileList }) => {
+                const validFiles = fileList.filter(file => {
+                  // Chỉ lấy file mới upload (có originFileObj)
+                  if (file.originFileObj) {
+                    return true
+                  }
+                  // Giữ lại file đã có (từ URL)
+                  return file.url || file.thumbUrl
+                })
+                setEditReviewForm(prev => ({
+                  ...prev,
+                  images: validFiles.slice(0, 5) // Giới hạn 5 ảnh
+                }))
+              }}
+              beforeUpload={(file) => {
+                // Validate file type
+                const isImage = file.type.startsWith('image/')
+                if (!isImage) {
+                  message.error('Chỉ có thể upload file ảnh!')
+                  return false
+                }
+                // Validate file size (max 5MB)
+                const isLt5M = file.size / 1024 / 1024 < 5
+                if (!isLt5M) {
+                  message.error('Ảnh phải nhỏ hơn 5MB!')
+                  return false
+                }
+                return false // Prevent auto upload
+              }}
+              onRemove={(file) => {
+                setEditReviewForm(prev => ({
+                  ...prev,
+                  images: prev.images.filter(img => img.uid !== file.uid)
+                }))
+              }}
+              accept="image/*"
+            >
+              {editReviewForm.images.length < 5 && (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+          </div>
+        </Space>
       </Modal>
 
       {selectedRoom && (
