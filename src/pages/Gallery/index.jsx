@@ -1,57 +1,96 @@
-import React from 'react'
-import { Card, Row, Col, Image, Typography, Space } from 'antd'
+import React, { useState } from 'react'
+import { Image, Typography, Tabs, Empty } from 'antd'
+import { AppstoreOutlined, HomeOutlined, CoffeeOutlined, StarOutlined } from '@ant-design/icons'
 import './gallery.css'
 
-// Import một số ảnh có sẵn trong assets
+// Import ảnh (Giữ nguyên import của bạn)
 import banner1 from '../../assets/images/banner1.jpg'
 import banner2 from '../../assets/images/banner2.jpg'
 import banner3 from '../../assets/images/banner3.jpg'
 import banner4 from '../../assets/images/banner4.jpg'
 import mainBanner from '../../assets/images/main-banner.png'
 import luxyryRoom from '../../assets/images/luxyryRoom.jpg'
-import about1 from '../../assets/images/about1.webp'
-import logo from '../../assets/images/logo.webp'
+// import about1 from '../../assets/images/about1.webp'
 
-const { Title, Text } = Typography
+const { Title, Paragraph } = Typography
 
-const images = [
-  { src: mainBanner, title: 'Sảnh chính' },
-  { src: banner1, title: 'Không gian khách sạn' },
-  { src: banner2, title: 'Lối vào' },
-  { src: banner3, title: 'Khu vực thư giãn' },
-  { src: banner4, title: 'Quầy lễ tân' },
-  { src: luxyryRoom, title: 'Phòng hạng sang' },
-  
+// Thêm category cho ảnh để làm bộ lọc
+const allImages = [
+  { src: mainBanner, title: 'Đại sảnh sang trọng', category: 'lobby' },
+  { src: luxyryRoom, title: 'Phòng Suite Hạng Sang', category: 'room' },
+  { src: banner1, title: 'Không gian thư giãn', category: 'relax' },
+  { src: banner2, title: 'Lối vào chính', category: 'exterior' },
+  { src: banner3, title: 'Khu vực chờ', category: 'lobby' },
+  { src: banner4, title: 'Quầy lễ tân 24/7', category: 'lobby' },
+  // Bạn có thể thêm ảnh duplicate để test giao diện Masonry
+  { src: banner1, title: 'Góc nhìn từ ban công', category: 'exterior' }, 
 ]
 
 function GalleryPage() {
+  const [activeCategory, setActiveCategory] = useState('all')
+
+  // Lọc ảnh theo danh mục
+  const filteredImages = activeCategory === 'all' 
+    ? allImages 
+    : allImages.filter(img => img.category === activeCategory)
+
+  // Danh sách Tabs
+  const items = [
+    { key: 'all', label: <span><AppstoreOutlined /> Tất cả</span> },
+    { key: 'lobby', label: <span><StarOutlined /> Sảnh & Tiện ích</span> },
+    { key: 'room', label: <span><HomeOutlined /> Phòng nghỉ</span> },
+    { key: 'exterior', label: <span><CoffeeOutlined /> Ngoại cảnh</span> },
+  ]
+
   return (
     <div className="gallery-page">
       <div className="container">
+        {/* Header */}
         <div className="gallery-header">
-          <Title level={2} className="gallery-title">Bộ sưu tập hình ảnh</Title>
-          <Text type="secondary">Khám phá không gian và tiện nghi tại khách sạn của chúng tôi</Text>
+          <Title level={1} className="gallery-title">Thư Viện Ảnh</Title>
+          <Paragraph className="gallery-desc">
+            Chiêm ngưỡng vẻ đẹp kiến trúc và không gian nghỉ dưỡng đẳng cấp tại Bean Hotel qua từng khung hình.
+          </Paragraph>
         </div>
 
-        <Card className="gallery-card" bodyStyle={{ padding: 16 }}>
+        {/* Tabs Filter - Điểm nhấn UX */}
+        <div className="gallery-filter">
+          <Tabs 
+            defaultActiveKey="all" 
+            centered 
+            items={items} 
+            onChange={setActiveCategory}
+            className="custom-tabs"
+          />
+        </div>
+
+        {/* Gallery Grid - Masonry Style */}
+        {filteredImages.length > 0 ? (
           <Image.PreviewGroup>
-            <Row gutter={[16, 16]}>
-              {images.map((img, idx) => (
-                <Col xs={12} sm={8} md={6} lg={6} key={idx}>
-                  <div className="gallery-item">
-                    <Image src={img.src} alt={img.title} className="gallery-image" />
-                  
+            <div className="masonry-grid">
+              {filteredImages.map((img, idx) => (
+                <div className="masonry-item" key={idx}>
+                  <div className="image-wrapper">
+                    <Image 
+                      src={img.src} 
+                      alt={img.title} 
+                      className="masonry-image"
+                      preview={{ mask: 'Xem phóng to' }} // Text khi hover vào để xem
+                    />
+                    <div className="image-overlay">
+                      <span className="overlay-text">{img.title}</span>
+                    </div>
                   </div>
-                </Col>
+                </div>
               ))}
-            </Row>
+            </div>
           </Image.PreviewGroup>
-        </Card>
+        ) : (
+          <Empty description="Chưa có hình ảnh cho mục này" style={{ padding: 50 }} />
+        )}
       </div>
     </div>
   )
 }
 
 export default GalleryPage
-
-
