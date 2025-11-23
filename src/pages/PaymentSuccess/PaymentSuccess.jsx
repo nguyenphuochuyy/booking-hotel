@@ -928,9 +928,11 @@ const PaymentSuccess = () => {
     // Không cần gọi API fetch lại
     if (initialBooking) {
        cleanupPendingBooking()
+       setBooking(initialBooking)
        return
+       
     }
-
+     
     fetchBookingData()    
   }, [orderCode, code, status])
 
@@ -950,7 +952,6 @@ const PaymentSuccess = () => {
         localStorage.removeItem('temp_booking_info')
     }
   }
-
   const fetchBookingData = async () => {
     try {
       setLoading(true)
@@ -973,7 +974,7 @@ const PaymentSuccess = () => {
           
           for (const b of bookings) {
             try {
-              const bookingDetail = await getBookingById(b.booking_id)
+              const bookingDetail = await getBookingById(b.booking_id)     
               const payments = bookingDetail?.booking?.payments || []
               const payment = payments.find(p => 
                 p.transaction_id === orderCode || 

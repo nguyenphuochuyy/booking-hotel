@@ -1234,7 +1234,6 @@ const Payment = () => {
         try {
           const response = await findBookingByCode(bookingCode)
           const booking = response?.booking || response?.data?.booking
-          
           if (booking) {
             const normalizedBooking = attachRoomTypeData(booking)
             setPaymentStatus('success')
@@ -1245,7 +1244,7 @@ const Payment = () => {
             } else {
               clearPendingPayment()
             }
-
+     
             const successUrl = `/payment/success?code=00&id=${encodeURIComponent(orderCode || bookingCode || tempBookingKey || '' || normalizedBooking?.booking_code || '')}&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
             navigate(successUrl, { 
               replace: true,
@@ -1274,11 +1273,27 @@ const Payment = () => {
         } else {
           clearPendingPayment()
         }
-         message.success('Thanh toán thành công!')
+        const tempSuccessData = {
+          booking_code: bookingCode || 'PROCESSING',
+          room_type: bookingInfo?.roomType || {},
+          check_in_date: bookingInfo?.checkIn,
+          check_out_date: bookingInfo?.checkOut,
+          num_rooms: bookingInfo?.numRooms,
+          num_person: (bookingInfo?.guests?.adults || 0) + (bookingInfo?.guests?.children || 0),
+          final_price: totalWithServices, // Biến đã tính ở trên
+          total_price: totalWithServices,
+          customer_name: bookingInfo?.customerInfo?.fullName,
+          customer_email: bookingInfo?.customerInfo?.email,
+          booking_services: selectedServices.map(s => ({
+              service: { name: s.name },
+              quantity: s.quantity,
+              total_price: s.price * s.quantity
+          }))
+      }
          // Lưu ý: Ở đây không có object `booking` đầy đủ, trang success sẽ phải tự fetch
          setTimeout(() => {
             const successUrl = `/payment/success?code=00&cancel=false&status=PAID&orderCode=${encodeURIComponent(orderCode || '')}`
-            navigate(successUrl, { replace: true })
+            navigate(successUrl, { replace: true, state: { booking: tempSuccessData } })
          }, 500)
 
       } else {
