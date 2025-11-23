@@ -20,7 +20,8 @@ import {
   CalendarOutlined, 
   UserOutlined,
   TagOutlined,
-  HomeOutlined
+  HomeOutlined,
+  ArrowRightOutlined
 } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePosts, useCategories } from '../../hooks/posts'
@@ -39,7 +40,7 @@ function News() {
   // Get initial params from URL
   const initialSearch = searchParams.get('search') || ''
   const initialCategory = searchParams.get('category') || 'all'
-  
+
   const { posts, loading, error, pagination, search, category, searchPosts, filterByCategory, goToPage } = usePosts({
     search: initialSearch,
     category: initialCategory,
@@ -121,37 +122,22 @@ function News() {
       navigate(`/news/${post.post_id}`)
     }
   }
-
+  const featuredPost = posts[0];
   return (
     <div className="news-page">
       <div className="news-container">
         {/* Breadcrumb */}
-        <Breadcrumb 
-          className="news-breadcrumb"
-          items={[
-            {
-              href: '/',
-              title: (
-                <>
-                  <HomeOutlined />
-                  <span>Trang chủ</span>
-                </>
-              ),
-            },
-            {
-              title: 'Tin tức',
-            },
-          ]}
-        />
+        <Breadcrumb className="breadcrumb-custom">
+          <Breadcrumb.Item href="/"><HomeOutlined /> Trang chủ</Breadcrumb.Item>
+          <Breadcrumb.Item>Tin tức</Breadcrumb.Item>
+        </Breadcrumb>
 
         {/* Header */}
-        <div className="news-header">
-          <Title level={1} className="news-main-title">
-            TIN TỨC & SỰ KIỆN
-          </Title>
-          <Text className="news-subtitle">
+        <div className="page-header">
+          <h1 className="page-title">Tin tức & Sự kiện</h1>
+          <Paragraph className="page-description">
             Cập nhật những thông tin mới nhất về khách sạn, du lịch và các sự kiện đặc biệt
-          </Text>
+          </Paragraph>
         </div>
 
         {/* Filters */}
@@ -248,6 +234,32 @@ function News() {
         {/* News Grid */}
         {!loading && !error && posts.length > 0 && (
           <>
+          <div className="featured-post-wrapper" onClick={() => handleCardClick(featuredPost)}>
+        <Row gutter={[0, 0]} className="featured-card">
+          <Col xs={24} md={14}>
+            <div className="featured-image-container">
+               <img 
+                 src={featuredPost.cover_image_url || featuredPost.image} 
+                 alt={featuredPost.title} 
+               />
+               <Tag color="#E6A73F" className="featured-tag">Mới nhất</Tag>
+            </div>
+          </Col>
+          <Col xs={24} md={10}>
+            <div className="featured-content">
+              <div className="featured-meta">
+                <CalendarOutlined /> {formatDate(featuredPost.created_at)}
+              </div>
+              <Title level={2} className="featured-title">{featuredPost.title}</Title>
+              <Paragraph className="featured-desc" ellipsis={{ rows: 4 }}>
+                 {/* Chỉ lấy text thuần, không render HTML để tránh lỗi */}
+                 {getExcerpt(featuredPost.content, 250)}
+              </Paragraph>
+              <Button type="link" className="featured-btn">Đọc tiếp <ArrowRightOutlined /></Button>
+            </div>
+          </Col>
+        </Row>
+      </div>
             <Row 
               gutter={screens.xs ? [16, 24] : screens.md ? [24, 32] : [32, 40]}
               className="news-grid"

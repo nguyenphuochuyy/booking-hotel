@@ -1212,7 +1212,8 @@ const BookingManagement = () => {
               {selectedBooking.check_in_time && (
                 <div className="detail-item">
                   <Text strong>Thời gian check-in: </Text>
-                  <Text>{new Date(selectedBooking.check_in_time).toLocaleString('vi-VN')}</Text>
+                  <Text>{formatDateTime(selectedBooking.check_in_time)}</Text>
+                 
                 </div>
               )}
               {selectedBooking.check_out_time && (

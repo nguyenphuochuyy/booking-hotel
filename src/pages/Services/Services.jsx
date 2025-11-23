@@ -1,72 +1,78 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Typography, Breadcrumb, Space, Spin, message } from 'antd'
-import { HomeOutlined, CalendarOutlined, HeartOutlined, CoffeeOutlined, CarOutlined, WifiOutlined, SafetyOutlined, ShopOutlined } from '@ant-design/icons'
-import { Link, useNavigate } from 'react-router-dom'
+import { Row, Col, Card, Typography, Breadcrumb, Spin, message, Tag, Modal, Button, Empty } from 'antd'
+import {
+  HomeOutlined, CalendarOutlined, HeartOutlined, CoffeeOutlined,
+  CarOutlined, WifiOutlined, SafetyOutlined, ShopOutlined,
+  InfoCircleOutlined, PhoneOutlined,
+  KeyOutlined
+} from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import './Services.css'
 import { serviceService } from '../../services/service.service'
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph, Text } = Typography
 
-// Mapping icon và color dựa trên tên service
+// --- CÁC HÀM HELPER (Giúp code gọn gàng hơn) ---
+
+// 1. Chọn icon dựa trên tên dịch vụ
 const getServiceIcon = (serviceName) => {
-  const name = serviceName.toLowerCase()
-  if (name.includes('hội nghị') || name.includes('sự kiện') || name.includes('hội thảo')) {
-    return <CalendarOutlined />
-  }
-  if (name.includes('cưới') || name.includes('tiệc')) {
-    return <HeartOutlined />
-  }
-  if (name.includes('sức khỏe') || name.includes('làm đẹp') || name.includes('spa')) {
-    return <HeartOutlined />
-  }
-  if (name.includes('nhà hàng') || name.includes('ẩm thực') || name.includes('ăn uống')) {
-    return <CoffeeOutlined />
-  }
-  if (name.includes('sân bay') || name.includes('đưa đón') || name.includes('xe')) {
-    return <CarOutlined />
-  }
-  if (name.includes('phòng') || name.includes('room service')) {
-    return <WifiOutlined />
-  }
-  if (name.includes('bảo vệ') || name.includes('an ninh') || name.includes('security')) {
-    return <SafetyOutlined />
-  }
-  if (name.includes('giặt') || name.includes('ủi') || name.includes('vệ sinh')) {
-    return <ShopOutlined />
-  }
+  const name = serviceName?.toLowerCase() || ''
+  if (name.includes('hội nghị') || name.includes('sự kiện')) return <CalendarOutlined />
+  if (name.includes('cưới') || name.includes('tiệc') || name.includes('spa')) return <HeartOutlined />
+  if (name.includes('nhà hàng') || name.includes('ẩm thực') || name.includes('ăn')) return <CoffeeOutlined />
+  if (name.includes('xe') || name.includes('đưa đón') || name.includes('taxi')) return <CarOutlined />
+  if (name.includes('phòng') || name.includes('wifi')) return <WifiOutlined />
+  if (name.includes('an ninh') || name.includes('bảo vệ')) return <SafetyOutlined />
   return <ShopOutlined />
 }
 
+// 2. Chọn màu sắc tag dựa trên tên dịch vụ
 const getServiceColor = (serviceName) => {
-  const name = serviceName.toLowerCase()
-  if (name.includes('hội nghị') || name.includes('sự kiện')) return '#1890ff'
-  if (name.includes('cưới') || name.includes('tiệc')) return '#ff4d4f'
-  if (name.includes('sức khỏe') || name.includes('làm đẹp')) return '#ff85c0'
-  if (name.includes('nhà hàng') || name.includes('ẩm thực')) return '#faad14'
-  if (name.includes('sân bay') || name.includes('đưa đón')) return '#52c41a'
-  if (name.includes('phòng')) return '#722ed1'
-  if (name.includes('bảo vệ') || name.includes('an ninh')) return '#2f54eb'
-  if (name.includes('giặt') || name.includes('ủi')) return '#13c2c2'
-  return '#1890ff'
+  const name = serviceName?.toLowerCase() || ''
+  if (name.includes('hội nghị') || name.includes('sự kiện')) return 'blue'
+  if (name.includes('cưới') || name.includes('tiệc')) return 'magenta'
+  if (name.includes('sức khỏe') || name.includes('spa')) return 'pink'
+  if (name.includes('nhà hàng') || name.includes('ẩm thực')) return 'orange'
+  if (name.includes('xe')) return 'green'
+  if (name.includes('phòng')) return 'purple'
+  return 'cyan'
 }
 
-// Tạo slug từ name
-const createSlug = (name) => {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+// 3. Format tiền Việt Nam (VND)
+const formatPrice = (price) => {
+  if (price === 0) return 'Miễn phí'
+  if (!price) return 'Liên hệ'
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+}
+
+// 4. Dịch payment_type sang tiếng Việt
+const translatePaymentType = (paymentType) => {
+  if (!paymentType) return null
+  const type = paymentType.toUpperCase()
+  if (type === 'POSTPAID' || type === 'TRẢ SAU') return 'Trả sau'
+  if (type === 'PREPAID' || type === 'TRẢ TRƯỚC') return 'Trả trước'
+  return paymentType
+}
+
+// 5. Dịch service_type sang tiếng Việt (nếu là POSTPAID/PREPAID)
+const translateServiceType = (serviceType) => {
+  if (!serviceType) return 'Tiện ích khác'
+  const type = serviceType.toUpperCase()
+  // Kiểm tra nếu service_type là POSTPAID hoặc PREPAID
+  if (type === 'POSTPAID' || type === 'TRẢ SAU') return 'Trả sau'
+  if (type === 'PREPAID' || type === 'TRẢ TRƯỚC') return 'Trả trước'
+  // Nếu không phải POSTPAID/PREPAID, trả về giá trị gốc
+  return serviceType
 }
 
 function Services() {
   const navigate = useNavigate()
-  const [hoveredCard, setHoveredCard] = useState(null)
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
+
+  // State quản lý Modal
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedService, setSelectedService] = useState(null)
 
   useEffect(() => {
     fetchServices()
@@ -75,57 +81,70 @@ function Services() {
   const fetchServices = async () => {
     try {
       setLoading(true)
-      const response = await serviceService.getServices({ limit: 100 }) // Lấy tất cả services
+      // Lấy danh sách services (giả sử API hỗ trợ pagination, lấy limit lớn để hiện hết)
+      const response = await serviceService.getServices({ limit: 100 })
+
       if (response && response.services) {
-        // Map dữ liệu từ API sang format cần thiết
         const mappedServices = response.services
-          .filter(service => service.is_available) // Chỉ hiển thị service available
+          .filter(service => service.is_available) // Chỉ lấy dịch vụ đang hoạt động
           .map(service => {
-            // Lấy ảnh đầu tiên từ images (có thể là JSON array hoặc string)
+            // Xử lý ảnh: API có thể trả về string JSON, array hoặc string thường
             let imageUrl = ''
             if (service.images) {
               if (typeof service.images === 'string') {
                 try {
+                  // Thử parse JSON nếu là string dạng mảng '["url1", "url2"]'
                   const parsed = JSON.parse(service.images)
                   imageUrl = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : service.images
                 } catch {
+                  // Nếu lỗi parse, dùng luôn string đó
                   imageUrl = service.images
                 }
               } else if (Array.isArray(service.images) && service.images.length > 0) {
                 imageUrl = service.images[0]
               }
             }
-            
-            // Fallback image nếu không có
-            if (!imageUrl) {
-              imageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'
-            }
+            // Ảnh mặc định nếu không có ảnh
+            if (!imageUrl) imageUrl = 'https://via.placeholder.com/400x300?text=Bean+Hotel+Service'
 
             return {
               id: service.service_id,
               title: service.name,
-              slug: createSlug(service.name),
-              description: service.description || 'Dịch vụ chất lượng cao từ Bean Hotel',
-              icon: getServiceIcon(service.name),
+              description: service.description || 'Dịch vụ cao cấp tại Bean Hotel.',
               image: imageUrl,
               color: getServiceColor(service.name),
+              icon: getServiceIcon(service.name),
               price: service.price,
-              service_type: service.service_type
+              service_type: service.service_type || 'Tiện ích khác',
+              payment_type: service.payment_type || null // Lưu payment_type để hiển thị trong modal
             }
           })
         setServices(mappedServices)
       }
     } catch (error) {
       console.error('Error fetching services:', error)
-      message.error('Không thể tải danh sách dịch vụ. Vui lòng thử lại sau.')
+      message.error('Không thể tải danh sách dịch vụ. Vui lòng thử lại.')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleServiceClick = (service) => {
-    // Chuyển trực tiếp sang trang chi tiết (không truyền service object có icon)
-    navigate(`/services/${service.slug}`)
+  // Mở Modal xem chi tiết
+  const showModal = (service) => {
+    setSelectedService(service)
+    setIsModalOpen(true)
+  }
+
+  // Đóng Modal
+  const handleCancel = () => {
+    setIsModalOpen(false)
+    setTimeout(() => setSelectedService(null), 300) // Reset data sau khi đóng animation
+  }
+
+  // Xử lý khi nhấn nút Liên hệ/Đặt ngay
+  const handleContact = () => {
+    setIsModalOpen(false)
+    navigate('/contact') // Chuyển hướng sang trang liên hệ
   }
 
   return (
@@ -133,107 +152,179 @@ function Services() {
       <div className="container">
         {/* Breadcrumb */}
         <Breadcrumb className="breadcrumb-custom">
-        <Breadcrumb.Item href="/">
-
-            <HomeOutlined />
-            <span>Trang chủ</span>
-        
-          </Breadcrumb.Item>
-          <Breadcrumb.Item
- 
-          >Dịch vụ</Breadcrumb.Item>
+          <Breadcrumb.Item href="/"><HomeOutlined /> Trang chủ</Breadcrumb.Item>
+          <Breadcrumb.Item>Dịch vụ</Breadcrumb.Item>
         </Breadcrumb>
 
-        {/* Page Header */}
+        {/* Header */}
         <div className="page-header">
-          <h1 className="page-title">Dịch vụ của chúng tôi</h1>
+          <h1 className="page-title">Dịch vụ & Tiện ích</h1>
           <Paragraph className="page-description">
-            Bean Hotel cam kết mang đến cho quý khách những trải nghiệm tuyệt vời nhất với đa dạng các dịch vụ cao cấp
+            Tận hưởng kỳ nghỉ trọn vẹn với hệ thống dịch vụ đa dạng và đẳng cấp tại Bean Hotel.
           </Paragraph>
         </div>
 
-        {/* Services Grid */}
-        <div className="services-grid">
+        {/* Grid Danh sách Dịch vụ */}
+        <div className="services-list-container">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="large" />
-            </div>
+            <div className="loading-container"><Spin size="large" tip="Đang tải dịch vụ..." /></div>
           ) : services.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Paragraph>Hiện tại chưa có dịch vụ nào.</Paragraph>
-            </div>
+            <div className="empty-container"><Empty description="Hiện chưa có dịch vụ nào." /></div>
           ) : (
             <Row gutter={[24, 24]}>
               {services.map((service) => (
-              <Col xs={24} sm={12} lg={8} xl={6} key={service.id}>
-                <div 
-                  className="service-card-wrapper"
-                  onClick={() => handleServiceClick(service)}
-                  onMouseEnter={() => setHoveredCard(service.id)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
+                <Col xs={24} sm={12} lg={8} xl={6} key={service.id}>
                   <Card
                     hoverable
-                    className={`service-card ${hoveredCard === service.id ? 'hovered' : ''}`}
+                    className="service-card-item"
+                    onClick={() => showModal(service)} // Click vào card mở Modal
                     cover={
-                      <div className="service-image-wrapper">
-                        <img
-                          alt={service.title}
-                          src={service.image}
-                          className="service-image"
-                        />
-                        <div className="service-overlay" style={{ background: `${service.color}ee` }}>
-                          <div className="service-icon" style={{ color: '#fff', fontSize: 48 }}>
-                            {service.icon}
-                          </div>
-                        </div>
+                      <div className="service-card-img-wrapper">
+                        <img alt={service.title} src={service.image} loading="lazy" />
                       </div>
                     }
                   >
-                    <Card.Meta
-                      title={<span className="service-title">{service.title}</span>}
-                      description={
-                        <Paragraph className="service-description" ellipsis={{ rows: 3 }}>
-                          {service.description}
-                        </Paragraph>
-                      }
-                    />
-                    <div className="service-footer">
-                      <span className="view-detail-link" style={{ color: service.color }}>
-                        Xem chi tiết →
-                      </span>
+                    <div className="service-card-body">
+                      {/* Tên dịch vụ */}
+                      <Title level={5} className="service-card-title" ellipsis={{ rows: 2 }}>
+                        {service.title}
+                      </Title>
+
+                      {/* Giá tiền */}
+                      <Text className="service-card-price">
+                        {formatPrice(service.price)}
+                      </Text>
+
+                      {/* Mô tả ngắn (cắt bớt nếu dài) */}
+                      <Paragraph className="service-card-desc" ellipsis={{ rows: 3 }}>
+                        {service.description}
+                      </Paragraph>
+
+                      {/* Nút xem thêm giả (visual cue) */}
+                      <div className="service-card-footer">
+                        <Text type="secondary" style={{ fontSize: 12 }}>Nhấn để xem chi tiết</Text>
+                      </div>
                     </div>
                   </Card>
-                </div>
-              </Col>
+                </Col>
               ))}
             </Row>
           )}
         </div>
 
-        {/* Call to Action */}
-        <div className="cta-section">
-          <Space direction="vertical" size={16} style={{ textAlign: 'center', width: '100%' }}>
-            <Title level={3} style={{ color: '#1a1a1a', margin: 0 }}>
-              Cần hỗ trợ thêm thông tin?
-            </Title>
-            <Paragraph style={{ color: '#666', fontSize: 16, margin: 0 }}>
-              Liên hệ với chúng tôi để được tư vấn chi tiết về các dịch vụ
-            </Paragraph>
-            <Space size={12}>
-              <Link to="/contact">
-                <button className="cta-button primary">Liên hệ ngay</button>
-              </Link>
-              <Link to="/hotels">
-                <button className="cta-button secondary">Đặt phòng</button>
-              </Link>
-            </Space>
-          </Space>
+        <div className="cta-wrapper">
+          <Row justify="center" align="middle" gutter={[40, 40]}>
+            <Col xs={24} md={14}>
+              <div className="cta-content">
+                <Title level={2} className="cta-title">
+                  Bạn cần tư vấn thêm về dịch vụ?
+                </Title>
+                <Paragraph className="cta-desc">
+                  Đừng ngần ngại liên hệ với đội ngũ chăm sóc khách hàng của Bean Hotel.
+                  Chúng tôi luôn sẵn sàng hỗ trợ thiết kế những trải nghiệm riêng biệt dành cho bạn.
+                </Paragraph>
+              </div>
+            </Col>
+            <Col xs={24} md={10} style={{ textAlign: 'center' }}>
+              <div className="cta-actions">
+                <Button
+                  type="primary"
+                  size="large"
+                  className="cta-btn-primary"
+                  icon={<KeyOutlined />}
+                  onClick={() => navigate('/booking')} // Điều hướng sang trang đặt phòng
+                >
+                  Đặt phòng ngay
+                </Button>
+                <Button
+                  size="large"
+                  className="cta-btn-secondary"
+                  icon={<PhoneOutlined />}
+                  onClick={() => navigate('/contact')} // Điều hướng sang liên hệ
+                >
+                  Liên hệ tư vấn
+                </Button>
+              </div>
+            </Col>
+          </Row>
         </div>
+        {/* --- KẾT THÚC PHẦN CTA --- */}
+        {/* --- MODAL CHI TIẾT DỊCH VỤ --- */}
+        <Modal
+          title={null}
+          open={isModalOpen}
+          onCancel={handleCancel}
+          footer={null}
+          width={700}
+          centered
+          className="service-detail-modal"
+        >
+          {selectedService && (
+            <div className="modal-content-wrapper">
+              {/* Ảnh lớn trong Modal */}
+              <div className="modal-image-header">
+                <img src={selectedService.image} alt={selectedService.title} />
+              </div>
+
+              <div className="modal-body-text">
+                {/* Tag loại dịch vụ */}
+                <Tag color={selectedService.color} style={{ marginBottom: 12, padding: '4px 10px' }}>
+                  {selectedService.icon} {translateServiceType(selectedService.service_type).toUpperCase()}
+                </Tag>
+
+                {/* Tiêu đề lớn */}
+                <Title level={3} style={{ margin: '0 0 8px 0', color: '#1a1a1a' }}>
+                  {selectedService.title}
+                </Title>
+
+                {/* Loại thanh toán (chỉ hiển thị trong modal) */}
+                {selectedService.payment_type && (
+                  <div style={{ marginBottom: 12 }}>
+                    <Tag color="blue" style={{ fontSize: 13, padding: '4px 12px' }}>
+                      Hình thức thanh toán: {translatePaymentType(selectedService.payment_type)}
+                    </Tag>
+                  </div>
+                )}
+
+                {/* Giá tiền nổi bật */}
+                <Text className="modal-price">
+                  {formatPrice(selectedService.price)}
+                  {selectedService.price > 0 && <span className="price-unit"> / lần (hoặc khách)</span>}
+                </Text>
+
+                <div className="modal-divider" />
+
+                <Title level={5}>Thông tin chi tiết</Title>
+                <Paragraph className="modal-description">
+                  {selectedService.description}
+                </Paragraph>
+                <Paragraph className="modal-note">
+                  * Vui lòng liên hệ lễ tân hoặc đặt trước để được phục vụ tốt nhất.
+                </Paragraph>
+
+                {/* Nút hành động */}
+                <div className="modal-actions">
+                  <Button size="large" onClick={handleCancel}>
+                    Đóng
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<PhoneOutlined />}
+                    onClick={handleContact}
+                    style={{ background: '#1a1a1a', borderColor: '#1a1a1a' }}
+                  >
+                    Liên hệ đặt dịch vụ
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
+
       </div>
     </div>
   )
 }
 
 export default Services
-

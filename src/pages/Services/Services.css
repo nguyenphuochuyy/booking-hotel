@@ -1,320 +1,312 @@
+/* --- Layout chung --- */
 .services-page {
-  background: #f8f9fa;
+  background-color: #f5f7fa; /* Màu nền nhẹ nhàng, hiện đại */
   min-height: 100vh;
-  padding: 2rem 0 4rem 0;
+  padding-bottom: 60px;
 }
 
-/* Breadcrumb */
-.services-page .breadcrumb-custom {
-  margin-bottom: 1.5rem;
-  font-size: 14px;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-.services-page .breadcrumb-custom a {
-  color: #666;
-  transition: color 0.3s;
+.breadcrumb-custom {
+  padding: 20px 0;
 }
 
-.services-page .breadcrumb-custom a:hover {
-  color: #c08a19;
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+  
 }
 
-/* Page Header */
-.services-page .page-header {
-  text-align: center;
-  margin-bottom: 50px;
+ .page-title{
+  color: #c08a19 ;
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-align: center !important;
 }
 
-.services-page .page-title {
-  text-align: center;
-  color: #111827;
-  margin-bottom: 1rem !important;
-  font-size: 2rem;
-}
-
-.services-page .page-description {
-  font-size: 18px;
+.page-description {
+  font-size: 16px;
   color: #666;
   max-width: 700px;
   margin: 0 auto;
   line-height: 1.6;
+  text-align: center !important;
 }
 
-/* Services Grid */
-.services-page .services-grid {
-  margin-bottom: 60px;
+.loading-container, .empty-container {
+  text-align: center;
+  padding: 60px 0;
 }
 
-/* Service Card Wrapper */
-.services-page .service-card-wrapper {
-  cursor: pointer;
-  height: 100%;
-}
-
-/* Service Card */
-.services-page .service-card {
+/* --- Service Card Styles --- */
+.service-card-item {
+  border: none;
   border-radius: 12px;
   overflow: hidden;
-  border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.services-page .service-card-wrapper:hover .service-card {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+.service-card-item:hover {
+  transform: translateY(-6px); /* Hiệu ứng nhấc lên nhẹ */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
 }
 
-.services-page .service-card .ant-card-body {
-  padding: 24px;
+.service-card-item .ant-card-body {
+  padding: 16px;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* Service Image */
-.services-page .service-image-wrapper {
+/* Wrapper ảnh card */
+.service-card-img-wrapper {
   position: relative;
-  height: 220px;
+  height: 200px; /* Chiều cao cố định cho ảnh */
   overflow: hidden;
 }
 
-.services-page .service-image {
+.service-card-img-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
 }
 
-.services-page .service-card-wrapper:hover .service-image {
-  transform: scale(1.1);
+.service-card-item:hover .service-card-img-wrapper img {
+  transform: scale(1.08); /* Zoom nhẹ ảnh khi hover */
 }
 
-/* Service Overlay */
-.services-page .service-overlay {
+/* Tag loại dịch vụ đè lên ảnh */
+.service-card-tag {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
 }
 
-.services-page .service-card-wrapper:hover .service-overlay {
-  opacity: 1;
+/* Nội dung Card */
+.service-card-title {
+  font-weight: 600 !important;
+  color: #2c3e50;
+  margin-bottom: 8px !important;
+  min-height: 48px; /* Giữ chỗ cho 2 dòng text */
 }
 
-.services-page .service-icon {
-  transform: scale(0.8);
-  transition: transform 0.4s ease;
-  pointer-events: none;
-}
-
-.services-page .service-card-wrapper:hover .service-icon {
-  transform: scale(1);
-}
-
-/* Service Content */
-.services-page .service-title {
-  color: #1a1a1a;
+.service-card-price {
   font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-weight: 700;
+  color: #d4380d; /* Màu cam đậm nổi bật cho giá */
   display: block;
+  margin-bottom: 12px;
+  font-family: 'Roboto', sans-serif;
 }
 
-.services-page .service-description {
+.service-card-desc {
   color: #666;
   font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 0 !important;
+  line-height: 1.5;
+  margin-bottom: 16px !important;
+  flex-grow: 1; /* Đẩy footer xuống đáy */
+  text-align: justify;
 }
 
-.services-page .service-footer {
-  margin-top: auto;
-  padding-top: 16px;
+.service-card-footer {
+  border-top: 1px dashed #eee;
+  padding-top: 10px;
+  text-align: right;
 }
 
-.services-page .view-detail-link {
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  display: inline-block;
-}
-
-.services-page .service-card-wrapper:hover .view-detail-link {
-  transform: translateX(4px);
-}
-
-/* CTA Section */
-.services-page .cta-section {
-  background: #ffffff;
-  padding: 60px 40px;
+/* --- Modal Styles --- */
+.service-detail-modal .ant-modal-content {
+  padding: 0;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-bottom: 40px;
+  overflow: hidden;
 }
 
-.services-page .cta-button {
-  padding: 12px 32px;
+.modal-image-header {
+  height: 300px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.modal-image-header img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-body-text {
+  padding: 24px 30px;
+}
+
+.modal-price {
+  font-size: 24px;
+  font-weight: bold;
+  color: #d4380d;
+}
+
+.price-unit {
+  font-size: 14px;
+  color: #999;
+  font-weight: normal;
+}
+
+.modal-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 20px 0;
+}
+
+.modal-description {
   font-size: 16px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  letter-spacing: 0.5px;
+  line-height: 1.8;
+  color: #4a4a4a;
+  text-align: justify;
 }
 
-.services-page .cta-button.primary {
-  background: #c08a19;
+.modal-note {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+
+/* --- CTA Section Styles --- */
+
+.cta-wrapper {
+  margin-top: 60px;
+  background: linear-gradient(135deg, #1f1f1f 0%, #2c3e50 100%); /* Gradient tối sang trọng */
+  border-radius: 16px;
+  padding: 40px 60px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   color: #fff;
 }
 
-.services-page .cta-button.primary:hover {
-  background: #a07517;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.3);
+/* Hiệu ứng trang trí nền (Optional) - tạo vòng tròn mờ phía sau */
+.cta-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  z-index: 0;
 }
 
-.services-page .cta-button.secondary {
-  background: #1a1a1a;
-  color: #fff;
+.cta-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 40px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  z-index: 0;
 }
 
-.services-page .cta-button.secondary:hover {
-  background: #333;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.cta-content {
+  position: relative;
+  z-index: 1;
+  text-align: left;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .services-page .page-title {
-    font-size: 38px !important;
+/* Responsive: Trên mobile thì căn giữa */
+@media (max-width: 768px) {
+  .cta-wrapper {
+    padding: 30px 20px;
   }
-
-  .services-page .service-image-wrapper {
-    height: 200px;
+  .cta-content {
+    text-align: center;
+    margin-bottom: 20px;
   }
 }
 
-@media (max-width: 992px) {
-  .services-page .page-title {
-    font-size: 36px !important;
-  }
+.cta-title {
+  color: #fff !important; /* Ghi đè màu đen mặc định của Antd Title */
+  margin-bottom: 16px !important;
+  font-weight: 700;
+}
 
-  .services-page .page-description {
-    font-size: 16px;
-  }
-
-  .services-page .service-image-wrapper {
-    height: 180px;
-  }
-
-  .services-page .cta-section {
-    padding: 50px 30px;
-  }
+.cta-desc {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  max-width: 90%;
+  margin-bottom: 0 !important;
+  line-height: 1.6;
 }
 
 @media (max-width: 768px) {
-  .services-page {
-    padding: 30px 0;
-  }
-
-  .services-page .page-header {
-    margin-bottom: 40px;
-  }
-
-  .services-page .page-title {
-    font-size: 32px !important;
-  }
-
-  .services-page .page-description {
-    font-size: 15px;
-    padding: 0 10px;
-  }
-
-  .services-page .services-grid {
-    margin-bottom: 50px;
-  }
-
-  .services-page .service-image-wrapper {
-    height: 200px;
-  }
-
-  .services-page .service-title {
-    font-size: 17px;
-  }
-
-  .services-page .cta-section {
-    padding: 40px 25px;
-  }
-
-  .services-page .cta-button {
-    padding: 10px 24px;
-    font-size: 15px;
+  .cta-desc {
+    max-width: 100%;
   }
 }
 
-@media (max-width: 576px) {
-  .services-page .page-title {
-    font-size: 28px !important;
-  }
-
-  .services-page .page-description {
-    font-size: 14px;
-  }
-
-  .services-page .service-image-wrapper {
-    height: 180px;
-  }
-
-  .services-page .service-card .ant-card-body {
-    padding: 20px;
-  }
-
-  .services-page .service-title {
-    font-size: 16px;
-  }
-
-  .services-page .service-description {
-    font-size: 13px;
-  }
-
-  .services-page .cta-section {
-    padding: 30px 20px;
-  }
-
-  .services-page .cta-button {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  .services-page .ant-space {
-    width: 100%;
-  }
-
-  .services-page .ant-space-item {
-    width: 100%;
-  }
+/* Nút bấm */
+.cta-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-/* Ant Design Override */
-.services-page .ant-card-meta-title {
-  margin-bottom: 8px !important;
+.cta-btn-primary {
+  background-color: #d4380d !important; /* Màu cam đỏ chủ đạo (như giá tiền) */
+  border-color: #d4380d !important;
+  height: 50px;
+  padding: 0 30px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(212, 56, 13, 0.4); /* Shadow màu cam */
+  transition: all 0.3s ease;
 }
 
-.services-page .ant-card-meta-description {
-  color: #666;
+.cta-btn-primary:hover {
+  background-color: #ff5722 !important;
+  border-color: #ff5722 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 56, 13, 0.6);
 }
 
+.cta-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  color: #fff !important;
+  height: 50px;
+  padding: 0 30px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+.cta-btn-secondary:hover {
+  border-color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}

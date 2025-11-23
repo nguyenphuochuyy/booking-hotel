@@ -11,7 +11,6 @@ dayjs.extend(utc)
  */
 const formatDateTime = (dateString) => {
   if (!dateString) return 'N/A'
-  
   try {
     // Dùng .utc() để bắt buộc Day.js xử lý chuỗi ở dạng UTC
     const formattedDate = dayjs.utc(dateString).format('HH:mm DD/MM/YYYY')

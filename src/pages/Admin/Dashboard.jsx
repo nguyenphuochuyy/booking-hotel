@@ -14,7 +14,6 @@ import {
   Descriptions,
   message
 } from 'antd'
-// import {  } from '@ant-design/charts'
 import {
   UserOutlined,
   HomeOutlined,
@@ -47,8 +46,7 @@ import {
 } from '../../services/dashboard.service'
 import { getBookingById, checkInGuest, checkOutGuest } from '../../services/admin.service'
 import formatPrice from '../../utils/formatPrice'
-
-const { Title, Text } = Typography
+const { Title } = Typography
 
 function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -355,7 +353,7 @@ function Dashboard() {
         setLoading(false)
       }
     }
-
+   
     loadStats()
   }, [])
 
