@@ -300,6 +300,64 @@
 }
 
 /* Responsive */
+/* Breakpoint > 992px: Desktop lớn - giữ nguyên kích thước */
+@media (min-width: 993px) and (max-width: 1200px) {
+  .nav-link {
+    font-size: 0.9rem;
+    padding: 5px 2px;
+  }
+
+  .nav-menu {
+    gap: 16px;
+  }
+
+  .action-link {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+  }
+
+  .hotel-logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .hotel-name {
+    font-size: 1.15rem;
+  }
+}
+
+/* Breakpoint 992px - 1024px: Desktop nhỏ - giảm kích thước vừa phải */
+@media (min-width: 992px) and (max-width: 1023.98px) {
+  .nav-link {
+    font-size: 0.9rem;
+    padding: 8px 4px;
+  }
+
+  .nav-menu {
+    gap: 14px;
+  }
+
+  .action-link {
+    padding: 7px 14px;
+    font-size: 0.85rem;
+  }
+
+  .hotel-logo {
+    width: 90px;
+    height: 90px;
+  }
+
+  .hotel-name {
+    font-size: 1.1rem;
+  }
+
+  .nav-container {
+    padding: 0 20px;
+    gap: 20px;
+  }
+}
+
+/* Breakpoint < 1024px: Tablet/Mobile - ẩn menu desktop */
 @media (max-width: 1023.98px) {
   .nav-center,
   .nav-actions {
@@ -325,6 +383,7 @@
   }
 }
 
+/* Breakpoint < 768px: Mobile nhỏ */
 @media (max-width: 767.98px) {
   .hotel-logo {
     width: 56px;
@@ -333,5 +392,10 @@
 
   .hotel-name {
     font-size: 1rem;
+  }
+
+  .nav-container {
+    padding: 0 16px;
+    min-height: 70px;
   }
 }
