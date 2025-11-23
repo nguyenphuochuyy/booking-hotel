@@ -716,7 +716,7 @@ const ReviewManagement = () => {
             {detailModal.review?.reply || detailModal.review?.admin_reply ? 'Sửa phản hồi' : 'Phản hồi'}
           </Button>
         ]}
-        width={800}
+        width={600}
         centered
       >
         {detailModal.review && (
