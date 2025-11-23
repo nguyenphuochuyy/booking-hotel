@@ -386,8 +386,8 @@
 /* Breakpoint < 768px: Mobile nhỏ */
 @media (max-width: 767.98px) {
   .hotel-logo {
-    width: 56px;
-    height: 56px;
+    width: 80px;
+    height: 80px;
   }
 
   .hotel-name {
