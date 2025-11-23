@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin } from 'antd'
+import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin, Dropdown } from 'antd'
 import {
   MessageOutlined,
   SendOutlined,
@@ -12,6 +12,7 @@ import {
   FileTextOutlined,
   PlusOutlined,
   DeleteOutlined,
+  CustomerServiceOutlined,
 } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -36,6 +37,7 @@ function ChatBot() {
   const [sessionId, setSessionId] = useState(null)
   const [tools, setTools] = useState([])
   const [showQuickActions, setShowQuickActions] = useState(true) // Hiển thị quick actions khi chưa có tin nhắn
+  const [showChatbot, setShowChatbot] = useState(false) // Hiển thị chatbot sau khi scroll hết banner
   const listRef = useRef(null)
   const isScrollingUpRef = useRef(false)
   const allMessagesRef = useRef([])
@@ -162,6 +164,36 @@ function ChatBot() {
     
     setLoadingMore(false)
   }, [loadingMore, hasMore])
+
+  // Kiểm tra scroll để hiển thị chatbot sau khi scroll hết banner
+  useEffect(() => {
+    const checkScrollPosition = () => {
+      const bannerElement = document.querySelector('.banner-slider')
+      if (bannerElement) {
+        const bannerHeight = bannerElement.offsetHeight
+        const scrollY = window.scrollY || window.pageYOffset
+        // Hiển thị chatbot khi scroll vượt quá banner (thêm 50px để mượt hơn)
+        setShowChatbot(scrollY > bannerHeight - 10)
+      } else {
+        // Nếu không tìm thấy banner (không phải trang home), hiển thị chatbot luôn
+        setShowChatbot(true)
+      }
+    }
+
+    // Kiểm tra ngay khi component mount
+    checkScrollPosition()
+
+    // Lắng nghe sự kiện scroll
+    window.addEventListener('scroll', checkScrollPosition, { passive: true })
+    
+    // Lắng nghe sự kiện resize để cập nhật khi banner thay đổi kích thước
+    window.addEventListener('resize', checkScrollPosition, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', checkScrollPosition)
+      window.removeEventListener('resize', checkScrollPosition)
+    }
+  }, [])
 
   useEffect(() => {
     fetchTools()
@@ -368,22 +400,81 @@ function ChatBot() {
     handleSend(messageText)
   }
 
+  // Menu items cho dropdown chatbot
+  const menuItems = [
+    {
+      key: 'chat',
+      label: (
+        <Space>
+          <MessageOutlined />
+          <span>Chat</span>
+        </Space>
+      ),
+    },
+    {
+      key: 'zalo',
+      label: (
+        <Space>
+          <CustomerServiceOutlined />
+          <span>Liên hệ Zalo</span>
+        </Space>
+      ),
+    },
+  ]
+
+  // Xử lý khi click vào menu item chatbot
+  const handleMenuClick = ({ key }) => {
+    if (key === 'chat') {
+      setOpen(true)
+    } else if (key === 'zalo') {
+      // Mở link Zalo với số điện thoại
+      const phoneNumber = '0858369609'
+      const zaloLink = `https://zalo.me/${phoneNumber}`
+      window.open(zaloLink, '_blank')
+    }
+  }
+
+  // Xử lý click vào button đặt phòng ngay
+  const handleBookingClick = () => {
+    const phoneNumber = '0858369609'
+    // Có thể dùng tel: để gọi trực tiếp hoặc zalo link
+    const zaloLink = `https://zalo.me/${phoneNumber}`
+    window.open(zaloLink, '_blank')
+  }
+
   const trigger = (
-    <Badge count={unread} offset={[-6, 6]}>
+    <div className="chatbot-buttons-container">
+      {/* Button Đặt phòng ngay */}
       <Button
         type="primary"
-        shape="circle"
-        size="large"
-        icon={<MessageOutlined />}
-        className="chatbot-fab"
-        onClick={() => setOpen((v) => !v)}
-      />
-    </Badge>
+        icon={<CustomerServiceOutlined />}
+        className={`chatbot-booking-btn ${showChatbot ? 'show' : ''}`}
+        onClick={handleBookingClick}
+      >
+       đặt phòng ngay - gọi 0366228041
+      </Button>
+      {/* Button Chat với dropdown */}
+      <Badge count={unread} offset={[-6, 6]}>
+        <Dropdown
+          menu={{ items: menuItems, onClick: handleMenuClick }}
+          trigger={['click']}
+          placement="topRight"
+        >
+          <Button
+            type="primary"
+            shape="circle"
+            size="large"
+            icon={<RobotOutlined />}
+            className={`chatbot-fab chatbot-shake ${showChatbot ? 'show' : ''}`}
+          />
+        </Dropdown>
+      </Badge>
+    </div>
   )
 
   return (
     <>
-      {trigger}
+      {showChatbot && trigger}
       {open && (
         <div className="chatbot-panel">
           <div className="chatbot-header">

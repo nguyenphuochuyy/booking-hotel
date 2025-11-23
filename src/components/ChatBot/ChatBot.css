@@ -1,9 +1,144 @@
-.chatbot-fab {
+/* Container cho các button chatbot */
+.chatbot-buttons-container {
   position: fixed;
-  right: 25px;
+  right: 2px;
   bottom: 100px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.chatbot-fab {
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  width: 44px !important;
+  height: 44px !important;
+  font-size: 28px !important;
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.chatbot-fab.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* Button Đặt phòng ngay */
+.chatbot-booking-btn {
+  height: 32px !important;
+  padding: 0 14px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  background: linear-gradient(135deg, #c08a19, #e3b650) !important;
+  border: none !important;
+  border-radius: 999px !important;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chatbot-booking-btn.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.chatbot-booking-btn:hover {
+  background: linear-gradient(135deg, #e3b650, #f0c978) !important;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(192, 138, 25, 0.3) !important;
+}
+
+.chatbot-booking-btn .anticon {
+  font-size: 14px;
+}
+
+/* Dropdown menu styling */
+.chatbot-fab + .ant-dropdown {
+  z-index: 1002;
+}
+
+.ant-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 180px;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 4px 0;
+  transition: all 0.2s ease;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: rgba(192, 138, 25, 0.1);
+  color: #c08a19;
+}
+
+.ant-dropdown-menu-item .anticon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+
+.chatbot-fab .anticon {
+  font-size: 28px !important;
+}
+
+/* Hiệu ứng lắc lư */
+.chatbot-shake {
+  animation: shake 4s ease-in-out infinite;
+  transition: transform 0.3s ease;
+}
+
+.chatbot-shake:hover {
+  animation: none;
+  transform: scale(1.1);
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  2.5% {
+    transform: translateX(-4px) translateY(-2px) rotate(-8deg);
+  }
+  5% {
+    transform: translateX(4px) translateY(2px) rotate(8deg);
+  }
+  7.5% {
+    transform: translateX(-3px) translateY(-1px) rotate(-6deg);
+  }
+  10% {
+    transform: translateX(3px) translateY(1px) rotate(6deg);
+  }
+  12.5% {
+    transform: translateX(-2px) translateY(0) rotate(-4deg);
+  }
+  15% {
+    transform: translateX(2px) translateY(0) rotate(4deg);
+  }
+  17.5% {
+    transform: translateX(-1px) translateY(0) rotate(-2deg);
+  }
+  20% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
 }
 
 .chatbot-panel {
@@ -243,9 +378,26 @@
 }
 
 @media (max-width: 768px) {
-  .chatbot-fab {
-    right: 20px;
+  .chatbot-buttons-container {
+    right: 16px;
     bottom: 90px;
+    gap: 10px;
+  }
+
+  .chatbot-fab {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 24px !important;
+  }
+
+  .chatbot-fab .anticon {
+    font-size: 24px !important;
+  }
+
+  .chatbot-booking-btn {
+    height: 30px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
   }
 
   .chatbot-panel {
@@ -257,9 +409,30 @@
 }
 
 @media (max-width: 576px) {
-  .chatbot-fab {
-    right: 16px;
+  .chatbot-buttons-container {
+    right: 12px;
     bottom: 90px;
+    gap: 8px;
+  }
+
+  .chatbot-fab {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 22px !important;
+  }
+
+  .chatbot-fab .anticon {
+    font-size: 22px !important;
+  }
+
+  .chatbot-booking-btn {
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 10px !important;
+  }
+
+  .chatbot-booking-btn .anticon {
+    font-size: 12px;
   }
 
   .chatbot-panel {
