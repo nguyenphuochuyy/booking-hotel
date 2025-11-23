@@ -47,6 +47,7 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   const [loading, setLoading] = useState(false)
   const [guestVisible, setGuestVisible] = useState(false)
   
+
   // Lấy params từ URL nếu có
   const searchParams = new URLSearchParams(location.search)
   const urlCheckIn = searchParams.get('checkIn')
@@ -103,8 +104,10 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
   }, [initialRange, form])
 
   const handleSearch = async (values) => {
+    if (loading) return
     try {
       setLoading(true)
+      await new Promise(resolve => setTimeout(resolve, 500))
       // Validate dates
       if (!values?.dateRange || values.dateRange.length !== 2) {
         message.error('Vui lòng chọn ngày nhận và trả phòng!')
@@ -159,6 +162,7 @@ const BookingWidget = ({ checkIn: propCheckIn, checkOut: propCheckOut, adults: p
         <Form
           form={form}
           onFinish={handleSearch}
+          disabled={loading}
           initialValues={{
             guests: { adults: 1, children: 0, rooms: 1 }
           }}
