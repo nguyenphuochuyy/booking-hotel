@@ -117,6 +117,7 @@ export function createHttpClient({ baseURL = getBaseUrl(), getToken = getAccessT
     const urlWithBase = safeJoinPaths(baseURL, path);
     const finalUrl = appendQueryParams(urlWithBase, params);
 
+    // Luôn lấy token mới nhất từ localStorage để đảm bảo token được cập nhật
     const token = getToken?.();
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
 
@@ -128,8 +129,15 @@ export function createHttpClient({ baseURL = getBaseUrl(), getToken = getAccessT
         finalHeaders.set('Content-Type', 'application/json');
       }
     }
+    
+    // Luôn thêm token nếu có (kể cả khi đã có trong headers)
     if (token) {
       finalHeaders.set('Authorization', `Bearer ${token}`);
+    } else {
+      // Log warning nếu không có token cho các endpoint cần auth
+      if (path.includes('/chat') || path.includes('/bookings') || path.includes('/user')) {
+        console.warn(`⚠️ No token found for request to ${path}. User may need to login.`);
+      }
     }
 
     const fetchOptions = {

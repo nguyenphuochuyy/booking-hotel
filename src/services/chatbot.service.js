@@ -2,6 +2,10 @@ import http from './httpClient'
 
 export async function sendChatMessage({ message, history = [], session_id = null }) {
   try {
+    // Đảm bảo token được lấy mới nhất trước khi gửi request
+    // const token = localStorage.getItem('accessToken')
+
+    
     const payload = { message }
     // Chỉ thêm history và session_id nếu có
     if (history && history.length > 0) {
@@ -10,10 +14,15 @@ export async function sendChatMessage({ message, history = [], session_id = null
     if (session_id) {
       payload.session_id = session_id
     }
+    
     const data = await http.post('/chat', payload)
     return data
   } catch (err) {
     console.error('sendChatMessage error:', err)
+    // Nếu lỗi 401, có thể do token hết hạn
+    if (err.status === 401 || err.statusCode === 401) {
+      console.error('❌ Authentication failed. Token may be expired.')
+    }
     throw err
   }
 }

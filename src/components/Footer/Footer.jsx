@@ -2,6 +2,7 @@ import React from 'react'
 import { Layout, Row, Col, Space, Button, Typography, Divider, Select } from 'antd'
 import { PhoneFilled, MessageFilled, EnvironmentFilled, MailFilled, ClockCircleFilled, CarFilled, InfoCircleFilled, LockFilled, FileTextFilled, GlobalOutlined, DollarOutlined, ArrowRightOutlined } from '@ant-design/icons'
 import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
+import vietqr from '../../assets/images/qr.png'
 const { Footer: AntFooter } = Layout
 const { Title, Text, Link } = Typography
 
@@ -61,7 +62,7 @@ function AppFooter() {
                 </div>
               </div>
 
-              <a href="#booking" style={{ width: '100%', display: 'block' }}>
+              <a href="/hotels" style={{ width: '100%', display: 'block' }}>
                 <Button
                   type="primary"
                   icon={<ArrowRightOutlined />}
@@ -79,7 +80,7 @@ function AppFooter() {
               <Space direction="vertical" size={12} style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <img
-                    src="/qr-vietqr.png"
+                    src={vietqr}
                     alt="VietQR chuyển khoản nhanh"
                     style={{
                       width: window.innerWidth < 768 ? 60 : 80,
@@ -92,8 +93,8 @@ function AppFooter() {
                   />
                   <div>
                     <Text strong style={{ color: '#0f172a', display: 'block' }}>Chuyển khoản nhanh</Text>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>VietQR • STK: 12345678</Text>
-                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>Vietcombank - CN Đà Lạt</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>VietQR • STK: 0858369609 - 0366228041</Text>
+                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>MB Bank - CN Thành Phố Hồ Chí Minh</Text>
                   </div>
                 </div>
               </Space>
@@ -217,17 +218,17 @@ function AppFooter() {
 
         {/* Bottom bar */}
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* <Col xs={24} md={8} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <Space size={8} wrap aria-label="Ngôn ngữ & Tiền tệ">
               <Button size="small" type="primary" ghost aria-pressed>VI</Button>
               <Button size="small" type="text">EN</Button>
               <Select size="small" defaultValue="VND" options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} style={{ width: 100 }} />
             </Space>
-          </Col>
-          <Col xs={24} md={8} style={{ textAlign: 'center' }}>
+          </Col> */}
+          <Col xs={24} md={12} style={{ textAlign: 'center' }}>
             <Text style={{ color: '#334155' }}>© {currentYear} Bean Hotel. All rights reserved.</Text>
           </Col>
-          <Col xs={24} md={8} style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+          <Col xs={24} md={12} style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
             <a href="/terms-of-service" style={{ color: '#1d4ed8' }}>Điều khoản</a>
             <a href="/privacy-policy" style={{ color: '#1d4ed8' }}>Bảo mật</a>
             <a href="/cookie-policy" style={{ color: '#1d4ed8' }}>Cookie</a>

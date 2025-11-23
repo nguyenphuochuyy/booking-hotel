@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin, Dropdown } from 'antd'
+import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin, Dropdown, Card, Row, Col, Tag, Image } from 'antd'
 import {
   MessageOutlined,
   SendOutlined,
@@ -13,6 +13,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
   CustomerServiceOutlined,
+  VerticalAlignBottomOutlined,
 } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -38,6 +39,7 @@ function ChatBot() {
   const [tools, setTools] = useState([])
   const [showQuickActions, setShowQuickActions] = useState(true) // Hiển thị quick actions khi chưa có tin nhắn
   const [showChatbot, setShowChatbot] = useState(false) // Hiển thị chatbot sau khi scroll hết banner
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false) // Hiển thị nút scroll xuống dưới
   const listRef = useRef(null)
   const isScrollingUpRef = useRef(false)
   const allMessagesRef = useRef([])
@@ -78,31 +80,53 @@ function ChatBot() {
       
       const chatHistory = await getChatHistoryByUserId({user_id: userId})
       const chatHistoryData = chatHistory.sessions || []
-      // Gộp tất cả tin nhắn từ tất cả sessions, sắp xếp theo thời gian
+      
+      // Sessions đã được sắp xếp theo updated_at DESC (mới nhất trước) từ backend
+      // Gộp tất cả tin nhắn từ tất cả sessions, sắp xếp theo thứ tự thời gian đúng
       const allHistoryMessages = []
-      chatHistoryData.forEach(session => {
+      
+      // Duyệt qua từng session (từ mới nhất đến cũ nhất)
+      chatHistoryData.forEach((session, sessionIndex) => {
         if (session.chat_history && Array.isArray(session.chat_history)) {
-          session.chat_history.forEach(item => {
+          // Tin nhắn trong mỗi session đã được lưu theo thứ tự đúng (cũ → mới)
+          // Session updated_at cho biết thời điểm tin nhắn cuối cùng được cập nhật
+          const sessionUpdatedAt = session.updated_at ? new Date(session.updated_at).getTime() : Date.now()
+          
+          session.chat_history.forEach((item, messageIndex) => {
             // Đảm bảo text là string
             const messageText = typeof item.text === 'string' 
               ? item.text 
               : String(item.text || '')
             
+            // Tính timestamp ước lượng cho mỗi tin nhắn
+            // Tin nhắn cuối cùng trong session = session.updated_at
+            // Tin nhắn trước đó sẽ có timestamp nhỏ hơn
+            // Ước lượng: tin nhắn cuối = updated_at, tin nhắn trước = updated_at - (số tin nhắn sau nó * 1000ms)
+            const totalMessages = session.chat_history.length
+            const messagesAfter = totalMessages - messageIndex - 1
+            const estimatedTimestamp = sessionUpdatedAt - (messagesAfter * 1000) // Mỗi tin nhắn cách nhau 1 giây
+            
             allHistoryMessages.push({
               role: item.role === 'user' ? 'user' : 'ai',
               text: messageText,
-              id: Date.now() + Math.random() // Tạo ID tạm
+              id: `${sessionIndex}-${messageIndex}-${estimatedTimestamp}`,
+              timestamp: estimatedTimestamp, // Lưu timestamp để sort
+              sessionIndex,
+              messageIndex
             })
           })
         }
       })
       
-      // Lưu tất cả tin nhắn
+      // Sắp xếp tất cả tin nhắn theo timestamp (cũ → mới)
+      allHistoryMessages.sort((a, b) => a.timestamp - b.timestamp)
+      
+      // Lưu tất cả tin nhắn (đã được sắp xếp đúng thứ tự thời gian)
       setAllMessages(allHistoryMessages)
       allMessagesRef.current = allHistoryMessages
       
-      // Chỉ hiển thị 20 tin nhắn cuối cùng
-      const last20Messages = allHistoryMessages.reverse().slice(-20)
+      // Lấy 20 tin nhắn cuối cùng (mới nhất) - không cần reverse vì đã đúng thứ tự
+      const last20Messages = allHistoryMessages.slice(-20)
       setMessages(last20Messages)
       setDisplayedCount(20)
       displayedCountRef.current = 20
@@ -113,7 +137,7 @@ function ChatBot() {
         setShowQuickActions(false)
       }
       
-      // Lấy session_id mới nhất nếu có
+      // Lấy session_id mới nhất nếu có (session đầu tiên trong mảng đã được sort DESC)
       if (chatHistoryData.length > 0) {
         const latestSession = chatHistoryData[0]
         if (latestSession.session_id) {
@@ -222,23 +246,59 @@ function ChatBot() {
     }
   }, [open])
   
+  // Scroll xuống cuối sau khi load xong chat history
+  useEffect(() => {
+    if (!historyLoading && messages.length > 0 && listRef.current) {
+      // Đợi một chút để DOM render xong
+      setTimeout(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = listRef.current.scrollHeight
+        }
+      }, 200)
+    }
+  }, [historyLoading, messages.length])
+  
   // Scroll xuống cuối khi có tin nhắn mới (không phải khi load thêm tin nhắn cũ)
   useEffect(() => {
     if (listRef.current && !isScrollingUpRef.current) {
       setTimeout(() => {
         if (listRef.current) {
           listRef.current.scrollTop = listRef.current.scrollHeight
+          // Ẩn nút scroll sau khi scroll xuống
+          setShowScrollToBottom(false)
+        }
+      }, 100)
+    } else if (listRef.current && isScrollingUpRef.current) {
+      // Nếu user đang scroll lên và có tin nhắn mới, kiểm tra xem có cần hiển thị nút không
+      setTimeout(() => {
+        if (listRef.current) {
+          const { scrollTop, scrollHeight, clientHeight } = listRef.current
+          const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+          const threeMessagesHeight = 250
+          // Hiển thị nút nếu scroll lên hơn 3 tin nhắn
+          setShowScrollToBottom(distanceFromBottom > threeMessagesHeight && messages.length > 0)
         }
       }, 100)
     }
   }, [messages])
   
-  // Xử lý scroll để load thêm tin nhắn cũ
+  // Xử lý scroll để load thêm tin nhắn cũ và hiển thị nút scroll xuống
   useEffect(() => {
     const handleScroll = () => {
       if (!listRef.current || loadingMore) return
       
-      const { scrollTop } = listRef.current
+      const { scrollTop, scrollHeight, clientHeight } = listRef.current
+      
+      // Tính khoảng cách từ vị trí hiện tại đến dưới cùng
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+      
+      // Ước tính chiều cao trung bình của 1 tin nhắn (khoảng 80-100px)
+      // 3 tin nhắn ≈ 240-300px
+      const threeMessagesHeight = 250
+      
+      // Hiển thị nút nếu scroll lên hơn 3 tin nhắn (khoảng 250px từ dưới cùng)
+      const shouldShowButton = distanceFromBottom > threeMessagesHeight && messages.length > 0
+      setShowScrollToBottom(shouldShowButton)
       
       // Nếu scroll gần đầu (trong vòng 100px) và còn tin nhắn cũ
       if (scrollTop < 100 && hasMore) {
@@ -252,11 +312,25 @@ function ChatBot() {
     const messagesContainer = listRef.current
     if (messagesContainer) {
       messagesContainer.addEventListener('scroll', handleScroll)
+      // Kiểm tra ngay khi mount
+      handleScroll()
       return () => {
         messagesContainer.removeEventListener('scroll', handleScroll)
       }
     }
-  }, [hasMore, loadingMore, loadMoreMessages])
+  }, [hasMore, loadingMore, loadMoreMessages, messages.length])
+
+  // Hàm scroll xuống dưới cùng
+  const scrollToBottom = useCallback(() => {
+    if (listRef.current) {
+      listRef.current.scrollTo({
+        top: listRef.current.scrollHeight,
+        behavior: 'smooth'
+      })
+      setShowScrollToBottom(false)
+      isScrollingUpRef.current = false
+    }
+  }, [])
 
   // Kiểm tra xem message có phải là yêu cầu hiển thị quick actions không
   const isQuickActionRequest = (text) => {
@@ -276,6 +350,795 @@ function ChatBot() {
       'xem tuy chon'
     ]
     return keywords.some(keyword => normalizedText.includes(keyword))
+  }
+
+  // Parse và kiểm tra xem response có chứa dữ liệu phòng/đặt phòng không
+  const parseRoomData = (text, responseData = null) => {
+    try {
+      // Nếu response có functionCalls và có data, thử lấy từ đó
+      if (responseData?.functionCalls) {
+        // Có thể có room data trong function results
+        // Backend có thể trả về structured data
+      }
+      
+      // Thử parse JSON nếu response chứa JSON
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0])
+          if (parsed.rooms && Array.isArray(parsed.rooms) && parsed.rooms.length > 0) {
+            return { type: 'rooms', data: parsed.rooms }
+          }
+          if (parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
+            return { type: 'rooms', data: parsed.data }
+          }
+          // Nếu là booking data
+          if (parsed.booking_id || parsed.booking_code) {
+            return { type: 'booking', data: parsed }
+          }
+        } catch (e) {
+          // Không phải valid JSON, bỏ qua
+        }
+      }
+      
+      // Kiểm tra xem có keywords liên quan đến phòng/booking không
+      const roomKeywords = ['phòng', 'room', 'rooms', 'danh sách phòng', 'tìm thấy', 'có sẵn']
+      const bookingKeywords = ['Mã đặt phòng', 'booking', 'đặt phòng', 'reservation', 'Ngày check-in', 'Check-in', 'check-in', 'Check-out', 'check-out', 'Trạng thái']
+      
+      const hasRoomKeywords = roomKeywords.some(keyword => text.toLowerCase().includes(keyword))
+      const hasBookingKeywords = bookingKeywords.some(keyword => text.toLowerCase().includes(keyword))
+      
+      // Thử parse format đơn giản trước: "CODE: Phòng Name, check-in..., check-out..., trạng thái..."
+      const simpleBookings = parseBookingResponse(text)
+      if (simpleBookings && simpleBookings.length > 0) {
+        return { type: 'simpleBookings', data: simpleBookings }
+      }
+      
+      // Nếu có keywords booking, parse thông tin booking từ text (format chi tiết)
+      if (hasBookingKeywords) {
+        const bookingInfo = parseBookingFromText(text)
+        if (bookingInfo) {
+          // Nếu là array (danh sách booking)
+          if (Array.isArray(bookingInfo)) {
+            return { type: 'bookings', data: bookingInfo }
+          }
+          // Nếu là single booking
+          return { type: 'booking', data: bookingInfo }
+        }
+      }
+      
+      // Nếu có keywords phòng và có pattern như "Phòng X", "giá", "VNĐ"
+      if (hasRoomKeywords) {
+        const hasRoomPattern = /phòng\s+\d+|giá|vnđ|vnd|đêm/i.test(text)
+        if (hasRoomPattern) {
+          // Có thể có thông tin phòng nhưng không parse được, return null để hiển thị text bình thường
+          return null
+        }
+      }
+      
+      return null
+    } catch (e) {
+      console.error('Error parsing room data:', e)
+      return null
+    }
+  }
+
+  // Parse thông tin booking từ text
+  const parseBookingFromText = (text) => {
+    try {
+      // Kiểm tra xem có phải là danh sách booking không (format: CODE: Loại phòng, check-in...)
+      const listBookingPattern = /^[A-Z0-9]{8,}:\s*Phòng/i
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      // Nếu có nhiều dòng match pattern danh sách booking
+      const bookingLines = lines.filter(line => listBookingPattern.test(line.trim()))
+      
+      if (bookingLines.length > 0) {
+        // Parse danh sách booking
+        const bookings = bookingLines.map(line => parseSingleBookingFromLine(line)).filter(Boolean)
+        if (bookings.length > 0) {
+          return bookings
+        }
+      }
+      
+      // Thử parse single booking với format chi tiết (có **Mã đặt phòng**)
+      const detailedBooking = parseDetailedBooking(text)
+      if (detailedBooking) {
+        return detailedBooking
+      }
+      
+      return null
+    } catch (e) {
+      console.error('Error parsing booking from text:', e)
+      return null
+    }
+  }
+
+  // Parse booking response từ text format đơn giản: "CODE: Phòng Name, check-in DD/MM/YY, check-out DD/MM/YY, trạng thái..."
+  // Trả về array of objects: { code, roomName, checkIn, checkOut, status, extra, reviewLink }
+  const parseBookingResponse = (text) => {
+    try {
+      if (!text || typeof text !== 'string') return null
+
+      // Pattern để tìm các dòng booking: CODE: Phòng Name, check-in DD/MM/YY, check-out DD/MM/YY, trạng thái...
+      // Format: CZP08WBF: Phòng Deluxe, check-in 22/11/25, check-out 23/11/25, trạng thái đã check-in.
+      const bookingLinePattern = /([A-Z0-9]{8,}):\s*Phòng\s+([^,]+?)(?:,\s*check-in\s+(\d{1,2}\/\d{1,2}\/\d{2,4}))?(?:,\s*check-out\s+(\d{1,2}\/\d{1,2}\/\d{2,4}))?(?:,\s*trạng thái\s+([^,\.]+))?/gi
+      
+      const bookings = []
+      let match
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      // Tìm tất cả các match trong từng dòng
+      for (const line of lines) {
+        // Reset regex lastIndex để tránh lỗi
+        bookingLinePattern.lastIndex = 0
+        match = bookingLinePattern.exec(line)
+        
+        if (match) {
+          const code = match[1]?.trim()
+          const roomName = match[2]?.trim()
+          const checkIn = match[3]?.trim() || null
+          const checkOut = match[4]?.trim() || null
+          let status = match[5]?.trim() || null
+          
+          // Làm sạch status (loại bỏ dấu chấm cuối)
+          if (status) {
+            status = status.replace(/\.$/, '').trim()
+          }
+          
+          // Tìm thông tin bổ sung (extra) - có thể là dịch vụ, ghi chú, etc.
+          // Tìm phần còn lại sau trạng thái
+          let extra = null
+          const afterStatusMatch = line.match(/trạng thái\s+[^,\.]+(?:,\s*|\.\s*)([^\.]+)/i)
+          if (afterStatusMatch && afterStatusMatch[1]) {
+            const extraText = afterStatusMatch[1].trim()
+            if (extraText && !extraText.includes('http')) {
+              extra = extraText.replace(/\.$/, '').trim()
+            }
+          }
+          
+          // Tìm review link nếu có (trong toàn bộ text)
+          let reviewLink = null
+          const reviewLinkMatch = text.match(/https?:\/\/[^\s\)]+/i)
+          if (reviewLinkMatch) {
+            reviewLink = reviewLinkMatch[0]
+          }
+          
+          if (code && roomName) {
+            bookings.push({
+              code,
+              roomName,
+              checkIn,
+              checkOut,
+              status,
+              extra,
+              reviewLink
+            })
+          }
+        }
+      }
+      
+      return bookings.length > 0 ? bookings : null
+    } catch (e) {
+      console.error('Error parsing booking response:', e)
+      return null
+    }
+  }
+
+  // Parse một booking từ dòng text (format: CODE: Loại phòng, check-in DD/MM/YY, check-out DD/MM/YY, trạng thái...)
+  const parseSingleBookingFromLine = (line) => {
+    try {
+      const bookingInfo = {}
+      
+      // Extract booking code (format: CODE: ...)
+      const codeMatch = line.match(/^([A-Z0-9]{8,}):/)
+      if (codeMatch) {
+        bookingInfo.booking_code = codeMatch[1]
+      } else {
+        return null // Không có code thì không phải booking
+      }
+      
+      // Extract loại phòng (sau dấu :)
+      const roomTypeMatch = line.match(/:\s*Phòng\s+([^,]+)/i)
+      if (roomTypeMatch) {
+        bookingInfo.room_type = roomTypeMatch[1].trim()
+      }
+      
+      // Extract check-in date (format: check-in DD/MM/YY)
+      const checkInMatch = line.match(/check-in\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i)
+      if (checkInMatch) {
+        bookingInfo.check_in = checkInMatch[1]
+      }
+      
+      // Extract check-out date (format: check-out DD/MM/YY)
+      const checkOutMatch = line.match(/check-out\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i)
+      if (checkOutMatch) {
+        bookingInfo.check_out = checkOutMatch[1]
+      }
+      
+      // Extract trạng thái
+      const statusMatch = line.match(/trạng thái\s+([^,\.]+)/i)
+      if (statusMatch) {
+        bookingInfo.status = statusMatch[1].trim()
+      }
+      
+      // Extract dịch vụ (nếu có)
+      const serviceMatch = line.match(/có dịch vụ\s+([^,\.]+)/i)
+      if (serviceMatch) {
+        bookingInfo.services = [{ name: serviceMatch[1].trim() }]
+      }
+      
+      // Extract link review (nếu có)
+      const reviewLinkMatch = line.match(/https?:\/\/[^\s]+/i)
+      if (reviewLinkMatch) {
+        bookingInfo.review_link = reviewLinkMatch[0]
+      }
+      
+      return bookingInfo
+    } catch (e) {
+      console.error('Error parsing single booking from line:', e)
+      return null
+    }
+  }
+
+  // Parse booking chi tiết với format markdown (có **Mã đặt phòng**)
+  const parseDetailedBooking = (text) => {
+    try {
+      const bookingInfo = {}
+      
+      // Extract booking code
+      const bookingCodeMatch = text.match(/\*\*Mã đặt phòng\*\*[:\s*]+([A-Z0-9]+)/i) ||
+                               text.match(/mã đặt phòng[:\s*]+([A-Z0-9]+)/i)
+      if (bookingCodeMatch) {
+        bookingInfo.booking_code = bookingCodeMatch[1].trim()
+      }
+      
+      // Extract booking ID
+      const bookingIdMatch = text.match(/\*\*ID đặt phòng\*\*[:\s*]+(\d+)/i) ||
+                             text.match(/id đặt phòng[:\s*]+(\d+)/i)
+      if (bookingIdMatch) {
+        bookingInfo.booking_id = parseInt(bookingIdMatch[1])
+      }
+      
+      // Extract status (hỗ trợ format: Đã trả phòng (checked_out) hoặc Đã check-out. Anh/chị có thể...)
+      // Tìm review link trong status text nếu có
+      let reviewLinkInStatus = null
+      const reviewLinkMatch = text.match(/https?:\/\/[^\s\)]+/i)
+      if (reviewLinkMatch) {
+        reviewLinkInStatus = reviewLinkMatch[0]
+        bookingInfo.review_link = reviewLinkInStatus
+      }
+      
+      const statusMatch = text.match(/\*\*Trạng thái\*\*[:\s*]+([^\.\n]+?)(?:\.|\(|$)/i) ||
+                           text.match(/trạng thái[:\s*]+([^\.\n]+?)(?:\.|\(|$)/i)
+      if (statusMatch) {
+        let statusText = statusMatch[1].trim()
+        // Loại bỏ phần text sau status nếu có (ví dụ: "Anh/chị có thể...")
+        statusText = statusText.split(/\.\s+/)[0].trim()
+        bookingInfo.status = statusText
+        // Tìm status_code trong ngoặc nếu có
+        const statusCodeMatch = text.match(/trạng thái[:\s*]+[^(]*\(([^)]+)\)/i)
+        if (statusCodeMatch) {
+          bookingInfo.status_code = statusCodeMatch[1].trim()
+        }
+      }
+      
+      // Extract check-in date (hỗ trợ cả "Check-in:" và "Ngày check-in:")
+      const checkInMatch = text.match(/\*\*Check-in\*\*[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+                          text.match(/\*\*Ngày check-in\*\*[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+                          text.match(/check-in[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i)
+      if (checkInMatch) {
+        bookingInfo.check_in = checkInMatch[1]
+      }
+      
+      // Extract check-out date (hỗ trợ cả "Check-out:" và "Ngày check-out:")
+      const checkOutMatch = text.match(/\*\*Check-out\*\*[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+                           text.match(/\*\*Ngày check-out\*\*[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i) ||
+                           text.match(/check-out[:\s*]+(\d{1,2}\/\d{1,2}\/\d{4})/i)
+      if (checkOutMatch) {
+        bookingInfo.check_out = checkOutMatch[1]
+      }
+      
+      // Extract giá cuối cùng
+      const priceMatch = text.match(/\*\*Giá cuối cùng\*\*[:\s*]+([\d.,]+)\s*vnđ/i) ||
+                        text.match(/giá cuối cùng[:\s*]+([\d.,]+)\s*vnđ/i) ||
+                        text.match(/tổng tiền[:\s*]+([\d.,]+)\s*vnđ/i)
+      if (priceMatch) {
+        bookingInfo.total_price = parseFloat(priceMatch[1].replace(/[,.]/g, ''))
+      }
+      
+      // Extract số người
+      const guestMatch = text.match(/\*\*Số người\*\*[:\s*]+(\d+)/i) ||
+                        text.match(/số người[:\s*]+(\d+)/i)
+      if (guestMatch) {
+        bookingInfo.num_guests = parseInt(guestMatch[1])
+      }
+      
+      // Extract số phòng
+      const roomCountMatch = text.match(/\*\*Số phòng\*\*[:\s*]+(\d+)/i) ||
+                            text.match(/số phòng[:\s*]+(\d+)/i)
+      if (roomCountMatch) {
+        bookingInfo.num_rooms = parseInt(roomCountMatch[1])
+      }
+      
+      // Extract trạng thái thanh toán
+      const paymentMatch = text.match(/\*\*Trạng thái thanh toán\*\*[:\s*]+([^\n*]+)/i) ||
+                          text.match(/trạng thái thanh toán[:\s*]+([^\n*]+)/i)
+      if (paymentMatch) {
+        bookingInfo.payment_status = paymentMatch[1].trim()
+      }
+      
+      // Extract loại phòng (hỗ trợ format: Phòng Suite (VIP))
+      const roomTypeMatch = text.match(/\*\*Loại phòng\*\*[:\s*]+([^\n*]+)/i) ||
+                           text.match(/loại phòng[:\s*]+([^\n*]+)/i)
+      if (roomTypeMatch) {
+        bookingInfo.room_type = roomTypeMatch[1].trim()
+      }
+      
+      // Extract số phòng cụ thể
+      const roomNumMatches = text.match(/\*\*Số phòng\*\*[:\s*]+(\d+)/gi)
+      if (roomNumMatches && roomNumMatches.length > 1) {
+        bookingInfo.room_number = parseInt(roomNumMatches[1].match(/\d+/)[0])
+      }
+      
+      // Extract dịch vụ
+      const serviceMatch = text.match(/\*\*Dịch vụ\*\*[:\s*]+([^\n*]+)/i) ||
+                         text.match(/dịch vụ[:\s*]+([^\n*]+)/i)
+      if (serviceMatch) {
+        const serviceText = serviceMatch[1].trim()
+        const servicePriceMatch = serviceText.match(/(.+?)\s*\(([\d.,]+)\s*vnđ\)/i)
+        if (servicePriceMatch) {
+          bookingInfo.services = [{
+            name: servicePriceMatch[1].trim(),
+            price: parseFloat(servicePriceMatch[2].replace(/[,.]/g, ''))
+          }]
+        } else {
+          bookingInfo.services = [{ name: serviceText }]
+        }
+      }
+      
+      // Chỉ return nếu có ít nhất booking code hoặc booking ID
+      if (bookingInfo.booking_code || bookingInfo.booking_id) {
+        return bookingInfo
+      }
+      
+      return null
+    } catch (e) {
+      console.error('Error parsing detailed booking:', e)
+      return null
+    }
+  }
+
+  // Format giá tiền
+  const formatPrice = (price, suffix = '/đêm') => {
+    if (!price && price !== 0) return 'Liên hệ'
+    const numPrice = typeof price === 'string' ? parseFloat(price.replace(/[,.]/g, '')) : price
+    if (isNaN(numPrice)) return 'Liên hệ'
+    return new Intl.NumberFormat('vi-VN').format(numPrice) + ' VNĐ' + suffix
+  }
+
+  // BookingCard sub-component với Luxury Gold theme cho format đơn giản
+  const BookingCard = ({ booking }) => {
+    const { code, roomName, checkIn, checkOut, status, extra, reviewLink } = booking
+
+    const getStatusColor = (status) => {
+      if (!status) return 'default'
+      const statusLower = status.toLowerCase()
+      if (statusLower.includes('xác nhận') || statusLower.includes('confirmed')) return 'green'
+      if (statusLower.includes('check-in') || statusLower.includes('nhận phòng')) return 'blue'
+      if (statusLower.includes('check-out') || statusLower.includes('trả phòng')) return 'default'
+      if (statusLower.includes('hủy') || statusLower.includes('cancelled')) return 'red'
+      return 'orange'
+    }
+
+    const getStatusText = (status) => {
+      if (!status) return 'Chờ xác nhận'
+      const statusLower = status.toLowerCase()
+      if (statusLower.includes('xác nhận')) return 'Đã xác nhận'
+      if (statusLower.includes('check-in') || statusLower.includes('nhận phòng')) return 'Đã nhận phòng'
+      if (statusLower.includes('check-out') || statusLower.includes('trả phòng')) return 'Đã trả phòng'
+      if (statusLower.includes('hủy')) return 'Đã hủy'
+      return status
+    }
+
+    return (
+      <Card
+        key={code || Math.random()}
+        hoverable
+        style={{
+          marginBottom: 12,
+          borderRadius: 12,
+          border: '1px solid #d4af37',
+          background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
+          boxShadow: '0 2px 8px rgba(212, 175, 55, 0.15)'
+        }}
+        bodyStyle={{ padding: '16px' }}
+      >
+        <Card.Meta
+          title={
+            <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 18, color: '#c08a19', letterSpacing: '0.5px' }}>
+                {code}
+              </Text>
+              {status && (
+                <Tag color={getStatusColor(status)} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 12 }}>
+                  {getStatusText(status)}
+                </Tag>
+              )}
+            </Space>
+          }
+          description={
+            <div>
+              {/* Loại phòng */}
+              {roomName && (
+                <div style={{ marginBottom: 12 }}>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                    Loại phòng
+                  </Text>
+                  <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>
+                    {roomName}
+                  </Text>
+                </div>
+              )}
+
+              {/* Check-in / Check-out */}
+              <Row gutter={[16, 8]}>
+                {checkIn && (
+                  <Col span={12}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                        Check-in
+                      </Text>
+                      <Text style={{ fontSize: 14, color: '#1a1a1a' }}>{checkIn}</Text>
+                    </div>
+                  </Col>
+                )}
+                {checkOut && (
+                  <Col span={12}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                        Check-out
+                      </Text>
+                      <Text style={{ fontSize: 14, color: '#1a1a1a' }}>{checkOut}</Text>
+                    </div>
+                  </Col>
+                )}
+              </Row>
+
+              {/* Extra info (dịch vụ, ghi chú, etc.) */}
+              {extra && (
+                <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fafafa', borderRadius: 6 }}>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                    Thông tin bổ sung
+                  </Text>
+                  <Text style={{ fontSize: 13, color: '#595959' }}>{extra}</Text>
+                </div>
+              )}
+
+              {/* Review link */}
+              {reviewLink && (
+                <div style={{
+                  marginTop: 12,
+                  paddingTop: 12,
+                  borderTop: '1px solid #f0f0f0'
+                }}>
+                  <a
+                    href={reviewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 13,
+                      color: '#c08a19',
+                      fontWeight: 500,
+                      textDecoration: 'none'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                  >
+                    Để lại đánh giá →
+                  </a>
+                </div>
+              )}
+            </div>
+          }
+        />
+      </Card>
+    )
+  }
+
+  // Render Card cho thông tin phòng
+  const renderRoomCard = (room) => {
+    const roomImage = room.image || room.images?.[0] || room.room_image
+    const roomName = room.room_name || room.name || room.room_type || 'Phòng'
+    const roomPrice = room.price_per_night || room.price || room.prices?.[0]?.price_per_night
+    const roomDescription = room.description || room.room_description || ''
+    const roomNum = room.room_num || room.room_number || ''
+    const amenities = room.amenities || []
+    
+    return (
+      <Card
+        key={room.room_id || room.id || Math.random()}
+        hoverable
+        style={{ marginBottom: 12, borderRadius: 12 }}
+        cover={
+          roomImage ? (
+            <Image
+              alt={roomName}
+              src={roomImage}
+              style={{ height: 180, objectFit: 'cover' }}
+              preview={false}
+            />
+          ) : null
+        }
+      >
+        <Card.Meta
+          title={
+            <Space>
+              <Text strong style={{ fontSize: 16 }}>{roomName}</Text>
+              {roomNum && <Tag color="blue">Phòng {roomNum}</Tag>}
+            </Space>
+          }
+          description={
+            <div>
+              {roomDescription && (
+                <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
+                  {roomDescription.length > 100 ? roomDescription.substring(0, 100) + '...' : roomDescription}
+                </Text>
+              )}
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Text strong style={{ color: '#c08a19', fontSize: 16 }}>
+                  {formatPrice(roomPrice)}
+                </Text>
+                {amenities.length > 0 && (
+                  <Space wrap size={[4, 4]}>
+                    {amenities.slice(0, 3).map((amenity, idx) => (
+                      <Tag key={idx} color="default" style={{ fontSize: 11 }}>
+                        {amenity}
+                      </Tag>
+                    ))}
+                    {amenities.length > 3 && <Tag style={{ fontSize: 11 }}>+{amenities.length - 3}</Tag>}
+                  </Space>
+                )}
+              </Space>
+            </div>
+          }
+        />
+      </Card>
+    )
+  }
+
+  // Render Card cho thông tin booking (format chi tiết)
+  const renderBookingCard = (booking) => {
+    const getStatusColor = (status, statusCode) => {
+      const statusLower = (statusCode || status || '').toLowerCase()
+      if (statusLower.includes('confirmed') || statusLower.includes('đã xác nhận') || statusLower.includes('xác nhận')) return 'green'
+      if (statusLower.includes('checked_in') || statusLower.includes('đã nhận phòng') || statusLower.includes('check-in')) return 'blue'
+      if (statusLower.includes('checked_out') || statusLower.includes('đã trả phòng') || statusLower.includes('check-out')) return 'default'
+      if (statusLower.includes('cancelled') || statusLower.includes('đã hủy') || statusLower.includes('hủy')) return 'red'
+      return 'orange'
+    }
+
+    const getStatusText = (status) => {
+      if (!status) return 'Chờ xác nhận'
+      const statusLower = status.toLowerCase()
+      if (statusLower.includes('đã xác nhận') || statusLower.includes('xác nhận')) return 'Đã xác nhận'
+      if (statusLower.includes('đã nhận phòng') || statusLower.includes('check-in')) return 'Đã nhận phòng'
+      if (statusLower.includes('đã trả phòng') || statusLower.includes('check-out')) return 'Đã trả phòng'
+      if (statusLower.includes('đã hủy') || statusLower.includes('hủy')) return 'Đã hủy'
+      return status
+    }
+
+    const getPaymentStatusColor = (paymentStatus) => {
+      const statusLower = (paymentStatus || '').toLowerCase()
+      if (statusLower.includes('đã thanh toán') || statusLower.includes('paid')) return 'green'
+      if (statusLower.includes('chưa thanh toán') || statusLower.includes('unpaid')) return 'red'
+      return 'orange'
+    }
+
+    return (
+      <Card
+        key={booking.booking_id || booking.booking_code || Math.random()}
+        hoverable
+        style={{
+          marginBottom: 12,
+          borderRadius: 12,
+          border: '1px solid #d4af37',
+          background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
+          boxShadow: '0 2px 8px rgba(212, 175, 55, 0.15)'
+        }}
+        bodyStyle={{ padding: '20px' }}
+      >
+        <Card.Meta
+          title={
+            <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text strong style={{ fontSize: 20, color: '#c08a19', letterSpacing: '0.5px' }}>
+                {booking.booking_code ? `Mã: ${booking.booking_code}` : 'Thông tin đặt phòng'}
+              </Text>
+              {booking.status && (
+                <Tag color={getStatusColor(booking.status, booking.status_code)} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12 }}>
+                  {getStatusText(booking.status)}
+                </Tag>
+              )}
+            </Space>
+          }
+          description={
+            <div>
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                {/* ID đặt phòng (nếu có) */}
+                {booking.booking_id && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                      ID đặt phòng
+                    </Text>
+                    <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>#{booking.booking_id}</Text>
+                  </div>
+                )}
+
+                {/* Loại phòng */}
+                {booking.room_type && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6, fontWeight: 500 }}>
+                      Loại phòng
+                    </Text>
+                    <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>{booking.room_type}</Text>
+                  </div>
+                )}
+
+                {/* Trạng thái booking */}
+                {booking.status && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6, fontWeight: 500 }}>
+                      Trạng thái đặt phòng
+                    </Text>
+                    <Tag 
+                      color={getStatusColor(booking.status, booking.status_code)} 
+                      style={{ 
+                        fontSize: 14, 
+                        padding: '6px 16px', 
+                        borderRadius: 8,
+                        fontWeight: 500
+                      }}
+                    >
+                      {getStatusText(booking.status)}
+                    </Tag>
+                  </div>
+                )}
+
+                {/* Ngày check-in/out */}
+                <Row gutter={[16, 12]}>
+                  {booking.check_in && (
+                    <Col span={12}>
+                      <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                          Check-in
+                        </Text>
+                        <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>{booking.check_in}</Text>
+                      </div>
+                    </Col>
+                  )}
+                  {booking.check_out && (
+                    <Col span={12}>
+                      <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
+                          Check-out
+                        </Text>
+                        <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>{booking.check_out}</Text>
+                      </div>
+                    </Col>
+                  )}
+                </Row>
+
+                {/* Số người và số phòng */}
+                {(booking.num_guests || booking.num_rooms) && (
+                  <Row gutter={[16, 8]}>
+                    {booking.num_guests && (
+                      <Col span={12}>
+                        <div>
+                          <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Số người</Text>
+                          <Text style={{ fontSize: 14 }}>{booking.num_guests} người</Text>
+                        </div>
+                      </Col>
+                    )}
+                    {booking.num_rooms && (
+                      <Col span={12}>
+                        <div>
+                          <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Số lượng phòng</Text>
+                          <Text style={{ fontSize: 14 }}>{booking.num_rooms} phòng</Text>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                )}
+
+                {/* Số phòng cụ thể */}
+                {booking.room_number && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Số phòng</Text>
+                    <Text strong style={{ fontSize: 14 }}>Phòng {booking.room_number}</Text>
+                  </div>
+                )}
+
+                {/* Trạng thái thanh toán */}
+                {booking.payment_status && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Trạng thái thanh toán</Text>
+                    <Tag color={getPaymentStatusColor(booking.payment_status)}>
+                      {booking.payment_status}
+                    </Tag>
+                  </div>
+                )}
+
+                {/* Dịch vụ */}
+                {booking.services && booking.services.length > 0 && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Dịch vụ</Text>
+                    {booking.services.map((service, idx) => (
+                      <div key={idx} style={{ marginBottom: 4 }}>
+                        <Text style={{ fontSize: 13 }}>
+                          {service.name}
+                          {service.price && (
+                            <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                              ({formatPrice(service.price, '')})
+                            </Text>
+                          )}
+                        </Text>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Link review */}
+                {booking.review_link && (
+                  <div style={{
+                    marginTop: 8,
+                    paddingTop: 16,
+                    borderTop: '1px solid #f0f0f0'
+                  }}>
+                    <a
+                      href={booking.review_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 14,
+                        color: '#c08a19',
+                        fontWeight: 500,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                    >
+                      Để lại đánh giá →
+                    </a>
+                  </div>
+                )}
+
+                {/* Giá cuối cùng */}
+                {booking.total_price && (
+                  <div style={{ 
+                    marginTop: 12, 
+                    paddingTop: 16, 
+                    borderTop: '2px solid #d4af37',
+                    background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
+                    borderRadius: 8,
+                    padding: '16px'
+                  }}>
+                    <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>Tổng tiền:</Text>
+                      <Text strong style={{ color: '#c08a19', fontSize: 20, letterSpacing: '0.5px' }}>
+                        {formatPrice(booking.total_price, '')}
+                      </Text>
+                    </Space>
+                  </div>
+                )}
+              </Space>
+            </div>
+          }
+        />
+      </Card>
+    )
   }
 
   const handleSend = async (textToSend = null) => {
@@ -342,13 +1205,39 @@ function ChatBot() {
     isScrollingUpRef.current = false // Đảm bảo scroll xuống khi có tin nhắn mới
 
     try {
-     const response = await sendChatMessage({message: cleanText, session_id: sessionId})
-     if(response.statusCode === 200){
+      // Đảm bảo token được gửi nếu đã đăng nhập
+      const token = localStorage.getItem('accessToken')
+      
+      // Log để debug
+      if (isAuthenticated) {
+        if (token) {
+          console.log('✅ Token found, will be sent with chat request')
+        } else {
+          console.warn('⚠️ User is authenticated but no token found in localStorage')
+          message.warning('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          return
+        }
+      } else {
+        console.log('ℹ️ User not authenticated, sending chat request without token')
+      }
+      
+      const response = await sendChatMessage({message: cleanText, session_id: sessionId})
+      if(response.statusCode === 200){
       // Đảm bảo aiText là string
       const aiText = typeof response.response === 'string' 
         ? response.response 
         : String(response.response || 'Xin lỗi, tôi chưa hiểu yêu cầu của bạn.')
-      const aiMsg = { role: 'ai', text: aiText, id: Date.now() + 1 }
+      
+      // Kiểm tra xem response có chứa dữ liệu phòng không
+      // Thử parse từ text và response data
+      const roomData = parseRoomData(aiText, response)
+      
+      const aiMsg = { 
+        role: 'ai', 
+        text: aiText, 
+        id: Date.now() + 1,
+        roomData: roomData // Lưu dữ liệu phòng nếu có
+      }
       // Thêm vào messages hiển thị và allMessages
       setMessages((prev) => [...prev, aiMsg])
       setAllMessages((prev) => {
@@ -428,7 +1317,7 @@ function ChatBot() {
       setOpen(true)
     } else if (key === 'zalo') {
       // Mở link Zalo với số điện thoại
-      const phoneNumber = '0858369609'
+      const phoneNumber = '0366228041'
       const zaloLink = `https://zalo.me/${phoneNumber}`
       window.open(zaloLink, '_blank')
     }
@@ -436,7 +1325,7 @@ function ChatBot() {
 
   // Xử lý click vào button đặt phòng ngay
   const handleBookingClick = () => {
-    const phoneNumber = '0858369609'
+    const phoneNumber = '0366228041'
     // Có thể dùng tel: để gọi trực tiếp hoặc zalo link
     const zaloLink = `https://zalo.me/${phoneNumber}`
     window.open(zaloLink, '_blank')
@@ -486,6 +1375,17 @@ function ChatBot() {
           </div>
           <div className="chatbot-container">
             <div className="chatbot-messages" ref={listRef}>
+              {/* Nút scroll xuống dưới cùng */}
+              {showScrollToBottom && (
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<VerticalAlignBottomOutlined />}
+                  className="chatbot-scroll-to-bottom"
+                  onClick={scrollToBottom}
+                  title="Cuộn xuống dưới cùng"
+                />
+              )}
               {historyLoading ? (
                 <div className="chatbot-history-loading">
                   <Spin tip="Đang tải hội thoại..." />
@@ -656,11 +1556,42 @@ function ChatBot() {
                           <Avatar icon={<RobotOutlined />} className="message-avatar" />
                           <div className="message-content bot-content">
                             <Text strong style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>BeanBot</Text>
-                            <div className="chatbot-markdown">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {messageText}
-                              </ReactMarkdown>
-                            </div>
+                            
+                            {/* Hiển thị Card nếu có dữ liệu phòng/booking */}
+                            {item.roomData && item.roomData.type ? (
+                              <div style={{ marginTop: 8 }}>
+                                {/* Hiển thị text chỉ khi không phải simpleBookings (để tránh duplicate) */}
+                                {item.roomData.type !== 'simpleBookings' && (
+                                  <div className="chatbot-markdown" style={{ marginBottom: 12 }}>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {messageText}
+                                    </ReactMarkdown>
+                                  </div>
+                                )}
+                                <div className="chatbot-rooms-container">
+                                  {item.roomData.type === 'rooms' && Array.isArray(item.roomData.data) && 
+                                    item.roomData.data.map((room) => renderRoomCard(room))
+                                  }
+                                  {item.roomData.type === 'booking' && item.roomData.data &&
+                                    renderBookingCard(item.roomData.data)
+                                  }
+                                  {item.roomData.type === 'bookings' && Array.isArray(item.roomData.data) &&
+                                    item.roomData.data.map((booking) => renderBookingCard(booking))
+                                  }
+                                  {item.roomData.type === 'simpleBookings' && Array.isArray(item.roomData.data) &&
+                                    item.roomData.data.map((booking, index) => (
+                                      <BookingCard key={booking.code || index} booking={booking} />
+                                    ))
+                                  }
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="chatbot-markdown">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {messageText}
+                                </ReactMarkdown>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
