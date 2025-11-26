@@ -191,7 +191,7 @@ function AppFooter() {
                 Chính sách hủy/đổi ngày
               </a>
 
-              <a href="/doi-phong" style={{ color: '#334155', display: 'block' }}>
+              <a href="/room-change-policy" style={{ color: '#334155', display: 'block' }}>
                 <CarFilled style={{ marginRight: 8, color: '#64748b' }} />
                 Chính sách đổi phòng
               </a>

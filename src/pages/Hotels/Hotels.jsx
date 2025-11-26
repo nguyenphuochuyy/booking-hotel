@@ -102,13 +102,14 @@ function Hotels() {
   useEffect(() => {
     if (checkIn && checkOut) {
       const loadAvailableRooms = async () => {
-        try {
+        try {          
           setSearchLoading(true)
-          const guests = parseInt(adults || 1) + parseInt(children || 0)
+          const guests = parseInt(adults || 1)
           const params = {
             check_in: checkIn,
             check_out: checkOut,
             guests: guests,
+            rooms: numRoomsURL,
             sort: 'price_asc',
             page: 1,
             limit: 1000
@@ -356,15 +357,28 @@ function Hotels() {
     }
   }
 
+  const getMaxSelectableRooms = () => {
+    if (selectedRoom && typeof selectedRoom.available_rooms === 'number' && selectedRoom.available_rooms > 0) {
+      return selectedRoom.available_rooms
+    }
+    return 10
+  }
+
   const handleSelectRoom = (room) => {
     const normalized = normalizeRoomData(room)
     if (!normalized) return
     setSelectedRoom(normalized)
-    setNumRooms(1)
+    setNumRooms(numRoomsURL || 1)
   }
   const handleRemoveRoom = () => { setSelectedRoom(null); setNumRooms(1); }
   const handleNumRoomsChange = (value) => {
     const num = value || 1
+    const maxRooms = getMaxSelectableRooms()
+    if (num > maxRooms) {
+      message.warning(`Chỉ còn ${maxRooms} phòng khả dụng cho hạng phòng này`)
+      setNumRooms(maxRooms)
+      return
+    }
     if (num === 0) {
       Modal.confirm({
         title: 'Xác nhận xóa phòng',
@@ -392,7 +406,12 @@ function Hotels() {
     }
   }
   const handleIncreaseRooms = () => {
-    if (numRooms < 10) { setNumRooms(numRooms + 1); } else { message.warning('Số lượng phòng tối đa là 10'); }
+    const maxRooms = getMaxSelectableRooms()
+    if (numRooms >= maxRooms) {
+      message.warning(`Chỉ còn ${maxRooms} phòng khả dụng cho hạng phòng này`)
+      return
+    }
+    setNumRooms(numRooms + 1)
     }
   const handleBookNow = () => {
     if (!selectedRoom) return
@@ -529,7 +548,7 @@ function Hotels() {
     const normalized = normalizeRoomData(roomInModal)
     if (!normalized) return
     setSelectedRoom(normalized)
-    setNumRooms(1)
+    setNumRooms(numRoomsURL || 1)
     handleCloseModal()
     message.success('Đã chọn phòng. Vui lòng xem lại thông tin ở cột bên phải trước khi đặt phòng.')
   }

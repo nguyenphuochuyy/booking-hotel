@@ -1,0 +1,132 @@
+.room-change-page {
+  background: #f9fafb;
+  min-height: 100vh;
+  padding: 80px 0;
+}
+
+.room-change-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.room-change-hero {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+  background: linear-gradient(135deg, #111111, #1f1f1f);
+  border-radius: 24px;
+  padding: 48px;
+  color: #fff;
+  margin-bottom: 48px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+}
+
+.hero-text h1,
+.hero-text .ant-typography {
+  color: #fff;
+}
+
+.hero-text .ant-typography {
+  opacity: 0.85;
+}
+
+.hero-tag {
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.hero-highlight {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.highlight-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px;
+  border: none !important;
+  color: #fff;
+}
+
+.highlight-card .ant-statistic-title,
+.highlight-card .ant-statistic-content,
+.highlight-card .ant-statistic-content span {
+  color: #ffd166 !important;
+}
+
+.highlight-card .ant-typography {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.room-change-steps {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(17, 17, 17, 0.05);
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
+}
+
+.steps-custom .ant-steps-item-content {
+  margin-left: 18px;
+}
+
+.room-change-reasons .reason-card,
+.room-change-policies .policy-card {
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12px 25px rgba(149, 157, 165, 0.1);
+  min-height: 220px;
+}
+
+.room-change-policies {
+  margin-top: 32px;
+}
+
+.room-change-policies .policy-card h4 {
+  color: #111;
+}
+
+.room-change-extra {
+  margin-top: 48px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.room-change-extra .faq-collapse .ant-collapse-header {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.room-change-extra .info-note {
+  margin-top: 24px;
+  border-radius: 10px;
+}
+
+@media (max-width: 992px) {
+  .room-change-hero {
+    grid-template-columns: 1fr;
+    padding: 32px;
+  }
+
+  .room-change-steps {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 576px) {
+  .room-change-page {
+    padding: 60px 0;
+  }
+
+  .room-change-steps,
+  .room-change-extra {
+    padding: 24px;
+  }
+}
+

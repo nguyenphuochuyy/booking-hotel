@@ -40,6 +40,8 @@ import Payment from '../pages/Payment'
 import PaymentSuccess from '../pages/PaymentSuccess/PaymentSuccess'
 import BookingManagement from '../pages/Admin/Booking'
 import GalleryPage from '../pages/Gallery'
+import FAQ from '../pages/FAQ/FAQ'
+import RoomChangePolicy from '../pages/RoomChangePolicy/RoomChangePolicy'
 import Reports from '../pages/Admin/Reports/Reports'
 
 function AppRoutes() {
@@ -99,6 +101,8 @@ function AppRoutes() {
         <Route path="/services" element={<Services />} />
         <Route path="/services/:slug" element={<ServiceDetail />} />
         <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/room-change-policy" element={<RoomChangePolicy />} />
         <Route path="/login" element={
           <AuthGuard><Authentication /></AuthGuard>
         } />
