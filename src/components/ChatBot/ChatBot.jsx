@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin, Dropdown, Card, Row, Col, Tag, Image } from 'antd'
+import { Button, Input, List, Avatar, Typography, Space, Badge, message, Spin, Dropdown, Card, Row, Col, Tag, Image, Tooltip } from 'antd'
 import {
   MessageOutlined,
   SendOutlined,
@@ -1340,7 +1340,7 @@ function ChatBot() {
         className={`chatbot-booking-btn ${showChatbot ? 'show' : ''}`}
         onClick={handleBookingClick}
       >
-       đặt phòng ngay - gọi 0366228041
+       đặt phòng ngay 
       </Button>
       {/* Button Chat với dropdown */}
       <Badge count={unread} offset={[-6, 6]}>

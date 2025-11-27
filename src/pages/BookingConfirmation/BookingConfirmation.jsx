@@ -94,7 +94,7 @@ const BookingConfirmation = () => {
     }
   }, [user, form])
 
-  // Submit Logic (Giữ nguyên)
+  // Submit Logic 
   const handleSubmit = async (values) => {
     try {
       setLoading(true)
@@ -144,7 +144,7 @@ const BookingConfirmation = () => {
       })
     } catch (error) {
       console.error('Booking error:', error)
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo đặt phòng!')
+      message.error(error.message)
     } finally {
       setLoading(false)
     }
@@ -195,7 +195,7 @@ const BookingConfirmation = () => {
                           label="Họ và tên người nhận phòng"
                           rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
                         >
-                          <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="VD: Nguyen Van A" size="large" />
+                          <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="VD: Nguyen Van A" size="large" disabled={true} />
                         </Form.Item>
                      </Col>
                      <Col xs={24} md={12}>
@@ -207,7 +207,7 @@ const BookingConfirmation = () => {
                             { type: 'email', message: 'Email không hợp lệ' }
                           ]}
                         >
-                          <Input placeholder="example@email.com" size="large" />
+                          <Input placeholder="example@email.com" size="large" disabled={true} />
                         </Form.Item>
                      </Col>
                      <Col xs={24} md={12}>
