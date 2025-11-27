@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Row, Col, Form, Input, Button, Typography, Space, Card, message } from 'antd'
 import { 
   HomeOutlined, 
@@ -8,44 +8,71 @@ import {
   SendOutlined 
 } from '@ant-design/icons'
 import './Contact.css'
-
+import emailjs from '@emailjs/browser' // Import thư viện gửi mail
 const { Title, Paragraph } = Typography
 const { TextArea } = Input
-
 function Contact() {
   const [form] = Form.useForm()
-
+  const [loading, setLoading] = useState(false)
   const onFinish = (values) => {
-    console.log('Form values:', values)
-    message.success('Gửi thông tin thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.')
-    form.resetFields()
-  }
+    setLoading(true) // Bật loading
 
+    // Cấu hình thông tin gửi đi
+    const templateParams = {
+      from_name: values.fullName,
+      from_email: values.email,
+      message: values.message,
+      to_email: 'beanhotelvn@gmail.com' // Email nhận (Cấu hình thêm trong EmailJS Dashboard)
+    }
+
+    // Gửi email qua EmailJS
+    // Thay thế 3 tham số dưới đây bằng thông tin tài khoản EmailJS của bạn
+    emailjs.send(
+    'service_w97ykx6' ,
+     'template_atyegcq' ,
+      templateParams,
+      'NEPKD6Oxzd9z6_Duk'
+    )
+    .then((response) => {
+      console.log('SUCCESS!', response.status, response.text)
+      message.success('Gửi tin nhắn thành công! Chúng tôi sẽ sớm liên hệ lại.')
+      form.resetFields() // Xóa trắng form sau khi gửi
+    })
+    .catch((err) => {
+      console.log('FAILED...', err)
+      message.error('Gửi tin nhắn thất bại. Vui lòng thử lại sau.')
+    })
+    .finally(() => {
+      setLoading(false) // Tắt loading dù thành công hay thất bại
+    })
+  }
   const onFinishFailed = (errorInfo) => {
     console.log('Failed:', errorInfo)
     message.error('Vui lòng điền đầy đủ thông tin!')
   }
-
   return (
     <div className="contact-page">
       <div className="container">
         {/* Page Header */}
         <div className="page-header">
-          <Title className="page-title">Liên hệ với chúng tôi</Title>
+          <Title className="page-title">LIÊN HỆ VỚI CHÚNG TÔI</Title>
           <Paragraph className="page-description">
-            Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, chúng tôi sẽ liên hệ lại sớm nhất.
+            Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, Bean Hotel sẽ liên hệ lại trong thời gian sớm nhất.
           </Paragraph>
         </div>
 
-        {/* Contact Form & Info Wrapper */}
+        {/* Contact Wrapper */}
         <div className="contact-wrapper">
-          <Row gutter={0} className="contact-row" style={{ maxWidth: 950, margin: '0 auto' }}>
+          <Row gutter={0} className="contact-row">
             {/* Form Column (Left) */}
             <Col xs={24} lg={12} className="form-column">
               <div className="form-container">
-                <Title className="form-title">Gửi tin nhắn</Title>
+                <div className="form-header-group">
+                  <Title className="form-title">Gửi tin nhắn</Title>
+                  <div className="title-underline"></div>
+                </div>
                 <Paragraph className="form-description">
-                  Điền thông tin của bạn vào form dưới đây và chúng tôi sẽ phản hồi trong thời gian sớm nhất.
+                  Điền thông tin của bạn vào form dưới đây:
                 </Paragraph>
                 
                 <Form
@@ -65,7 +92,7 @@ function Contact() {
                       { min: 2, message: 'Họ tên phải có ít nhất 2 ký tự!' }
                     ]}
                   >
-                    <Input placeholder="Nguyễn Văn A" size="large" />
+                    <Input placeholder="Nhập họ và tên của bạn" size="large" />
                   </Form.Item>
 
                   <Form.Item
@@ -76,7 +103,7 @@ function Contact() {
                       { type: 'email', message: 'Email không hợp lệ!' }
                     ]}
                   >
-                    <Input placeholder="example@email.com" size="large" />
+                    <Input placeholder="example@beanhotel.com" size="large" />
                   </Form.Item>
 
                   <Form.Item
@@ -88,8 +115,8 @@ function Contact() {
                     ]}
                   >
                     <TextArea 
-                      rows={6} 
-                      placeholder="Nhập nội dung bạn muốn gửi..."
+                      rows={5} 
+                      placeholder="Bạn cần chúng tôi hỗ trợ gì?"
                       maxLength={1000}
                       showCount
                     />
@@ -113,48 +140,63 @@ function Contact() {
             {/* Info Column (Right) */}
             <Col xs={24} lg={12} className="info-column">
               <div className="info-container">
+                {/* Decorative Elements */}
                 <div className="gold-accent top"></div>
                 <div className="gold-accent bottom"></div>
                 
                 <div className="info-content-wrapper">
                   <Title className="info-title">Thông tin liên hệ</Title>
                   
-                  <Space direction="vertical" size={32}>
+                  <div className="info-list">
                     <div className="info-item">
-                      <HomeOutlined className="info-icon" />
-                      <Paragraph className="info-text">
-                        <strong>Địa chỉ:</strong><br />
-                        12 Nguyễn Văn Bảo phường Hạnh Thông,<br />
-                        Thành phố Hồ Chí Minh, Việt Nam
-                      </Paragraph>
+                      <div className="icon-box">
+                        <HomeOutlined className="info-icon" />
+                      </div>
+                      <div className="text-box">
+                        <strong>Địa chỉ:</strong>
+                        <Paragraph className="info-text">
+                          12 Nguyễn Văn Bảo, Phường 4, <br/>Quận Gò Vấp, TP. Hồ Chí Minh
+                        </Paragraph>
+                      </div>
                     </div>
 
                     <div className="info-item">
-                      <PhoneOutlined className="info-icon" />
-                      <Paragraph className="info-text">
-                        <strong>Số điện thoại:</strong><br />
-                        Hotline: (+84) 28 1234 5678<br />
-                        Mobile: (+84) 901 234 567
-                      </Paragraph>
+                      <div className="icon-box">
+                        <PhoneOutlined className="info-icon" />
+                      </div>
+                      <div className="text-box">
+                        <strong>Hotline:</strong>
+                        <Paragraph className="info-text">
+                          (+84) 28 1234 5678 <br/> (+84) 901 234 567
+                        </Paragraph>
+                      </div>
                     </div>
 
                     <div className="info-item">
-                      <MailOutlined className="info-icon" />
-                      <Paragraph className="info-text">
-                        <strong>Email:</strong><br />
-                        beanhotelvn@gmail.com<br />
-                      </Paragraph>
+                      <div className="icon-box">
+                        <MailOutlined className="info-icon" />
+                      </div>
+                      <div className="text-box">
+                        <strong>Email:</strong>
+                        <Paragraph className="info-text">
+                          contact@beanhotel.com
+                        </Paragraph>
+                      </div>
                     </div>
 
                     <div className="info-item">
-                      <ClockCircleOutlined className="info-icon" />
-                      <Paragraph className="info-text">
-                        <strong>Giờ mở cửa:</strong><br />
-                        Thứ 2 - Chủ nhật: 24/7<br />
-                        Lễ tân luôn sẵn sàng phục vụ
-                      </Paragraph>
+                      <div className="icon-box">
+                        <ClockCircleOutlined className="info-icon" />
+                      </div>
+                      <div className="text-box">
+                        <strong>Giờ mở cửa:</strong>
+                        <Paragraph className="info-text">
+                          Thứ 2 - Chủ nhật: 24/7<br />
+                          Lễ tân luôn sẵn sàng phục vụ
+                        </Paragraph>
+                      </div>
                     </div>
-                  </Space>
+                  </div>
                 </div>
               </div>
             </Col>
@@ -163,15 +205,12 @@ function Contact() {
 
         {/* Google Map Section */}
         <div className="map-section">
-          <Card 
-            title="Vị trí của chúng tôi" 
-            className="map-card"
-          >
+          <Card className="map-card" bordered={false}>
             <div className="map-container">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.8582379826526!2d106.6842704748576!3d10.82215888932942!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174deb3ef536f31%3A0x8b7bb8b7c956157b!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBDw7RuZyBuZ2hp4buHcCBUUC5IQ00!5e0!3m2!1svi!2s!4v1759586604110!5m2!1svi!2s"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.8582378452174!2d106.68427047480556!3d10.822158889329432!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317528e549695d13%3A0x333d01f195e3478d!2zMTIgTmd1eOG7hW4gVsSDbiBC4bqjbywgUGjGsOG7nW5nIDQsIEjhuqFuaCBUaMO0bmcsIEfDsiBW4bqlcCwgSOG7kyBDaMOtIE1pbmgsIFZpZXRuYW0!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s"
                 width="100%"
-                height="500"
+                height="450"
                 style={{ border: 0 }}
                 allowFullScreen=""
                 loading="lazy"
@@ -187,4 +226,3 @@ function Contact() {
 }
 
 export default Contact
-
