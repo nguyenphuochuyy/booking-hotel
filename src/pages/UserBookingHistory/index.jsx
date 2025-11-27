@@ -722,25 +722,14 @@ function UserBookingHistory() {
                     icon={<DollarOutlined />}
                     size="small"
                     onClick={() => {
-                      // Kiểm tra nếu ở localhost thì chuyển đến trang thanh toán
-                      const isLocalhost = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1' ||
-                        window.location.hostname === ''
-                      if (isLocalhost) {
-                        navigate('/payment', {
-                          state: {
-                            tempBookingKey: record.tempBookingKey,
-                            orderCode: record.orderCode,
-                            bookingCode: record.bookingCode
-                          }
-                        })
-                      } else {
-                        if (paymentUrl) {
-                          window.open(paymentUrl, '_blank')
-                        } else {
-                          message.error('Không tìm thấy link thanh toán')
+                      navigate('/payment', {
+                        state: {
+                          tempBookingKey: record.tempBookingKey,
+                          orderCode: record.orderCode,
+                          bookingCode: record.bookingCode,
+                          bookingData: record
                         }
-                      }
+                      })
                     }}
                     className="payment-btn"
                     type="primary"
@@ -753,25 +742,14 @@ function UserBookingHistory() {
                   icon={<DollarOutlined />}
                   size="middle"
                   onClick={() => {
-                    // Kiểm tra nếu ở localhost thì chuyển đến trang thanh toán
-                    const isLocalhost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname === ''
-                    if (isLocalhost) {
-                      navigate('/payment', {
-                        state: {
-                          tempBookingKey: record.tempBookingKey,
-                          orderCode: record.orderCode,
-                          bookingCode: record.bookingCode
-                        }
-                      })
-                    } else {
-                      if (paymentUrl) {
-                        window.open(paymentUrl, '_blank')
-                      } else {
-                        message.error('Không tìm thấy link thanh toán')
+                    navigate('/payment', {
+                      state: {
+                        tempBookingKey: record.tempBookingKey,
+                        orderCode: record.orderCode,
+                        bookingCode: record.bookingCode,
+                        bookingData: record
                       }
-                    }
+                    })
                   }}
                   className="payment-btn"
                   type="primary"
