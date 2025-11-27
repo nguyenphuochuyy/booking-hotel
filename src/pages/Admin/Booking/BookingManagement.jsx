@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons'
 import {
   getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
-  getAllHotels, getAllRoomTypes, getAllUsers,
+  getAllHotels, getAllRoomTypes, getAllUsers, getUserById,
   checkOutGuest,
   checkInGuest,
   createWalkInBooking,
@@ -83,6 +83,8 @@ const BookingManagement = () => {
   const [selectedServices, setSelectedServices] = useState({})
   const [paymentType, setPaymentType] = useState('postpaid') // 'postpaid' hoặc 'prepaid'
   const [addingServices, setAddingServices] = useState(false)
+  const [walkInUserDetail, setWalkInUserDetail] = useState(null) // Thông tin user chi tiết cho Walk-in booking
+  const [loadingUserDetail, setLoadingUserDetail] = useState(false)
 
   const handleLoadAvailableRooms = async () => {
     try {
@@ -309,6 +311,23 @@ const BookingManagement = () => {
       const booking = response.booking
       setSelectedBooking(booking)
       setIsDetailModalVisible(true)
+      
+      // Nếu là booking Walk-in, gọi API lấy thông tin user chi tiết
+      if (booking.booking_type === 'walkin' && booking.user_id) {
+        setLoadingUserDetail(true)
+        setWalkInUserDetail(null)
+        try {
+          const userResponse = await getUserById(booking.user_id)
+          setWalkInUserDetail(userResponse?.user || userResponse || null)
+        } catch (userError) {
+          console.error('Error fetching user details:', userError)
+          setWalkInUserDetail(null)
+        } finally {
+          setLoadingUserDetail(false)
+        }
+      } else {
+        setWalkInUserDetail(null)
+      }
       
       // Nếu booking có trạng thái đã hủy, gọi API lấy thông tin hoàn tiền
       if (booking.booking_status === 'cancelled') {
@@ -969,6 +988,7 @@ const BookingManagement = () => {
           setIsDetailModalVisible(false)
           setSelectedBooking(null)
           setRefundInfo(null) // Reset refund info khi đóng modal
+          setWalkInUserDetail(null) // Reset user detail khi đóng modal
         }}
         width={800}
         footer={[
@@ -1094,18 +1114,51 @@ const BookingManagement = () => {
               </Col>
               <Col span={12}>
                 <Card title="Thông tin khách hàng" size="small">
-                  <div className="detail-item">
-                    <Text strong>Tên:</Text>
-                    <Text>{selectedBooking.user?.full_name}</Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Email:</Text>
-                    <Text>{selectedBooking.user?.email}</Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Số điện thoại:</Text>
-                    <Text>{selectedBooking.user?.phone}</Text>
-                  </div>
+                  <Spin spinning={loadingUserDetail}>
+                    <div className="detail-item">
+                      <Text strong>Tên:</Text>
+                      <Text>{selectedBooking.user?.full_name || 'Chưa cập nhật'}</Text>
+                    </div>
+                    {selectedBooking.booking_type === 'walkin' ? (
+                      <>
+                        <div className="detail-item">
+                          <Text strong>CCCD/CMND:</Text>
+                          <Text>
+                            {loadingUserDetail 
+                              ? 'Đang tải...' 
+                              : walkInUserDetail?.national_id || walkInUserDetail?.cccd || selectedBooking.user?.national_id || selectedBooking.user?.cccd || 'Chưa cập nhật'}
+                          </Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Email:</Text>
+                          <Text>
+                            {loadingUserDetail 
+                              ? 'Đang tải...' 
+                              : walkInUserDetail?.email || selectedBooking.user?.email || 'Chưa cập nhật'}
+                          </Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Số điện thoại:</Text>
+                          <Text>
+                            {loadingUserDetail 
+                              ? 'Đang tải...' 
+                              : walkInUserDetail?.phone || selectedBooking.user?.phone || 'Chưa cập nhật'}
+                          </Text>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="detail-item">
+                          <Text strong>Email:</Text>
+                          <Text>{selectedBooking.user?.email || 'Chưa cập nhật'}</Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Số điện thoại:</Text>
+                          <Text>{selectedBooking.user?.phone || 'Chưa cập nhật'}</Text>
+                        </div>
+                      </>
+                    )}
+                  </Spin>
                 </Card>
               </Col>
             </Row>
@@ -1160,7 +1213,15 @@ const BookingManagement = () => {
                   </div>
                   <div className="detail-item">
                     <Text strong>Phương thức:</Text>
-                    <Text>{selectedBooking.payment_status === 'paid' ? 'PayOS' : selectedBooking.payment_status === 'partial_refunded' ? 'Chờ hoàn tiền từ admin' : 'Admin chuyển khoản'}</Text>
+                    <Text>
+                      {selectedBooking.booking_type === 'walkin' 
+                        ? 'Tiền mặt' 
+                        : selectedBooking.payment_status === 'paid' 
+                          ? 'PayOS' 
+                          : selectedBooking.payment_status === 'partial_refunded' 
+                            ? 'Chờ hoàn tiền từ admin' 
+                            : 'Admin chuyển khoản'}
+                    </Text>
                   </div>
                   
                   {/* Hiển thị thông tin hoàn tiền khi booking đã hủy */}
@@ -1219,7 +1280,7 @@ const BookingManagement = () => {
               {selectedBooking.check_out_time && (
                 <div className="detail-item">   
                   <Text strong>Thời gian check-out:</Text>
-                  <Text strong>{new Date(selectedBooking.check_out_time).toLocaleString('vi-VN')}</Text>
+                  <Text strong>{formatDateTime(selectedBooking.check_out_time)}</Text>
                 </div>
               )}
             </Card>

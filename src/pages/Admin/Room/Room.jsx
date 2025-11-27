@@ -57,11 +57,11 @@ const RoomManagement = () => {
       }
       const response = await getAllRooms(params)
       setRooms(response.rooms || [])
-      setPagination({
-        current: page,
-        pageSize,
-        total: response.total || 0
-      })
+      // setPagination({
+      //   current: page,
+      //   pageSize,
+      //   total: response.total || 0
+      // })
     } catch (error) {
       console.error('Error fetching rooms:', error)
       message.error('Không thể tải danh sách phòng')
@@ -572,7 +572,7 @@ const RoomManagement = () => {
       {/* Statistics */}
       <Row gutter={[16, 16]} className="statistics-row">
         <Col xs={12} sm={12} md={6}>
-          <Card className="stat-card">
+          <Card className="stat-card" data-stat-type="total">
             <Statistic
               title="Tổng số phòng"
               value={statistics.total}
@@ -582,7 +582,7 @@ const RoomManagement = () => {
           </Card>
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card className="stat-card">
+          <Card className="stat-card" data-stat-type="available">
             <Statistic
               title="Phòng có sẵn"
               value={statistics.available}
@@ -592,7 +592,7 @@ const RoomManagement = () => {
           </Card>
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card className="stat-card">
+          <Card className="stat-card" data-stat-type="booked">
             <Statistic
               title="Phòng đã đặt"
               value={statistics.booked}
@@ -602,7 +602,7 @@ const RoomManagement = () => {
           </Card>
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card className="stat-card">
+          <Card className="stat-card" data-stat-type="cleaning">
             <Statistic
               title="Đang dọn dẹp"
               value={statistics.cleaning}
@@ -950,7 +950,7 @@ const RoomManagement = () => {
             </Card>
           )}
 
-          <Collapse ghost style={{ marginTop: 8 }}
+          {/* <Collapse ghost style={{ marginTop: 8 }}
             items={[{
               key: 'services',
               label: <span style={{ fontWeight: 500 }}>Dịch vụ bổ sung (tùy chọn)</span>,
@@ -989,7 +989,7 @@ const RoomManagement = () => {
                   </Row>
                 </Spin>
               )
-            }]} />
+            }]} /> */}
 
           <Divider />
 
