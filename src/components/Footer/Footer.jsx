@@ -118,8 +118,8 @@ function AppFooter() {
               <div
                 style={{ display: 'flex', alignItems: 'center', gap: 8 }}
               >
-                <PhoneFilled style={{ color: '#000', marginRight: 8 }} />
-                <a href="tel:0858369609" style={{ color: '#000', marginRight: 8 }}>
+                <PhoneFilled style={{ color: '#000'}} />
+                <a href="tel:0858369609" style={{ color: '#000' }}>
                   Hotline: 0858 369 609
                 </a>
               </div>
@@ -135,7 +135,7 @@ function AppFooter() {
               <div>
                 <EnvironmentFilled style={{ color: '#64748b', marginRight: 8 }} />
                 <Text style={{ color: '#334155' }}>
-                  Số 12 Hoa Sữa, P.7, TP. Đà Lạt, Lâm Đồng
+                  Nguyễn Văn Bảo/12 Đ. Hạnh Thông, Phường, Gò Vấp, Thành phố Hồ Chí Minh
                 </Text>
               </div>
 

@@ -1,0 +1,195 @@
+.payment-refund-page {
+  padding: 60px 0 80px;
+  background: linear-gradient(135deg, #f7f9fc 0%, #ffffff 60%);
+}
+
+.payment-refund-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.payment-hero {
+  display: flex;
+  gap: 32px;
+  padding: 40px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #111827 0%, #1f2937 60%, #111827 100%);
+  color: #fff;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+}
+
+.payment-hero .hero-content {
+  flex: 1;
+  min-width: 260px;
+}
+
+.payment-hero .page-title {
+  color: #fff;
+  letter-spacing: 4px;
+}
+
+.payment-hero .page-description {
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+
+.payment-hero .hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.payment-hero .hero-stats .ant-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-align: center;
+  border-radius: 16px;
+}
+
+.payment-hero .hero-stats .ant-typography {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.payment-section,
+.workflow-section,
+.refund-section,
+.guarantee-section,
+.support-section {
+  margin-bottom: 56px;
+}
+
+.section-title {
+  text-align: center;
+  color: #1f2937 !important;
+  margin-bottom: 12px !important;
+}
+
+.section-desc {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 32px;
+  color: #4b5563;
+}
+
+.method-card {
+  height: 100%;
+  border-radius: 18px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.method-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+.method-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #fff4e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #c08a19;
+  margin-bottom: 16px;
+}
+
+.payment-steps .ant-steps-item-title {
+  font-weight: 600;
+}
+
+.payment-steps .ant-steps-item-description {
+  color: #4b5563;
+}
+
+.policy-alert {
+  margin-top: 24px;
+  border-radius: 12px;
+}
+
+.refund-card {
+  background: #fff;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+.refund-policy-card {
+  background: #f9fafb;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.refund-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timeline-card {
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.guarantee-card {
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.guarantee-icon {
+  font-size: 36px;
+  color: #c08a19;
+  margin-top: 4px;
+}
+
+.support-card {
+  border-radius: 24px;
+  background: #111827;
+  color: #fff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  padding: 32px;
+}
+
+.support-card .ant-typography {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.support-card .ant-typography strong {
+  color: #fff;
+}
+
+@media (max-width: 992px) {
+  .payment-hero {
+    padding: 32px;
+  }
+
+  .payment-hero .hero-stats {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .payment-hero {
+    padding: 24px;
+  }
+
+  .refund-card {
+    padding: 24px;
+  }
+
+  .support-card {
+    padding: 24px;
+  }
+}
+

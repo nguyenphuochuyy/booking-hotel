@@ -42,7 +42,10 @@ import BookingManagement from '../pages/Admin/Booking'
 import GalleryPage from '../pages/Gallery'
 import FAQ from '../pages/FAQ/FAQ'
 import RoomChangePolicy from '../pages/RoomChangePolicy/RoomChangePolicy'
+import VATInvoice from '../pages/VATInvoice/VATInvoice'
+import ReviewPage from '../pages/Review/Review'
 import Reports from '../pages/Admin/Reports/Reports'
+import PaymentRefund from '../pages/PaymentRefund/PaymentRefund'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -103,6 +106,8 @@ function AppRoutes() {
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/room-change-policy" element={<RoomChangePolicy />} />
+        <Route path="/hoa-don-vat" element={<VATInvoice />} />
+        <Route path="/review/:code" element={<ReviewPage />} />
         <Route path="/login" element={
           <AuthGuard><Authentication /></AuthGuard>
         } />
@@ -117,6 +122,7 @@ function AppRoutes() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />
         <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+        <Route path="/thanh-toan" element={<PaymentRefund />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 
