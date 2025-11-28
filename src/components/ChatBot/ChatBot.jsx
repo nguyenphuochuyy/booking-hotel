@@ -1340,7 +1340,7 @@ function ChatBot() {
         className={`chatbot-booking-btn ${showChatbot ? 'show' : ''}`}
         onClick={handleBookingClick}
       >
-       đặt phòng ngay 
+       đặt phòng ngay - 0366228041
       </Button>
       {/* Button Chat với dropdown */}
       <Badge count={unread} offset={[-6, 6]}>
