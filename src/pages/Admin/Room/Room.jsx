@@ -48,20 +48,20 @@ const RoomManagement = () => {
   const [selectedServices, setSelectedServices] = useState({})
 
   // Fetch rooms data
-  const fetchRooms = async (page = 1, pageSize = 10) => {
+  const fetchRooms = async () => {
     setLoading(true)
     try {
       const params = {
-        page,
-        limit: pageSize
+        page: 1,
+        limit: 1000
       }
       const response = await getAllRooms(params)
-      setRooms(response.rooms || [])
-      // setPagination({
-      //   current: page,
-      //   pageSize,
-      //   total: response.total || 0
-      // })
+      const fetchedRooms = response.rooms || []
+      setRooms(fetchedRooms)
+      setPagination((prev) => ({
+        ...prev,
+        total: fetchedRooms.length
+      }))
     } catch (error) {
       console.error('Error fetching rooms:', error)
       message.error('Không thể tải danh sách phòng')
@@ -309,8 +309,21 @@ const RoomManagement = () => {
 
   // Handle table change
   const handleTableChange = (paginationInfo) => {
-    fetchRooms(paginationInfo.current, paginationInfo.pageSize)
+    setPagination(paginationInfo)
   }
+
+  useEffect(() => {
+    setPagination((prev) => {
+      const total = filteredRooms.length
+      const pageSize = prev.pageSize
+      const maxPage = Math.max(1, Math.ceil(total / pageSize))
+      return {
+        ...prev,
+        total,
+        current: Math.min(prev.current, maxPage)
+      }
+    })
+  }, [filteredRooms.length])
 
   // Handle booking modal
   const handleOpenBookingModal = (room) => {
@@ -669,9 +682,8 @@ const RoomManagement = () => {
         rowKey="room_id"
         pagination={{
           ...pagination,
-          showSizeChanger: true,
-          showTotal: (total) => `Tổng ${total} phòng`,
-          pageSizeOptions: ['10', '20', '50', '100']
+          showSizeChanger: false,
+          showTotal: (total) => `Tổng ${total} phòng`
         }}
         onChange={handleTableChange}
         loading={loading}
