@@ -45,6 +45,7 @@ import RoomChangePolicy from '../pages/RoomChangePolicy/RoomChangePolicy'
 import VATInvoice from '../pages/VATInvoice/VATInvoice'
 import ReviewPage from '../pages/Review/Review'
 import Reports from '../pages/Admin/Reports/Reports'
+import AdminProfile from '../pages/Admin/Profile/AdminProfile'
 import PaymentRefund from '../pages/PaymentRefund/PaymentRefund'
 
 function AppRoutes() {
@@ -190,7 +191,7 @@ function AppRoutes() {
         } />
         <Route path="/admin/profile" element={
           <AdminRoute>
-            <div>Thông tin cá nhân</div>
+            <AdminProfile />
           </AdminRoute>
         } />
         <Route path="/admin/settings" element={

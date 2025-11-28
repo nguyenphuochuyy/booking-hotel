@@ -875,6 +875,7 @@ const BookingManagement = () => {
           </Card>
         </Col>
       </Row>
+
       {/* Toolbar tìm kiếm và lọc , tạo mới đặt phòng mới */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12} md={8} lg={8}>
@@ -899,6 +900,7 @@ const BookingManagement = () => {
             <Option value="confirmed">Đã xác nhận</Option>
             <Option value="cancelled">Đã hủy</Option>
             <Option value="checked_in">Đã nhận phòng</Option>
+            <Option value="checked_out">Đã trả phòng</Option>
           </Select>
         </Col>
         <Col xs={24} sm={12} md={8} lg={8}>
@@ -915,41 +917,6 @@ const BookingManagement = () => {
         
       </Row>
    
-   
-      {/* Check-in/Check-out Buttons */}
-      {/* <Row gutter={[16, 16]} className="statistics-row">
-        <Col span={12}>
-          <Space size="middle" style={{ width: '100%', justifyContent: 'start' }}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<CheckCircleOutlined />}
-              onClick={() => setIsCheckInModalVisible(true)}
-              style={{ background: '#52c41a', borderColor: '#52c41a' }}
-            >
-              Check-in
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              icon={<ClockCircleOutlined />}
-              onClick={() => setIsCheckOutModalVisible(true)}
-              style={{ background: '#722ed1', borderColor: '#722ed1' }}
-            >
-              Check-out
-            </Button>
-    
-            <Button
-              type="primary"
-              size="large"
-              icon={<ReloadOutlined />}
-              onClick={() => handleRefresh()}
-            >
-              Làm mới
-            </Button>
-          </Space>
-        </Col>
-      </Row> */}
 
       {/* Table */}
       <Table

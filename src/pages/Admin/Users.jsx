@@ -39,19 +39,14 @@ const formatDate = (dateString) => {
   return `${day}/${month}/${year}`
 }
 
-// Format date string để binding vào input type="date"
-const formatDateForInput = (dateString) => {
-  if (!dateString) return undefined
-  const date = new Date(dateString)
-  if (Number.isNaN(date.getTime())) return undefined
-  return date.toISOString().slice(0, 10)
-}
 
 function Users() {
   const [loading, setLoading] = useState(false)
   const [allUsers, setAllUsers] = useState([]) // Lưu toàn bộ users từ API
   const [filteredUsers, setFilteredUsers] = useState([]) // Users sau khi filter
   const [searchText, setSearchText] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [pagination, setPagination] = useState({
@@ -98,25 +93,26 @@ function Users() {
     fetchUsers()
   }, [])
 
-  // Filter users khi searchText thay đổi
+  // Filter users khi searchText / roleFilter / statusFilter thay đổi
   useEffect(() => {
-    if (!searchText.trim()) {
-      setFilteredUsers(allUsers)
-      setPagination(prev => ({
-        ...prev,
-        total: allUsers.length,
-        current: 1,
-      }))
-      return
-    }
-
     const searchLower = searchText.toLowerCase()
+
     const filtered = allUsers.filter(user => {
-      return (
+      const matchSearch =
+        !searchText.trim() ||
         user.full_name?.toLowerCase().includes(searchLower) ||
         user.email?.toLowerCase().includes(searchLower) ||
         user.phone?.includes(searchText)
-      )
+
+      const matchRole =
+        roleFilter === 'all' || user.role === roleFilter
+
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'verified' && user.is_verified) ||
+        (statusFilter === 'unverified' && !user.is_verified)
+
+      return matchSearch && matchRole && matchStatus
     })
 
     setFilteredUsers(filtered)
@@ -125,7 +121,7 @@ function Users() {
       total: filtered.length,
       current: 1, // Reset về trang 1 khi search
     }))
-  }, [searchText, allUsers])
+  }, [searchText, roleFilter, statusFilter, allUsers])
 
   const columns = [
     {
@@ -149,6 +145,11 @@ function Users() {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
+      render: (text) => (
+        <span>
+          {text? text : 'Chưa cập nhật'}
+          </span>
+      ),
     },
     {
       title: 'Số điện thoại',
@@ -156,7 +157,7 @@ function Users() {
       key: 'phone',
       render: (text) => (
         <span>
-          {text? text : 'chưa cập nhật'}
+          {text? text : 'Chưa cập nhật'}
           </span>
       ),
     },
@@ -166,7 +167,7 @@ function Users() {
       key: 'cccd',
       render: (text) => (
         <span>
-          {text? text : 'chưa cập nhật'}
+          {text? text : 'Chưa cập nhật'}
           </span>
       ),
     },
@@ -320,15 +321,47 @@ function Users() {
         </Button>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 12,
+          alignItems: 'center',
+        }}
+      >
         <Search
           placeholder="Tìm kiếm theo tên hoặc email"
           allowClear
           enterButton={<SearchOutlined />}
           size="large"
           onChange={(e) => setSearchText(e.target.value)}
-          style={{ maxWidth: 400 }}
+          style={{ maxWidth: 400, width: '100%', flex: '0 1 280px' }}
         />
+        <Select
+          value={roleFilter}
+          onChange={setRoleFilter}
+          placeholder="Lọc theo vai trò"
+          size="large"
+          style={{ width: 180, minWidth: 160 }}
+          allowClear={false}
+        >
+          <Select.Option value="all">Tất cả vai trò</Select.Option>
+          <Select.Option value="customer">Khách hàng</Select.Option>
+          <Select.Option value="admin">Quản trị viên</Select.Option>
+        </Select>
+        <Select
+          value={statusFilter}
+          onChange={setStatusFilter}
+          placeholder="Lọc theo trạng thái"
+          size="large"
+          style={{ width: 200, minWidth: 160 }}
+          allowClear={false}
+        >
+          <Select.Option value="all">Tất cả trạng thái</Select.Option>
+          <Select.Option value="verified">Đã xác thực</Select.Option>
+          <Select.Option value="unverified">Chưa xác thực</Select.Option>
+        </Select>
       </div>
 
       <Table 

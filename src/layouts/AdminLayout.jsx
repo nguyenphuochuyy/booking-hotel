@@ -246,16 +246,13 @@ function AdminLayout() {
         {/* Content */}
         <Content
           style={{
-            // margin: '24px',
-            // padding: 24,
             minHeight: 'calc(100vh - 112px)',
-            background: '#f0f2f5',
+            background: '#ffffff',
           }}
         >
           <div
             style={{
-              background: '#fff',
-              // padding: 24,
+              background: '#ffffff',
               borderRadius: 8,
               boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
               minHeight: 'calc(100vh - 160px)',
