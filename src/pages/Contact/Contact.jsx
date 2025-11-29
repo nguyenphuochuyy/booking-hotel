@@ -28,10 +28,10 @@ function Contact() {
     // Gửi email qua EmailJS
     // Thay thế 3 tham số dưới đây bằng thông tin tài khoản EmailJS của bạn
     emailjs.send(
-    'service_w97ykx6' ,
-     'template_atyegcq' ,
+    'service_cilrf0q' ,
+     'template_6jl026y' ,
       templateParams,
-      'NEPKD6Oxzd9z6_Duk'
+      'Wnt8fcNNJcgDy13MZ'
     )
     .then((response) => {
       console.log('SUCCESS!', response.status, response.text)
