@@ -53,7 +53,7 @@ const RoomPriceManagement = () => {
     }
   }
 
-  // Fetch room types for dropdown
+  // Fetch loại phòng cho dropdown
   const fetchRoomTypes = async () => {
     try {
       const response = await getAllRoomTypes({ limit: 100 })
@@ -67,7 +67,21 @@ const RoomPriceManagement = () => {
   useEffect(() => {
     fetchRoomPrices()
     fetchRoomTypes()
-  }, []) 
+  }, [])
+
+  // Set form values khi edit và modal đã mở
+  useEffect(() => {
+    if (isModalVisible && editingPrice) {
+      form.setFieldsValue({
+        room_type_id: editingPrice.room_type_id,
+        date_range: [
+          dayjs(editingPrice.start_date),
+          dayjs(editingPrice.end_date)
+        ],
+        price_per_night: parseFloat(editingPrice.price_per_night) || editingPrice.price_per_night
+      })
+    }
+  }, [isModalVisible, editingPrice, form]) 
 
   //  Lọc giá phòng theo tên loại phòng và giá
   const filteredRoomPrices = useMemo(() => {
@@ -104,16 +118,68 @@ const RoomPriceManagement = () => {
     setDateRangeFilter(dates)
   }
 
+  // Kiểm tra trùng lặp thời gian áp dụng
+  const checkDateOverlap = (roomTypeId, startDate, endDate, excludePriceId = null) => {
+    const newStart = dayjs(startDate)
+    const newEnd = dayjs(endDate)
+    
+    // Lọc các giá phòng cùng loại phòng (trừ giá đang chỉnh sửa nếu có)
+    const sameRoomTypePrices = roomPrices.filter(price => {
+      if (price.room_type_id !== roomTypeId) return false
+      if (excludePriceId && price.price_id === excludePriceId) return false
+      return true
+    })
+    
+    // Kiểm tra trùng lặp với từng giá phòng
+    for (const price of sameRoomTypePrices) {
+      const existingStart = dayjs(price.start_date)
+      const existingEnd = dayjs(price.end_date)
+      
+      // Kiểm tra trùng lặp: khoảng thời gian mới có giao với khoảng thời gian hiện có
+      const hasOverlap = (
+        (newStart.isSameOrAfter(existingStart) && newStart.isSameOrBefore(existingEnd)) ||
+        (newEnd.isSameOrAfter(existingStart) && newEnd.isSameOrBefore(existingEnd)) ||
+        (newStart.isBefore(existingStart) && newEnd.isAfter(existingEnd))
+      )
+      
+      if (hasOverlap) {
+        return true
+      }
+    }
+    
+    return false
+  }
+
   // Handle create/update room price
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields()
       
+      // Kiểm tra giá > 0
+      const priceValue = typeof values.price_per_night === 'string' 
+        ? parseFloat(values.price_per_night.replace(/,/g, '')) 
+        : parseFloat(values.price_per_night)
+      
+      if (isNaN(priceValue) || priceValue <= 0) {
+        message.error('Giá phải lớn hơn 0')
+        return
+      }
+      
+      const startDate = values.date_range[0].format('YYYY-MM-DD')
+      const endDate = values.date_range[1].format('YYYY-MM-DD')
+      
+      // Kiểm tra trùng lặp thời gian áp dụng
+      const excludePriceId = editingPrice ? editingPrice.price_id : null
+      if (checkDateOverlap(values.room_type_id, startDate, endDate, excludePriceId)) {
+        message.error('Đã có 1 giá đang được áp dụng trong khoảng thời gian này, vui lòng không thêm giá')
+        return
+      }
+      
       const priceData = {
         room_type_id: values.room_type_id,
-        start_date: values.date_range[0].format('YYYY-MM-DD'),
-        end_date: values.date_range[1].format('YYYY-MM-DD'),
-        price_per_night: parseFloat(values.price_per_night)
+        start_date: startDate,
+        end_date: endDate,
+        price_per_night: priceValue
       }
 
       if (editingPrice) {
@@ -129,7 +195,10 @@ const RoomPriceManagement = () => {
       form.resetFields()
       fetchRoomPrices(selectedRoomType)
     } catch (error) {
-      console.error('Error saving room price:', error)
+      // Nếu lỗi từ form validation, không hiển thị message error ở đây
+      if (error.errorFields) {
+        return
+      }
       const errMsg = error?.message || (editingPrice ? 'Không thể cập nhật giá phòng!' : 'Không thể tạo giá phòng!')
       message.error(errMsg)
     }
@@ -145,14 +214,6 @@ const RoomPriceManagement = () => {
   // Handle edit room price
   const handleEdit = (record) => {
     setEditingPrice(record)
-    form.setFieldsValue({
-      room_type_id: record.room_type_id,
-      date_range: [
-        dayjs(record.start_date),
-        dayjs(record.end_date)
-      ],
-      price_per_night: record.price_per_night
-    })
     setIsModalVisible(true)
   }
 
@@ -478,7 +539,18 @@ const RoomPriceManagement = () => {
                 label="Giá mỗi đêm (VNĐ)"
                 rules={[
                   { required: true, message: 'Vui lòng nhập giá!' },
-                  { type: 'number', min: 0, message: 'Giá phải lớn hơn 0!' }
+                  {
+                    validator: (_, value) => {
+                      if (value === null || value === undefined || value === '') {
+                        return Promise.reject(new Error('Vui lòng nhập giá!'))
+                      }
+                      const numValue = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : parseFloat(value)
+                      if (isNaN(numValue) || numValue <= 0) {
+                        return Promise.reject(new Error('Giá phải lớn hơn 0'))
+                      }
+                      return Promise.resolve()
+                    }
+                  }
                 ]}
               >
                 <InputNumber
@@ -486,7 +558,7 @@ const RoomPriceManagement = () => {
                   style={{ width: '100%' }}
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                  min={0}
+                  min={0.01}
                   step={100000}
                   addonAfter="VNĐ"
                 />
