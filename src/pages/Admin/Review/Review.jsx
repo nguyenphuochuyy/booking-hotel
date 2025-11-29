@@ -337,18 +337,10 @@ const ReviewManagement = () => {
   // Table columns
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'review_id',
-      key: 'review_id',
-      width: 60,
-      align: 'center',
-      sorter: (a, b) => a.review_id - b.review_id
-    },
-    {
       title: 'Khách hàng',
       dataIndex: ['user', 'full_name'],
       key: 'user_name',
-      width: 150,
+      width: 250,
       render: (name, record) => (
         <Space>
           <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
@@ -367,8 +359,8 @@ const ReviewManagement = () => {
       title: 'Đánh giá',
       dataIndex: 'rating',
       key: 'rating',
-      width: 120,
-      align: 'center',
+      width: 150,
+      align: 'left',
       render: (rating) => (
         <Space direction="vertical" size={2}>
           <Rate disabled value={rating} style={{ fontSize: '14px' }} />
@@ -413,7 +405,7 @@ const ReviewManagement = () => {
       title: 'Loại phòng',
       dataIndex: ['booking', 'room_type_name'],
       key: 'room_type',
-      width: 150,
+      width: 300,
       render: (roomType) => (
         <Tag color="blue">{roomType || 'N/A'}</Tag>
       ),
