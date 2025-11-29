@@ -709,7 +709,7 @@ function Hotels() {
               )}
               <div className="summary-guests" style={{ marginTop: '8px' }}>
                 <Text style={{ fontSize: '14px', color: '#6b7280' }}>
-                  {adults ? `${adults} người lớn` : ''}
+                  {adults ? `${adults} khách` : ''}
                   {children && parseInt(children) > 0 ? `, ${children} trẻ em` : ''}
                   {!adults && !children && selectedRoom ? `${selectedRoom?.capacity || 2} người` : ''}
                 </Text>

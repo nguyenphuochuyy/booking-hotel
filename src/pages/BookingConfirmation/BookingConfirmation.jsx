@@ -337,7 +337,7 @@ const BookingConfirmation = () => {
                 </div>
                 <div className="info-row">
                    <span className="label">Khách</span>
-                   <span className="value">{bookingInfo.guests?.adults} người lớn, {bookingInfo.guests?.children || 0} trẻ em</span>
+                   <span className="value">{bookingInfo.guests?.adults} khách</span>
                 </div>
 
                 <Divider className="dashed-divider" />

@@ -717,134 +717,7 @@ function ChatBot() {
     return new Intl.NumberFormat('vi-VN').format(numPrice) + ' VNĐ' + suffix
   }
 
-  // BookingCard sub-component với Luxury Gold theme cho format đơn giản
-  const BookingCard = ({ booking }) => {
-    const { code, roomName, checkIn, checkOut, status, extra, reviewLink } = booking
 
-    const getStatusColor = (status) => {
-      if (!status) return 'default'
-      const statusLower = status.toLowerCase()
-      if (statusLower.includes('xác nhận') || statusLower.includes('confirmed')) return 'green'
-      if (statusLower.includes('check-in') || statusLower.includes('nhận phòng')) return 'blue'
-      if (statusLower.includes('check-out') || statusLower.includes('trả phòng')) return 'default'
-      if (statusLower.includes('hủy') || statusLower.includes('cancelled')) return 'red'
-      return 'orange'
-    }
-
-    const getStatusText = (status) => {
-      if (!status) return 'Chờ xác nhận'
-      const statusLower = status.toLowerCase()
-      if (statusLower.includes('xác nhận')) return 'Đã xác nhận'
-      if (statusLower.includes('check-in') || statusLower.includes('nhận phòng')) return 'Đã nhận phòng'
-      if (statusLower.includes('check-out') || statusLower.includes('trả phòng')) return 'Đã trả phòng'
-      if (statusLower.includes('hủy')) return 'Đã hủy'
-      return status
-    }
-
-    return (
-      <Card
-        key={code || Math.random()}
-        hoverable
-        style={{
-          marginBottom: 12,
-          borderRadius: 12,
-          border: '1px solid #d4af37',
-          background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
-          boxShadow: '0 2px 8px rgba(212, 175, 55, 0.15)'
-        }}
-        bodyStyle={{ padding: '16px' }}
-      >
-        <Card.Meta
-          title={
-            <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <Text strong style={{ fontSize: 18, color: '#c08a19', letterSpacing: '0.5px' }}>
-                {code}
-              </Text>
-              {status && (
-                <Tag color={getStatusColor(status)} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 12 }}>
-                  {getStatusText(status)}
-                </Tag>
-              )}
-            </Space>
-          }
-          description={
-            <div>
-              {/* Loại phòng */}
-              {roomName && (
-                <div style={{ marginBottom: 12 }}>
-                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                    Loại phòng
-                  </Text>
-                  <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>
-                    {roomName}
-                  </Text>
-                </div>
-              )}
-
-              {/* Check-in / Check-out */}
-              <Row gutter={[16, 8]}>
-                {checkIn && (
-                  <Col span={12}>
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                        Check-in
-                      </Text>
-                      <Text style={{ fontSize: 14, color: '#1a1a1a' }}>{checkIn}</Text>
-                    </div>
-                  </Col>
-                )}
-                {checkOut && (
-                  <Col span={12}>
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                        Check-out
-                      </Text>
-                      <Text style={{ fontSize: 14, color: '#1a1a1a' }}>{checkOut}</Text>
-                    </div>
-                  </Col>
-                )}
-              </Row>
-
-              {/* Extra info (dịch vụ, ghi chú, etc.) */}
-              {extra && (
-                <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fafafa', borderRadius: 6 }}>
-                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                    Thông tin bổ sung
-                  </Text>
-                  <Text style={{ fontSize: 13, color: '#595959' }}>{extra}</Text>
-                </div>
-              )}
-
-              {/* Review link */}
-              {reviewLink && (
-                <div style={{
-                  marginTop: 12,
-                  paddingTop: 12,
-                  borderTop: '1px solid #f0f0f0'
-                }}>
-                  <a
-                    href={reviewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: 13,
-                      color: '#c08a19',
-                      fontWeight: 500,
-                      textDecoration: 'none'
-                    }}
-                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                  >
-                    Để lại đánh giá →
-                  </a>
-                </div>
-              )}
-            </div>
-          }
-        />
-      </Card>
-    )
-  }
 
   // Render Card cho thông tin phòng
   const renderRoomCard = (room) => {
@@ -907,7 +780,7 @@ function ChatBot() {
     )
   }
 
-  // Render Card cho thông tin booking (format chi tiết)
+  // Render danh sách thông tin booking (format chi tiết) – không dùng Card
   const renderBookingCard = (booking) => {
     const getStatusColor = (status, statusCode) => {
       const statusLower = (statusCode || status || '').toLowerCase()
@@ -936,208 +809,137 @@ function ChatBot() {
     }
 
     return (
-      <Card
+      <div
         key={booking.booking_id || booking.booking_code || Math.random()}
-        hoverable
         style={{
           marginBottom: 12,
-          borderRadius: 12,
-          border: '1px solid #d4af37',
-          background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
-          boxShadow: '0 2px 8px rgba(212, 175, 55, 0.15)'
+          padding: 12,
+          borderBottom: '1px dashed #e5e5e5',
         }}
-        bodyStyle={{ padding: '20px' }}
       >
-        <Card.Meta
-          title={
-            <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text strong style={{ fontSize: 20, color: '#c08a19', letterSpacing: '0.5px' }}>
-                {booking.booking_code ? `Mã: ${booking.booking_code}` : 'Thông tin đặt phòng'}
-              </Text>
-              {booking.status && (
-                <Tag color={getStatusColor(booking.status, booking.status_code)} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 12 }}>
-                  {getStatusText(booking.status)}
-                </Tag>
+        <Space
+          style={{
+            width: '100%',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}
+        >
+          <Text strong style={{ fontSize: 14 }}>
+            {booking.booking_code ? `Mã đặt phòng: ${booking.booking_code}` : 'Thông tin đặt phòng'}
+          </Text>
+          {booking.status && (
+            <Tag
+              color={getStatusColor(booking.status, booking.status_code)}
+              style={{ fontSize: 12 }}
+            >
+              {getStatusText(booking.status)}
+            </Tag>
+          )}
+        </Space>
+
+        <Space direction="vertical" size={4} style={{ width: '100%', fontSize: 13 }}>
+          {booking.booking_id && (
+            <Text>
+              <Text type="secondary">ID đặt phòng: </Text>
+              <Text strong>#{booking.booking_id}</Text>
+            </Text>
+          )}
+
+          {booking.room_type && (
+            <Text>
+              <Text type="secondary">Loại phòng: </Text>
+              <Text strong>{booking.room_type}</Text>
+            </Text>
+          )}
+
+          {booking.check_in && (
+            <Text>
+              <Text type="secondary">Check-in: </Text>
+              <Text>{booking.check_in}</Text>
+            </Text>
+          )}
+
+          {booking.check_out && (
+            <Text>
+              <Text type="secondary">Check-out: </Text>
+              <Text>{booking.check_out}</Text>
+            </Text>
+          )}
+
+          {(booking.num_guests || booking.num_rooms) && (
+            <Text>
+              {booking.num_guests && (
+                <>
+                  <Text type="secondary">Số người: </Text>
+                  <Text>{booking.num_guests}</Text>
+                </>
               )}
-            </Space>
-          }
-          description={
+              {booking.num_rooms && (
+                <>
+                  {'  '}
+                  <Text type="secondary">Số phòng: </Text>
+                  <Text>{booking.num_rooms}</Text>
+                </>
+              )}
+            </Text>
+          )}
+
+          {booking.room_number && (
+            <Text>
+              <Text type="secondary">Số phòng: </Text>
+              <Text>Phòng {booking.room_number}</Text>
+            </Text>
+          )}
+
+          {booking.payment_status && (
+            <Text>
+              <Text type="secondary">Thanh toán: </Text>
+              <Tag color={getPaymentStatusColor(booking.payment_status)}>
+                {booking.payment_status}
+              </Tag>
+            </Text>
+          )}
+
+          {booking.services && booking.services.length > 0 && (
             <div>
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                {/* ID đặt phòng (nếu có) */}
-                {booking.booking_id && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                      ID đặt phòng
+              <Text type="secondary">Dịch vụ: </Text>
+              {booking.services.map((service, idx) => (
+                <Tag key={idx} style={{ marginTop: 4 }}>
+                  {service.name}
+                  {service.price && (
+                    <Text type="secondary" style={{ marginLeft: 4, fontSize: 11 }}>
+                      ({formatPrice(service.price, '')})
                     </Text>
-                    <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>#{booking.booking_id}</Text>
-                  </div>
-                )}
-
-                {/* Loại phòng */}
-                {booking.room_type && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6, fontWeight: 500 }}>
-                      Loại phòng
-                    </Text>
-                    <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>{booking.room_type}</Text>
-                  </div>
-                )}
-
-                {/* Trạng thái booking */}
-                {booking.status && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6, fontWeight: 500 }}>
-                      Trạng thái đặt phòng
-                    </Text>
-                    <Tag 
-                      color={getStatusColor(booking.status, booking.status_code)} 
-                      style={{ 
-                        fontSize: 14, 
-                        padding: '6px 16px', 
-                        borderRadius: 8,
-                        fontWeight: 500
-                      }}
-                    >
-                      {getStatusText(booking.status)}
-                    </Tag>
-                  </div>
-                )}
-
-                {/* Ngày check-in/out */}
-                <Row gutter={[16, 12]}>
-                  {booking.check_in && (
-                    <Col span={12}>
-                      <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                          Check-in
-                        </Text>
-                        <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>{booking.check_in}</Text>
-                      </div>
-                    </Col>
                   )}
-                  {booking.check_out && (
-                    <Col span={12}>
-                      <div style={{ padding: '12px', background: '#fafafa', borderRadius: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                          Check-out
-                        </Text>
-                        <Text strong style={{ fontSize: 15, color: '#1a1a1a' }}>{booking.check_out}</Text>
-                      </div>
-                    </Col>
-                  )}
-                </Row>
-
-                {/* Số người và số phòng */}
-                {(booking.num_guests || booking.num_rooms) && (
-                  <Row gutter={[16, 8]}>
-                    {booking.num_guests && (
-                      <Col span={12}>
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Số người</Text>
-                          <Text style={{ fontSize: 14 }}>{booking.num_guests} người</Text>
-                        </div>
-                      </Col>
-                    )}
-                    {booking.num_rooms && (
-                      <Col span={12}>
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Số lượng phòng</Text>
-                          <Text style={{ fontSize: 14 }}>{booking.num_rooms} phòng</Text>
-                        </div>
-                      </Col>
-                    )}
-                  </Row>
-                )}
-
-                {/* Số phòng cụ thể */}
-                {booking.room_number && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Số phòng</Text>
-                    <Text strong style={{ fontSize: 14 }}>Phòng {booking.room_number}</Text>
-                  </div>
-                )}
-
-                {/* Trạng thái thanh toán */}
-                {booking.payment_status && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Trạng thái thanh toán</Text>
-                    <Tag color={getPaymentStatusColor(booking.payment_status)}>
-                      {booking.payment_status}
-                    </Tag>
-                  </div>
-                )}
-
-                {/* Dịch vụ */}
-                {booking.services && booking.services.length > 0 && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Dịch vụ</Text>
-                    {booking.services.map((service, idx) => (
-                      <div key={idx} style={{ marginBottom: 4 }}>
-                        <Text style={{ fontSize: 13 }}>
-                          {service.name}
-                          {service.price && (
-                            <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                              ({formatPrice(service.price, '')})
-                            </Text>
-                          )}
-                        </Text>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Link review */}
-                {booking.review_link && (
-                  <div style={{
-                    marginTop: 8,
-                    paddingTop: 16,
-                    borderTop: '1px solid #f0f0f0'
-                  }}>
-                    <a
-                      href={booking.review_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: 14,
-                        color: '#c08a19',
-                        fontWeight: 500,
-                        textDecoration: 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6
-                      }}
-                      onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                      onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                    >
-                      Để lại đánh giá →
-                    </a>
-                  </div>
-                )}
-
-                {/* Giá cuối cùng */}
-                {booking.total_price && (
-                  <div style={{ 
-                    marginTop: 12, 
-                    paddingTop: 16, 
-                    borderTop: '2px solid #d4af37',
-                    background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
-                    borderRadius: 8,
-                    padding: '16px'
-                  }}>
-                    <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>Tổng tiền:</Text>
-                      <Text strong style={{ color: '#c08a19', fontSize: 20, letterSpacing: '0.5px' }}>
-                        {formatPrice(booking.total_price, '')}
-                      </Text>
-                    </Space>
-                  </div>
-                )}
-              </Space>
+                </Tag>
+              ))}
             </div>
-          }
-        />
-      </Card>
+          )}
+
+          {booking.total_price && (
+            <Text>
+              <Text type="secondary">Tổng tiền: </Text>
+              <Text strong style={{ color: '#c08a19' }}>
+                {formatPrice(booking.total_price, '')}
+              </Text>
+            </Text>
+          )}
+
+          {booking.review_link && (
+            <div style={{ marginTop: 4 }}>
+              <a
+                href={booking.review_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 13 }}
+              >
+                Để lại đánh giá
+              </a>
+            </div>
+          )}
+        </Space>
+      </div>
     )
   }
 
@@ -1439,22 +1241,7 @@ function ChatBot() {
                             >
                               Chi tiết đặt phòng
                             </Button>
-                            <Button 
-                              type="default" 
-                              icon={<PlusOutlined />} 
-                              className="quick-action-btn"
-                              onClick={() => handleQuickAction('create_booking')}
-                            >
-                              Tạo đặt phòng
-                            </Button>
-                            <Button 
-                              type="default" 
-                              icon={<DeleteOutlined />} 
-                              className="quick-action-btn"
-                              onClick={() => handleQuickAction('cancel_booking')}
-                            >
-                              Hủy đặt phòng
-                            </Button>
+                           
                           </>
                         )}
                       </div>
@@ -1515,24 +1302,7 @@ function ChatBot() {
                                   >
                                     Chi tiết đặt phòng
                                   </Button>
-                                  <Button 
-                                    type="default" 
-                                    size="small"
-                                    icon={<PlusOutlined />} 
-                                    className="quick-action-btn-inline"
-                                    onClick={() => handleQuickAction('create_booking')}
-                                  >
-                                    Tạo đặt phòng
-                                  </Button>
-                                  <Button 
-                                    type="default" 
-                                    size="small"
-                                    icon={<DeleteOutlined />} 
-                                    className="quick-action-btn-inline"
-                                    onClick={() => handleQuickAction('cancel_booking')}
-                                  >
-                                    Hủy đặt phòng
-                                  </Button>
+                                  
                                 </>
                               )}
                             </div>
