@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Avatar, Button, Divider, Drawer, Dropdown, Space } from 'antd'
 import { MenuOutlined, UserOutlined } from '@ant-design/icons'
 import './Navigation.css'
-import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
+import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.webp'
 import { useAuth } from '../../context/AuthContext'
 
 function Navigation() {

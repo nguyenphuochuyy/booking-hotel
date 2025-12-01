@@ -4,12 +4,12 @@ import { AppstoreOutlined, HomeOutlined, CoffeeOutlined, StarOutlined } from '@a
 import './gallery.css'
 
 // Import ảnh (Giữ nguyên import của bạn)
-import banner1 from '../../assets/images/banner1.jpg'
-import banner2 from '../../assets/images/banner2.jpg'
-import banner3 from '../../assets/images/banner3.jpg'
-import banner4 from '../../assets/images/banner4.jpg'
-import mainBanner from '../../assets/images/main-banner.png'
-import luxyryRoom from '../../assets/images/luxyryRoom.jpg'
+import banner1 from '../../assets/images/banner1.webp'
+import banner2 from '../../assets/images/banner2.webp'
+import banner3 from '../../assets/images/banner3.webp'
+import banner4 from '../../assets/images/banner4.webp'
+import mainBanner from '../../assets/images/main-banner.webp'
+import luxyryRoom from '../../assets/images/luxyryRoom.webp'
 // import about1 from '../../assets/images/about1.webp'
 
 const { Title, Paragraph } = Typography

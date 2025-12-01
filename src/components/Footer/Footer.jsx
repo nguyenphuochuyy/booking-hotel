@@ -1,8 +1,8 @@
 import React from 'react'
 import { Layout, Row, Col, Space, Button, Typography, Divider, Select } from 'antd'
 import { PhoneFilled, MessageFilled, EnvironmentFilled, MailFilled, ClockCircleFilled, CarFilled, InfoCircleFilled, LockFilled, FileTextFilled, GlobalOutlined, DollarOutlined, ArrowRightOutlined } from '@ant-design/icons'
-import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.png'
-import vietqr from '../../assets/images/qr.png'
+import logo from '../../assets/images/z7069108952704_e5432be9b3a36f7a517a48cad2d3807b-removebg-preview.webp'
+import vietqr from '../../assets/images/qr.webp'
 const { Footer: AntFooter } = Layout
 const { Title, Text, Link } = Typography
 

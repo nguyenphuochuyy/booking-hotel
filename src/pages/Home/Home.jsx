@@ -3,19 +3,15 @@ import './Home.css'
 import { Row, Col, Typography, Button, Grid } from 'antd'
 const { useBreakpoint } = Grid
 import { motion } from 'framer-motion';
-import { GlobalOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
 import { useRoomTypes } from "../../hooks/roomtype"
-import banner1 from '../../assets/images/main-banner.png'
-import aboutBanner from "../../assets/images/banner/banner1.jpg"
-import luxuryRoom from "../../assets/images/luxyryRoom.jpg"
-import dishes from "../../assets/images/dishes.jpg"
-import spaImage from "../../assets/images/pin.jpg"
+import banner1 from '../../assets/images/main-banner.webp'
+import aboutBanner from "../../assets/images/banner/banner1.webp"
+import luxuryRoom from "../../assets/images/luxyryRoom.webp"
+import dishes from "../../assets/images/dishes.webp"
+import spaImage from "../../assets/images/pin.webp"
 import RoomList from '../../components/RoomList/RoomList'
-import HomeNews from '../../components/HomeNews'
 import BookingWidget from '../../components/BookingWidget'
 import WhyChooseUs from '../../components/WhyChooseUs'
-import Testimonials from '../../components/Testimonials/Testimonials'
 import Moments from '../../components/Moments/Moments'
 
 function Home() {
@@ -51,7 +47,7 @@ function Home() {
     <>
       <div className="banner-slider">
         <div className="banner-image-container">
-          <img src={banner1} alt="BEAN HOTEL" className="banner-image" />
+          <img srcSet={banner1} alt="BEAN HOTEL" className="banner-image" />
           <div className="banner-overlay">
             <motion.div
               className="banner-hero-content"

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Row, Col, Typography, Button, Image } from 'antd'
 import { CloseOutlined, GiftOutlined } from '@ant-design/icons'
 import { useLocation } from 'react-router-dom'
-import khuyenmai from "../../assets/images/khuyenmai1.jpg"
 import './PopupAdvertisement.css'
 
 const { Title, Paragraph } = Typography
