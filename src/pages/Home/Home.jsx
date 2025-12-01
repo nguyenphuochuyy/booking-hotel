@@ -47,7 +47,11 @@ function Home() {
     <>
       <div className="banner-slider">
         <div className="banner-image-container">
-          <img srcSet={banner1} alt="BEAN HOTEL" className="banner-image" />
+          <img srcSet={banner1} alt="BEAN HOTEL" className="banner-image"
+           loading='eager'
+           fetchPriority='high'
+           
+          />
           <div className="banner-overlay">
             <motion.div
               className="banner-hero-content"
