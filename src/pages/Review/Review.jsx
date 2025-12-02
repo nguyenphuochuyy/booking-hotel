@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Typography,
   Rate,
@@ -14,6 +14,8 @@ import {
   UploadOutlined
 } from '@ant-design/icons'
 import './Review.css'
+import bookingService from '../../services/booking.service'
+import { createReview } from '../../services/review.service'
 
 const { Title, Paragraph, Text } = Typography
 const { TextArea } = Input
@@ -39,19 +41,92 @@ function ReviewPage() {
   const { code } = useParams()
   const navigate = useNavigate()
   const [form] = Form.useForm()
+  const [loadingBooking, setLoadingBooking] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [fileList, setFileList] = useState([])
   const [ratingValue, setRatingValue] = useState(5)
+  const [booking, setBooking] = useState(null)
+
+  // Lấy thông tin booking từ mã code khi mở trang
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!code) {
+        message.error('Mã booking không hợp lệ')
+        navigate('/')
+        return
+      }
+
+      try {
+        setLoadingBooking(true)
+        const response = await bookingService.findBookingByCode(code)
+        const bookingData = response?.data?.booking || response?.booking
+
+        if (!bookingData) {
+          message.error('Không tìm thấy thông tin đặt phòng')
+          navigate('/')
+          return
+        }
+
+        // Kiểm tra trạng thái booking có được phép đánh giá không (checked_out)
+        if (bookingData.booking_status !== 'checked_out') {
+          message.warning('Bạn chỉ có thể đánh giá sau khi đã trả phòng.')
+          navigate('/')
+          return
+        }
+
+        setBooking(bookingData)
+      } catch (error) {
+        const status = error?.response?.status
+        const errMsg =
+          error?.response?.data?.message ||
+          error?.message ||
+          'Không thể tải thông tin đặt phòng'
+
+        // Nếu chưa đăng nhập / token hết hạn
+        if (status === 401 || status === 403) {
+          message.warning('Vui lòng đăng nhập để gửi đánh giá.')
+          navigate('/login')
+        } else {
+          message.error(errMsg)
+          navigate('/')
+        }
+      } finally {
+        setLoadingBooking(false)
+      }
+    }
+
+    fetchBooking()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code])
 
   const handleSubmit = async (values) => {
+    if (!booking) {
+      message.error('Không tìm thấy thông tin đặt phòng để đánh giá.')
+      return
+    }
+
     try {
       setSubmitting(true)
-      // TODO: call actual API with code
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      const images =
+        fileList
+          ?.map(file => file.originFileObj)
+          .filter(Boolean) || []
+
+      await createReview({
+        booking_id: booking.booking_id,
+        rating: values.rating,
+        comment: values.content,
+        images
+      })
+
       message.success('Cảm ơn bạn đã chia sẻ trải nghiệm tại Bean Hotel!')
       navigate('/')
     } catch (error) {
-      message.error('Không thể gửi đánh giá. Vui lòng thử lại.')
+      const errMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Không thể gửi đánh giá. Vui lòng thử lại.'
+      message.error(errMsg)
     } finally {
       setSubmitting(false)
     }
@@ -80,6 +155,11 @@ function ReviewPage() {
           <Button type="text" icon={<CloseOutlined />} onClick={() => navigate('/')} />
         </div>
 
+        {loadingBooking ? (
+          <div style={{ padding: 24, textAlign: 'center' }}>
+            <Text>Đang tải thông tin đặt phòng...</Text>
+          </div>
+        ) : (
         <Form
           form={form}
           layout="vertical"
@@ -139,6 +219,7 @@ function ReviewPage() {
             </div>
           </Form.Item>
         </Form>
+        )}
       </div>
     </div>
   )
