@@ -47,6 +47,7 @@ import ReviewPage from '../pages/Review/Review'
 import Reports from '../pages/Admin/Reports/Reports'
 import AdminProfile from '../pages/Admin/Profile/AdminProfile'
 import PaymentRefund from '../pages/PaymentRefund/PaymentRefund'
+import ResetPassword from '../pages/ResetPassword/ResetPassword'
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -117,6 +118,7 @@ function AppRoutes() {
         } />
         <Route path="/register/success" element={<RegistrationSuccess />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/user/profile" element={<ProfileUser />} />
         <Route path="/user/bookings" element={<UserBookingHistory />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
