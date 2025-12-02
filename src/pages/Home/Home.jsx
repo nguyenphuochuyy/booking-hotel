@@ -23,12 +23,6 @@ function Home() {
       widget.scrollIntoView({ behavior: 'smooth', block: 'end' })
     }
   }
-  const {
-    roomTypes, pagination, loading, error,
-    search, setSearch, category, setCategory,
-    page, setPage, limit, setLimit,
-    refresh, nextPage, prevPage,
-  } = useRoomTypes();
   // Nó sẽ làm cho component con "nảy" lên và mờ dần xuất hiện khi cuộn tới
   const AnimatedSection = ({ children }) => {
     return (
@@ -153,6 +147,8 @@ function Home() {
             </div>
           </div>
         </AnimatedSection>
+
+        
         <AnimatedSection>
           {/* Luxury Section */}
           <div className="luxury-section">

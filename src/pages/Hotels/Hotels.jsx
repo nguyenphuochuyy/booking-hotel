@@ -418,6 +418,10 @@ function Hotels() {
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
     const user = localStorage.getItem('user')
     if (!token && !user) { setIsLoginModalVisible(true); return; }
+    if(!checkIn || !checkOut) {
+      message.warning('Vui lòng chọn ngày check-in và check-out trước khi đặt phòng')
+      return
+    }
     const adultsNum = parseInt(adults || '1', 10)
     const childrenNum = parseInt(children || '0', 10)
     navigate('/booking-confirmation', {
