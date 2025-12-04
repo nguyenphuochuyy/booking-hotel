@@ -1,495 +1,317 @@
-/* Container cho các button chatbot */
-.chatbot-buttons-container {
+/* Container chung nằm góc dưới phải */
+.chatbot-trigger-container {
   position: fixed;
-  right: 2px;
-  bottom: 100px;
+  right: 10px;
+  bottom: 90px; /* Điều chỉnh vị trí cách đáy */
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end; /* Canh phải để các nút thẳng hàng */
   gap: 12px;
-}
-
-.chatbot-fab {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  width: 44px !important;
-  height: 44px !important;
-  font-size: 28px !important;
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
   pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
-.chatbot-fab.show {
+.chatbot-trigger-container.show {
   opacity: 1;
-  transform: scale(1) translateY(0);
   pointer-events: auto;
 }
 
-/* Button Đặt phòng ngay */
-.chatbot-booking-btn {
-  height: 32px !important;
-  padding: 0 14px !important;
-  font-weight: 600 !important;
-  font-size: 12px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+/* --- 1. Greeting Bubble (Lời chào) --- */
+.chatbot-greeting-bubble {
+  position: relative;
+  background: linear-gradient(135deg, #f9f3e5 0%, #c08a19 100%);
+  color: #3f3f3f;
+  padding: 8px 30px 8px 16px; /* Padding phải rộng để chứa nút Close */
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(255, 77, 106, 0.4);
+  max-width: 280px;
+  margin-bottom: 4px;
+  margin-right: 10px; /* Thụt vào một chút so với avatar */
+  
+  /* Animation ẩn/hiện */
   opacity: 0;
-  transform: scale(0.8) translateY(20px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: none;
-  background: linear-gradient(135deg, #c08a19, #e3b650) !important;
-  border: none !important;
-  border-radius: 999px !important;
-  white-space: nowrap;
+  transform: translateY(10px) scale(0.9);
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.chatbot-greeting-bubble.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+}
+
+/* Mũi tên trỏ xuống của bubble */
+.chatbot-greeting-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 25px; /* Vị trí mũi tên trỏ vào avatar */
+  width: 12px;
+  height: 12px;
+  background: #ff4d6a; /* Cùng màu với bubble */
+  background: #c08a19;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.greeting-text {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  display: block;
+  color: #3f3f3f;
+}
+
+.greeting-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  cursor: pointer;
+  color: #3f3f3f;
+  transition: background 0.2s;
 }
 
-.chatbot-booking-btn.show {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
+.greeting-close-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
-.chatbot-booking-btn:hover {
-  background: linear-gradient(135deg, #e3b650, #f0c978) !important;
+/* --- 2. Main Chatbot Button (Avatar) --- */
+.chatbot-main-button {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+  z-index: 2;
+  margin-right: 5px; /* Căn chỉnh với Zalo bên dưới */
+}
+
+.chatbot-main-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(192, 138, 25, 0.3) !important;
 }
 
-.chatbot-booking-btn .anticon {
-  font-size: 14px;
+.chatbot-avatar-circle {
+  width: 50px;
+  height: 50px;
+  /* Nền trắng, viền vàng theo tone website */
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.35);
+  /* border: 2px solid #c08a19; */
+  overflow: hidden;
+  position: relative;
 }
 
-/* Dropdown menu styling */
-.chatbot-fab + .ant-dropdown {
-  z-index: 1002;
+.chatbot-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-.ant-dropdown-menu {
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  padding: 8px;
-  min-width: 180px;
+/* Hiệu ứng bóng/gradient cho avatar */
+.chatbot-avatar-circle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Overlay rất nhẹ để tạo chiều sâu, gần như trong suốt */
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.3) 0%, rgba(192, 138, 25, 0.05) 60%, transparent 100%);
+  pointer-events: none;
 }
 
-.ant-dropdown-menu-item {
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin: 4px 0;
+/* --- 3. Zalo Button (Mới) --- */
+.chatbot-zalo-button-new {
+  width: 45px;
+  height: 45px;
+  background: #0068ff; /* Màu xanh Zalo */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 104, 255, 0.3);
   transition: all 0.2s ease;
+  margin-right: 12px; /* Căn giữa với Avatar (60-45=15 -> 7.5px lệch, chỉnh margin để cân) */
+  border: 2px solid white;
 }
 
-.ant-dropdown-menu-item:hover {
-  background: rgba(192, 138, 25, 0.1);
-  color: #c08a19;
-}
-
-.ant-dropdown-menu-item .anticon {
-  font-size: 16px;
-  margin-right: 8px;
-}
-
-
-.chatbot-fab .anticon {
-  font-size: 28px !important;
-}
-
-/* Hiệu ứng lắc lư */
-.chatbot-shake {
-  animation: shake 4s ease-in-out infinite;
-  transition: transform 0.3s ease;
-}
-
-.chatbot-shake:hover {
-  animation: none;
+.chatbot-zalo-button-new:hover {
   transform: scale(1.1);
+  box-shadow: 0 6px 14px rgba(0, 104, 255, 0.4);
 }
 
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
-  2.5% {
-    transform: translateX(-4px) translateY(-2px) rotate(-8deg);
-  }
-  5% {
-    transform: translateX(4px) translateY(2px) rotate(8deg);
-  }
-  7.5% {
-    transform: translateX(-3px) translateY(-1px) rotate(-6deg);
-  }
-  10% {
-    transform: translateX(3px) translateY(1px) rotate(6deg);
-  }
-  12.5% {
-    transform: translateX(-2px) translateY(0) rotate(-4deg);
-  }
-  15% {
-    transform: translateX(2px) translateY(0) rotate(4deg);
-  }
-  17.5% {
-    transform: translateX(-1px) translateY(0) rotate(-2deg);
-  }
-  20% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
+.zalo-text {
+  color: white;
+  font-weight: 800;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
 }
 
+/* --- PANEL CHAT VÀ CÁC THÀNH PHẦN KHÁC (GIỮ NGUYÊN) --- */
 .chatbot-panel {
   position: fixed;
   right: 24px;
-  bottom: 70px; 
-  width: min(420px, calc(100vw - 48px));
-  max-height: 75vh;
+  bottom: 100px; /* Panel hiện cao hơn trigger */
+  width: 380px;
+  height: 550px;
+  max-height: 80vh;
   background: #fff;
-  border: 1px solid #f0f0f0;
   border-radius: 16px;
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 5px 25px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 1001;
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid #f0f0f0;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .chatbot-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+  background: linear-gradient(135deg, #fdf8ec, #f3e3c7);
 }
 
 .chatbot-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .chatbot-messages {
   flex: 1;
+  padding: 16px;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px 16px;
-  min-height: 0;
   position: relative;
 }
 
-.chatbot-history-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 0;
-}
-
-.chatbot-loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 12px;
-}
-
 .chatbot-input {
+  padding: 12px;
+  border-top: 1px solid #eee;
   display: flex;
   gap: 8px;
-  padding: 12px;
-  border-top: 1px solid #f0f0f0;
 }
 
-/* Message Styles */
-.msg-bot,
-.msg-user {
-  padding: 0 !important;
-  border: none !important;
-  margin-bottom: 12px;
+.chatbot-history-loading, .chatbot-loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
 }
 
 .message-wrapper {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  width: 100%;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-end;
 }
 
 .user-message {
+  flex-direction: row;
   justify-content: flex-end;
 }
 
-.bot-message {
-  justify-content: flex-start;
-}
-
-.message-avatar {
-  flex-shrink: 0;
-}
-
 .message-content {
-  max-width: 75%;
+  max-width: 80%;
   padding: 10px 14px;
   border-radius: 12px;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-}
-
-.user-content {
-  background: #1890ff;
-  color: #fff !important;
-
-  border-bottom-right-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .bot-content {
-  background: #f0f0f0;
-  color: #333;
+  background: #f7f3e8;
+  color: #2d2d2d;
   border-bottom-left-radius: 4px;
 }
 
-.chatbot-markdown {
-  font-size: 13px;
-  color: #1f2937;
+.user-content {
+  background: linear-gradient(135deg, #c08a19, #e3b650);
+  color: #fff;
+  border-bottom-right-radius: 4px;
 }
 
-.chatbot-markdown p {
-  margin-bottom: 8px;
-}
+.chatbot-markdown p { margin-bottom: 8px; }
+.chatbot-markdown ul { padding-left: 20px; }
 
-.chatbot-markdown ul,
-.chatbot-markdown ol {
-  padding-left: 20px;
-  margin-bottom: 8px;
-}
-
-.chatbot-markdown li {
-  margin-bottom: 4px;
-}
-
-.chatbot-markdown a {
-  color: #c08a19;
-  text-decoration: underline;
-}
-
-.chatbot-markdown table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 8px 0;
-}
-
-.chatbot-markdown th,
-.chatbot-markdown td {
-  border: 1px solid #e5e7eb;
-  padding: 6px 8px;
-  text-align: left;
-  font-size: 12px;
-}
-
-/* Quick Actions */
 .quick-actions-container {
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 15px;
 }
-
 .quick-actions-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-
 .quick-action-btn {
-  width: 100%;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
 }
-
-/* Quick Actions trong tin nhắn bot */
-.quick-actions-message {
-  max-width: 100% !important;
-}
-
 .quick-actions-grid-inline {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
   margin-top: 8px;
 }
 
-.quick-action-btn-inline {
-  width: 100%;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border-radius: 6px;
-  font-size: 12px;
-  padding: 4px 8px;
-}
-
 .typing-indicator {
-  background: #f0f0f0;
+  padding: 10px;
+  background: #f0f2f5;
   border-radius: 12px;
-  border-bottom-left-radius: 4px;
+  display: inline-block;
 }
-
-.typing-dots {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  padding: 4px 0;
-}
-
 .typing-dots span {
-  width: 8px;
-  height: 8px;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #aaa;
   border-radius: 50%;
-  background-color: #999;
-  animation: typing 1.4s infinite ease-in-out;
+  margin: 0 2px;
+  animation: typing 1s infinite;
 }
-
-.typing-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes typing {
-  0%, 80%, 100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
-/* Container cho room cards */
-.chatbot-rooms-container {
-  margin-top: 12px;
-}
-
-.chatbot-rooms-container .ant-card {
-  border: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
-}
-
-.chatbot-rooms-container .ant-card:hover {
-  border-color: #c08a19;
-  box-shadow: 0 4px 12px rgba(192, 138, 25, 0.15);
-  transform: translateY(-2px);
-}
-
-/* Nút scroll xuống dưới cùng */
 .chatbot-scroll-to-bottom {
   position: absolute;
   bottom: 20px;
   right: 20px;
   z-index: 10;
-  width: 40px !important;
-  height: 40px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: fadeInUp 0.3s ease;
-  background: linear-gradient(135deg, #c08a19, #e3b650) !important;
-  border: none !important;
-}
-
-.chatbot-scroll-to-bottom:hover {
-  background: linear-gradient(135deg, #e3b650, #f0c978) !important;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(192, 138, 25, 0.3) !important;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .chatbot-buttons-container {
-    right: 16px;
-    bottom: 90px;
-    gap: 10px;
-  }
-
-  .chatbot-fab {
-    width: 56px !important;
-    height: 56px !important;
-    font-size: 24px !important;
-  }
-
-  .chatbot-fab .anticon {
-    font-size: 24px !important;
-  }
-
-  .chatbot-booking-btn {
-    height: 30px !important;
-    padding: 0 12px !important;
-    font-size: 11px !important;
-  }
-
-  .chatbot-panel {
-    width: calc(100% - 40px);
-    right: 20px;
-    left: 20px;
-    bottom: 70px;
-  }
 }
 
 @media (max-width: 576px) {
-  .chatbot-buttons-container {
-    right: 12px;
-    bottom: 90px;
-    gap: 8px;
-  }
-
-  .chatbot-fab {
-    width: 52px !important;
-    height: 52px !important;
-    font-size: 22px !important;
-  }
-
-  .chatbot-fab .anticon {
-    font-size: 22px !important;
-  }
-
-  .chatbot-booking-btn {
-    height: 28px !important;
-    padding: 0 10px !important;
-    font-size: 10px !important;
-  }
-
-  .chatbot-booking-btn .anticon {
-    font-size: 12px;
-  }
-
   .chatbot-panel {
-    right: 12px;
-    left: 12px;
-    width: calc(100% - 24px);
-    bottom: 70px;
-    border-radius: 14px;
+    width: calc(100% - 30px);
+    right: 15px;
+    height: 70vh;
   }
 }
-
-
