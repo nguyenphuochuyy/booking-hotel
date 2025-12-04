@@ -37,8 +37,8 @@ function ChatBot() {
   const [showChatbot, setShowChatbot] = useState(false)
   const [showScrollToBottom, setShowScrollToBottom] = useState(false)
   
-  // STATE MỚI: Quản lý hiển thị lời chào
-  const [showGreeting, setShowGreeting] = useState(true)
+  // Quản lý hiển thị lời chào (chỉ hiện khi hover icon)
+  const [showGreeting, setShowGreeting] = useState(false)
 
   const listRef = useRef(null)
   const isScrollingUpRef = useRef(false)
@@ -713,11 +713,12 @@ function ChatBot() {
         </button>
       </div>
 
-      {/* 2. Main Chatbot Button (Avatar) */}
+       {/* 2. Main Chatbot Button (Avatar) */}
       <div 
         className="chatbot-main-button"
         onClick={() => setOpen(true)}
-        onMouseEnter={() => setShowGreeting(true)} // Hover hiển thị lại lời chào
+         onMouseEnter={() => setShowGreeting(true)}
+         onMouseLeave={() => setShowGreeting(false)}
       >
         <Badge count={unread} size="small" offset={[-5, 5]}>
           <div className="chatbot-avatar-circle">
