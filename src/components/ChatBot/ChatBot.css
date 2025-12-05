@@ -1,7 +1,7 @@
 /* Container chung nằm góc dưới phải */
 .chatbot-trigger-container {
   position: fixed;
-  right: 10px;
+  right: 15px;
   bottom: 90px; /* Điều chỉnh vị trí cách đáy */
   z-index: 1000;
   display: flex;
@@ -93,6 +93,7 @@
   position: relative;
   z-index: 2;
   margin-right: 5px; /* Căn chỉnh với Zalo bên dưới */
+  display: inline-block; /* Đảm bảo Badge không làm thay đổi kích thước */
 }
 
 .chatbot-main-button:hover {
@@ -102,16 +103,16 @@
 .chatbot-avatar-circle {
   width: 50px;
   height: 50px;
-  /* Nền trắng, viền vàng theo tone website */
   background-color: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(192, 138, 25, 0.35);
-  /* border: 2px solid #c08a19; */
   overflow: hidden;
   position: relative;
+  box-sizing: border-box;
+  border: 2px solid transparent; /* Thêm border trong suốt để đồng nhất với zalo button */
 }
 
 .chatbot-avatar-image {
@@ -136,8 +137,8 @@
 
 /* --- 3. Zalo Button (Mới) --- */
 .chatbot-zalo-button-new {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   background: #0068ff; /* Màu xanh Zalo */
   border-radius: 50%;
   display: flex;
@@ -146,8 +147,9 @@
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 104, 255, 0.3);
   transition: all 0.2s ease;
-  margin-right: 12px; /* Căn giữa với Avatar (60-45=15 -> 7.5px lệch, chỉnh margin để cân) */
+  margin-right: 5px; /* Căn chỉnh với Avatar */
   border: 2px solid white;
+  box-sizing: border-box; /* Đảm bảo border được tính trong kích thước */
 }
 
 .chatbot-zalo-button-new:hover {
@@ -165,7 +167,7 @@
 /* --- PANEL CHAT VÀ CÁC THÀNH PHẦN KHÁC (GIỮ NGUYÊN) --- */
 .chatbot-panel {
   position: fixed;
-  right: 24px;
+  right: 25px;
   bottom: 100px; /* Panel hiện cao hơn trigger */
   width: 380px;
   height: 550px;
@@ -232,6 +234,7 @@
 .user-message {
   flex-direction: row;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .message-content {

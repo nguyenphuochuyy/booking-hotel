@@ -115,12 +115,6 @@ function AdminLayout() {
       onClick: () => navigate('/admin/profile')
     },
     {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Cài đặt',
-      onClick: () => navigate('/admin/settings')
-    },
-    {
       type: 'divider'
     },
     {

@@ -1,7 +1,7 @@
 import React from 'react';
 import "./About.css"; // Chúng ta sẽ cập nhật file CSS này rất nhiều
 import { Breadcrumb, Row, Col, Card, Carousel, Button } from 'antd';
-import { HomeOutlined, WifiOutlined, CoffeeOutlined, CustomerServiceOutlined } from '@ant-design/icons';
+import { HomeOutlined, WifiOutlined, CoffeeOutlined, CustomerServiceOutlined , FireOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 
 // Một component HOC (Higher-Order Component) nhỏ để bọc hiệu ứng cho gọn
@@ -150,7 +150,7 @@ function About() {
             <Col xs={24} sm={12} md={6}>
               <Card bordered={false} hoverable>
                 {/* Bạn có thể thêm icon khác, ví dụ: <CarOutlined /> */}
-                <span className="feature-icon" style={{ fontSize: '24px' }}>🏊</span>
+                <FireOutlined className="feature-icon" />
                 <h3>Hồ bơi & Spa</h3>
                 <p>Thư giãn tuyệt đối với hồ bơi vô cực và dịch vụ spa.</p>
               </Card>
