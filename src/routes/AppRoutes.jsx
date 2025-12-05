@@ -1,4 +1,4 @@
-import React, { useMemo, Suspense, lazy } from 'react'
+import React, { useMemo, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import { useAuth } from '../context/AuthContext'
@@ -95,156 +95,40 @@ function AppRoutes() {
     <Routes>
       {/* User layout */}
       <Route element={<UserLayout />}>
-        <Route path="/" element={
-          <Suspense fallback={<Loading message="Đang tải trang chủ..." />}>
-            <Home />
-          </Suspense>
-        } />
-        <Route path="/hotels" element={
-          <Suspense fallback={<Loading message="Đang tải danh sách khách sạn..." />}>
-            <Hotels />
-          </Suspense>
-        } />
-        <Route path="/rooms/:id" element={
-          <Suspense fallback={<Loading message="Đang tải thông tin phòng..." />}>
-            <RoomDetail />
-          </Suspense>
-        } />
-        <Route path="/booking-confirmation" element={
-          <Suspense fallback={<Loading message="Đang tải xác nhận đặt phòng..." />}>
-            <BookingConfirmation />
-          </Suspense>
-        } />
-        <Route path="/payment" element={
-          <Suspense fallback={<Loading message="Đang tải trang thanh toán..." />}>
-            <Payment />
-          </Suspense>
-        } />
-        <Route path="/payment/success" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <PaymentSuccess />
-          </Suspense>
-        } />
-        <Route path="/about" element={
-          <Suspense fallback={<Loading message="Đang tải giới thiệu..." />}>
-            <About />
-          </Suspense>
-        } />
-        <Route path="/news" element={
-          <Suspense fallback={<Loading message="Đang tải tin tức..." />}>
-            <News />
-          </Suspense>
-        } />
-        <Route path="/news/:slug" element={
-          <Suspense fallback={<Loading message="Đang tải bài viết..." />}>
-            <NewsDetail />
-          </Suspense>
-        } />
-        <Route path="/contact" element={
-          <Suspense fallback={<Loading message="Đang tải liên hệ..." />}>
-            <Contact />
-          </Suspense>
-        } />
-        <Route path="/services" element={
-          <Suspense fallback={<Loading message="Đang tải dịch vụ..." />}>
-            <Services />
-          </Suspense>
-        } />
-        <Route path="/services/:slug" element={
-          <Suspense fallback={<Loading message="Đang tải chi tiết dịch vụ..." />}>
-            <ServiceDetail />
-          </Suspense>
-        } />
-        <Route path="/gallery" element={
-          <Suspense fallback={<Loading message="Đang tải thư viện ảnh..." />}>
-            <GalleryPage />
-          </Suspense>
-        } />
-        <Route path="/faq" element={
-          <Suspense fallback={<Loading message="Đang tải câu hỏi thường gặp..." />}>
-            <FAQ />
-          </Suspense>
-        } />
-        <Route path="/room-change-policy" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <RoomChangePolicy />
-          </Suspense>
-        } />
-        <Route path="/hoa-don-vat" element={
-          <Suspense fallback={<Loading message="Đang tải thông tin hóa đơn VAT..." />}>
-            <VATInvoice />
-          </Suspense>
-        } />
-        <Route path="/review/:code" element={
-          <Suspense fallback={<Loading message="Đang tải trang đánh giá..." />}>
-            <ReviewPage />
-          </Suspense>
-        } />
+        <Route path="/" element={<Home />} />
+        <Route path="/hotels" element={<Hotels />} />
+        <Route path="/rooms/:id" element={<RoomDetail />} />
+        <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/news/:slug" element={<NewsDetail />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/services/:slug" element={<ServiceDetail />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/room-change-policy" element={<RoomChangePolicy />} />
+        <Route path="/hoa-don-vat" element={<VATInvoice />} />
+        <Route path="/review/:code" element={<ReviewPage />} />
         <Route path="/login" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <AuthGuard><Authentication /></AuthGuard>
-          </Suspense>
+          <AuthGuard><Authentication /></AuthGuard>
         } />
         <Route path="/register" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <AuthGuard><Authentication /></AuthGuard>
-          </Suspense>
+          <AuthGuard><Authentication /></AuthGuard>
         } />
-        <Route path="/register/success" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <RegistrationSuccess />
-          </Suspense>
-        } />
-        <Route path="/verify-email" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <VerifyEmail />
-          </Suspense>
-        } />
-        <Route path="/reset-password" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <ResetPassword />
-          </Suspense>
-        } />
-        <Route path="/user/profile" element={
-          <Suspense fallback={<Loading message="Đang tải thông tin cá nhân..." />}>
-            <ProfileUser />
-          </Suspense>
-        } />
-        <Route path="/user/bookings" element={
-          <Suspense fallback={<Loading message="Đang tải lịch sử đặt phòng..." />}>
-            <UserBookingHistory />
-          </Suspense>
-        } />
-        <Route path="/terms-of-service" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <TermsOfService />
-          </Suspense>
-        } />
-        <Route path="/privacy-policy" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <PrivacyPolicy />
-          </Suspense>
-        } />
-        <Route path="/cookie-policy" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <CookiePolicy />
-          </Suspense>
-        } />
-        <Route path="/cancellation-policy" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <CancellationPolicy />
-          </Suspense>
-        } />
-        <Route path="/thanh-toan" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <PaymentRefund />
-          </Suspense>
-        } />
-        <Route path="*" element={
-          <Suspense fallback={<Loading message="Đang tải..." />}>
-            <NotFound />
-          </Suspense>
-        } />
+        <Route path="/register/success" element={<RegistrationSuccess />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/user/profile" element={<ProfileUser />} />
+        <Route path="/user/bookings" element={<UserBookingHistory />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+        <Route path="/thanh-toan" element={<PaymentRefund />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Admin layout - hoàn toàn tách biệt */}
@@ -316,8 +200,12 @@ function AppRoutes() {
         } />
       </Route>
 
-      {/* Common */}
-      <Route path="/access-denied" element={<AccessDenied />} />
+      {/* Common - không có layout */}
+      <Route path="/access-denied" element={
+        <Suspense fallback={<Loading message="Đang tải..." />}>
+          <AccessDenied />
+        </Suspense>
+      } />
     </Routes>
   )
 }

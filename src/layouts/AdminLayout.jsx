@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { 
@@ -8,8 +8,10 @@ import {
   Dropdown, 
   Typography, 
   Button,
-  Grid
+  Grid,
+  Spin
 } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import {
   DashboardOutlined,
   UserOutlined,
@@ -258,7 +260,26 @@ function AdminLayout() {
               minHeight: 'calc(100vh - 160px)',
             }}
           >
-            <Outlet />
+            <Suspense fallback={
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: 'calc(100vh - 200px)',
+                flexDirection: 'column',
+                gap: 24
+              }}>
+                <Spin 
+                  indicator={<LoadingOutlined style={{ fontSize: 48, color: '#c08a19' }} spin />} 
+                  size="large" 
+                />
+                <div style={{ color: '#666', fontSize: 16, fontWeight: 500 }}>
+                  Đang tải...
+                </div>
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
           </div>
         </Content>
       </Layout>
