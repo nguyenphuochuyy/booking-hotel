@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statistic, Select } from 'antd'
 import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons'
-import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import httpClient from '../../../services/httpClient'
 import { getAllRoomTypes } from '../../../services/admin.service'
 import { exportRevenueReportExcel, exportRevenueReportPDF, exportTaxReport, downloadBlob, getMonthlyRevenue, getDailyRevenue } from '../../../services/report.service'
 import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
+
 const { RangePicker } = DatePicker
 const { Text } = Typography
 const { Option } = Select
@@ -167,6 +173,16 @@ function Reports() {
 
       const bookings = Array.isArray(response?.bookings) ? response.bookings : []
       const [startDate, endDate] = rangeValue
+      
+      // Đảm bảo startDate và endDate là dayjs objects
+      const start = dayjs(startDate)
+      const end = dayjs(endDate)
+      
+      if (!start.isValid() || !end.isValid()) {
+        console.warn('Invalid date range for filtering')
+        setRangeRevenue([])
+        return
+      }
 
       // Filter bookings theo khoảng thời gian
       const filteredBookings = bookings.filter((booking) => {
@@ -176,8 +192,8 @@ function Reports() {
         if (!bookingDate.isValid()) return false
 
         return (
-          bookingDate.isSameOrAfter(startDate, 'day') &&
-          bookingDate.isSameOrBefore(endDate, 'day')
+          bookingDate.isSameOrAfter(start, 'day') &&
+          bookingDate.isSameOrBefore(end, 'day')
         )
       })
 
@@ -260,13 +276,22 @@ function Reports() {
 
       if (hasRangeFilter) {
         const [startDate, endDate] = rangeValue
+        // Đảm bảo startDate và endDate là dayjs objects
+        const start = dayjs(startDate)
+        const end = dayjs(endDate)
+        
+        if (!start.isValid() || !end.isValid()) {
+          console.warn('Invalid date range for filtering')
+          return
+        }
+        
         filteredBookings = filteredBookings.filter((booking) => {
           if (!booking.check_in_date) return false
           const checkIn = dayjs(booking.check_in_date)
           if (!checkIn.isValid()) return false
           return (
-            checkIn.isSameOrAfter(startDate, 'day') &&
-            checkIn.isSameOrBefore(endDate, 'day')
+            checkIn.isSameOrAfter(start, 'day') &&
+            checkIn.isSameOrBefore(end, 'day')
           )
         })
       }

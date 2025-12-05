@@ -56,8 +56,6 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     const data = await authenticationService.login(credentials)
-    console.log("data", data);
-    
     const token = data?.accessToken || data?.token
     if (token) {
       try { localStorage.setItem('accessToken', token) } catch (_err) {}
