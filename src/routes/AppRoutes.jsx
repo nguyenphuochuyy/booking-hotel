@@ -251,103 +251,73 @@ function AppRoutes() {
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải trang quản trị..." />}>
-              <Dashboard />
-            </Suspense>
+            <Dashboard />
           </AdminRoute>
         } />
         <Route path="/admin/users" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý người dùng..." />}>
-              <Users />
-            </Suspense>
+            <Users />
           </AdminRoute>
         } />
         <Route path="/admin/hotels" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý khách sạn..." />}>
-              <AdminHotels />
-            </Suspense>
+            <AdminHotels />
           </AdminRoute>
         } />
         <Route path="/admin/room-types" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý loại phòng..." />}>
-              <AdminRoomTypes />
-            </Suspense>
+            <AdminRoomTypes />
           </AdminRoute>
         } />
         <Route path="/admin/rooms" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý phòng..." />}>
-              <AdminRooms />
-            </Suspense>
+            <AdminRooms />
           </AdminRoute>
         } />
         <Route path="/admin/room-prices" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý giá phòng..." />}>
-              <AdminRoomPrices />
-            </Suspense>
+            <AdminRoomPrices />
           </AdminRoute>
         } />
         <Route path="/admin/bookings" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý đặt phòng..." />}>
-              <BookingManagement />
-            </Suspense>
+            <BookingManagement />
           </AdminRoute>
         } />
         <Route path="/admin/promotions" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý khuyến mãi..." />}>
-              <PromotionManagement />
-            </Suspense>
+            <PromotionManagement/>
           </AdminRoute>
         } />
         <Route path="/admin/posts" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý bài viết..." />}>
-              <AdminPosts />
-            </Suspense>
+            <AdminPosts />
           </AdminRoute>
         } />
         <Route path="/admin/services" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý dịch vụ..." />}>
-              <ServiceManagement />
-            </Suspense>
+            <ServiceManagement />
           </AdminRoute>
         } />
         <Route path="/admin/reviews" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải quản lý đánh giá..." />}>
-              <ReviewManagement />
-            </Suspense>
+            <ReviewManagement />
           </AdminRoute>
         } />
         <Route path="/admin/reports" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải báo cáo..." />}>
-              <Reports />
-            </Suspense>
+            <Reports />
           </AdminRoute>
         } />
         <Route path="/admin/profile" element={
           <AdminRoute>
-            <Suspense fallback={<Loading message="Đang tải thông tin cá nhân..." />}>
-              <AdminProfile />
-            </Suspense>
+            <AdminProfile />
           </AdminRoute>
         } />
       </Route>
 
       {/* Common */}
-      <Route path="/access-denied" element={
-        <Suspense fallback={<Loading message="Đang tải..." />}>
-          <AccessDenied />
-        </Suspense>
-      } />
+      <Route path="/access-denied" element={<AccessDenied />} />
     </Routes>
   )
 }
