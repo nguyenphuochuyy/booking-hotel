@@ -1,42 +1,49 @@
 /* =========================================
-   1. GLOBAL SETTINGS
+   1. GLOBAL SETTINGS (đồng bộ với Services/News/Gallery)
    ========================================= */
-   .contact-page {
-    padding: 60px 0;
-    background: #f4f6f8;
-    min-height: calc(100vh - 80px);
+  .contact-page {
+    background: #fff;
+    min-height: 100vh;
+    padding-bottom: 60px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
   .contact-page .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 16px;
+  }
+
+  .breadcrumb-custom {
+    padding: 20px 0;
   }
   
   /* =========================================
-     2. PAGE HEADER
+     2. PAGE HEADER (đồng bộ style tiêu đề)
      ========================================= */
-  .contact-page .page-header {
+  .page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
     text-align: center;
-    margin-bottom: 50px;
   }
   
-  .contact-page .page-title {
-    color: #1a1a1a !important;
-    font-size: 38px !important;
-    font-weight: 800 !important;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 15px !important;
+  .page-title {
+    color: #c08a19;
+    margin-bottom: 12px;
+    font-weight: 700;
+    font-size: 2rem;
+    text-align: center !important;
   }
   
-  .contact-page .page-description {
+  .page-description {
     font-size: 16px;
     color: #666;
-    max-width: 650px;
+    max-width: 700px;
     margin: 0 auto;
     line-height: 1.6;
+    text-align: center !important;
   }
   
   /* =========================================
@@ -267,12 +274,9 @@
     line-height: 1.6;
     margin: 0 !important;
   }
-  
-  /* =========================================
-     6. MAP SECTION
-     ========================================= */
+  /* Map Section */
   .contact-page .map-section {
-    margin-top: 0;
+    margin-top: 30px;
   }
   
   .contact-page .map-card {

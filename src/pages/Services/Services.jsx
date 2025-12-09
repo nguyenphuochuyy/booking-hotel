@@ -158,7 +158,7 @@ function Services() {
 
         {/* Header */}
         <div className="page-header">
-          <h1 className="page-title">Dịch vụ & Tiện ích</h1>
+          <h1 className="page-title">DỊCH VỤ & TIỆN ÍCH</h1>
           <Paragraph className="page-description">
             Tận hưởng kỳ nghỉ trọn vẹn với hệ thống dịch vụ đa dạng và đẳng cấp tại Bean Hotel.
           </Paragraph>

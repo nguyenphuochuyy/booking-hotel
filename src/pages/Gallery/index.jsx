@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Image, Typography, Tabs, Empty } from 'antd'
+import { Image, Typography, Tabs, Empty, Breadcrumb } from 'antd'
 import { AppstoreOutlined, HomeOutlined, CoffeeOutlined, StarOutlined } from '@ant-design/icons'
 import './gallery.css'
 
@@ -45,10 +45,16 @@ function GalleryPage() {
   return (
     <div className="gallery-page">
       <div className="container">
+        {/* Breadcrumb */}
+        <Breadcrumb className="breadcrumb-custom">
+          <Breadcrumb.Item href="/"><HomeOutlined /> Trang chủ</Breadcrumb.Item>
+          <Breadcrumb.Item>Thư viện ảnh</Breadcrumb.Item>
+        </Breadcrumb>
+        
         {/* Header */}
-        <div className="gallery-header">
-          <Title level={1} className="gallery-title">Thư Viện Ảnh</Title>
-          <Paragraph className="gallery-desc">
+        <div className="page-header">
+          <h1 className="page-title">THƯ VIỆN ẢNH</h1>
+          <Paragraph className="page-description">
             Chiêm ngưỡng vẻ đẹp kiến trúc và không gian nghỉ dưỡng đẳng cấp tại Bean Hotel qua từng khung hình.
           </Paragraph>
         </div>

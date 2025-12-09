@@ -124,7 +124,7 @@ function News() {
   }
   const featuredPost = posts[0];
   return (
-    <div className="news-page">
+    <div className="news-page container">
       <div className="news-container">
         {/* Breadcrumb */}
         <Breadcrumb className="breadcrumb-custom">
@@ -134,7 +134,7 @@ function News() {
 
         {/* Header */}
         <div className="page-header">
-          <h1 className="page-title">Tin tức & Sự kiện</h1>
+          <h1 className="page-title">TIN TỨC & SỰ KIỆN</h1>
           <Paragraph className="page-description">
             Cập nhật những thông tin mới nhất về khách sạn, du lịch và các sự kiện đặc biệt
           </Paragraph>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Row, Col, Form, Input, Button, Typography, Space, Card, message } from 'antd'
+import { Row, Col, Form, Input, Button, Typography, Space, Card, message, Breadcrumb } from 'antd'
 import { 
   HomeOutlined, 
   PhoneOutlined, 
@@ -53,9 +53,15 @@ function Contact() {
   return (
     <div className="contact-page">
       <div className="container">
+        {/* Breadcrumb */}
+        <Breadcrumb className="breadcrumb-custom">
+          <Breadcrumb.Item href="/"><HomeOutlined /> Trang chủ</Breadcrumb.Item>
+          <Breadcrumb.Item>Liên hệ</Breadcrumb.Item>
+        </Breadcrumb>
+
         {/* Page Header */}
         <div className="page-header">
-          <Title className="page-title">LIÊN HỆ VỚI CHÚNG TÔI</Title>
+          <h1 className="page-title">Liên hệ với chúng tôi</h1>
           <Paragraph className="page-description">
             Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy để lại thông tin, Bean Hotel sẽ liên hệ lại trong thời gian sớm nhất.
           </Paragraph>

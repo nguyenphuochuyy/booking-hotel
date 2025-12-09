@@ -1,8 +1,8 @@
 /* --- Layout & Background --- */
 .gallery-page {
-  padding: 40px 0 80px;
-  background-color: #f9f9f9; /* Nền xám rất nhẹ để làm nổi bật ảnh */
+  background-color: #fff; /* Màu nền nhẹ nhàng, hiện đại - giống Services */
   min-height: 100vh;
+  padding-bottom: 60px;
 }
 
 .container {
@@ -11,25 +11,33 @@
   padding: 0 16px;
 }
 
+.breadcrumb-custom {
+  padding: 20px 0;
+}
+
 /* --- Header --- */
-.gallery-header {
-  text-align: center;
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 40px;
 }
 
-.gallery-title {
-  color: #1a1a1a;
-  font-weight: 700 !important;
-  margin-bottom: 12px !important;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.page-title {
+  color: #c08a19;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 2rem;
+  text-align: center !important;
 }
 
-.gallery-desc {
+.page-description {
   font-size: 16px;
   color: #666;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
+  line-height: 1.6;
+  text-align: center !important;
 }
 
 /* --- Filter Tabs --- */
