@@ -10,7 +10,8 @@ import {
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
   UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined,
   CustomerServiceFilled, ClearOutlined, 
-  KeyOutlined, HomeOutlined
+  KeyOutlined, HomeOutlined,
+  DollarOutlined
 } from '@ant-design/icons'
 import {
   getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
@@ -819,7 +820,7 @@ const BookingManagement = () => {
             <Statistic
               title="Tổng đặt phòng"
               value={statistics.total}
-              valueStyle={{ color: '#262626' , fontWeight: 'bold' , fontSize: '24px' }}
+              valueStyle={{ color: '#1890ff' , fontWeight: 'bold' , fontSize: '24px' }}
               prefix={<CalendarOutlined />}
             />
           </Card>
@@ -868,9 +869,10 @@ const BookingManagement = () => {
         <Col xs={12} sm={12} md={6} lg={4}>
           <Card className="stat-card">
             <Statistic
-              title="Tổng doanh thu"
+              title="Tổng doanh thu (đ)"
               value={statistics.totalRevenue.toLocaleString('vi-VN')}
               valueStyle={{ color: '#008000' ,fontWeight: 'bold' , fontSize: '24px'}}
+              suffix="đ"
             />
           </Card>
         </Col>
@@ -1153,7 +1155,7 @@ const BookingManagement = () => {
                           <Col span={12}>
                             <div className="detail-item">
                               <Text>Ngày trả phòng:</Text>
-                              <Text strong>{formatDate(selectedBooking.check_out_date)}</Text>
+                              <Text >{formatDate(selectedBooking.check_out_date)}</Text>
                             </div>
                           </Col>
                         </Row>
@@ -1186,7 +1188,7 @@ const BookingManagement = () => {
                       <Card title="Thông tin phòng" size="small" style={{ marginBottom: 16 }}>
                         <div className="detail-item">
                           <Text strong>Loại phòng:</Text>
-                          <Text>
+                          <Text strong>
                             {selectedBooking.room_type?.room_type_name ||
                               selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
                               'Chưa xác định'}
@@ -1194,7 +1196,7 @@ const BookingManagement = () => {
                         </div>
                         <div className="detail-item">
                           <Text strong>Số phòng:</Text>
-                          <Text>
+                          <Text strong>
                             {selectedBooking.booking_rooms && selectedBooking.booking_rooms.length > 0
                               ? selectedBooking.booking_rooms
                                 .map(br => br.room?.room_num)
@@ -1207,12 +1209,12 @@ const BookingManagement = () => {
                         </div>
                         <div className="detail-item">
                           <Text strong>Số khách:</Text>
-                          <Text>{selectedBooking.num_person} người</Text>
+                          <Text strong>{selectedBooking.num_person} người</Text>
                         </div>
                         {selectedBooking.num_rooms > 1 && (
                           <div className="detail-item">
                             <Text strong>Số lượng phòng:</Text>
-                            <Text>{selectedBooking.num_rooms} phòng</Text>
+                            <Text strong>{selectedBooking.num_rooms} phòng</Text>
                           </div>
                         )}
                       </Card>

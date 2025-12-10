@@ -159,7 +159,7 @@ function Reports() {
   }
 
   // Lấy doanh thu theo khoảng thời gian đã chọn
-  const fetchRevenueByRange = async (rangeValue, type = chartType) => {
+  const fetchRevenueByRange = async (rangeValue, type = chartType, roomTypeId = selectedRoomTypeId) => {
     if (!rangeValue || !Array.isArray(rangeValue) || rangeValue.length !== 2) {
       setRangeRevenue([])
       return
@@ -184,12 +184,20 @@ function Reports() {
         return
       }
 
-      // Filter bookings theo khoảng thời gian
+      // Filter bookings theo khoảng thời gian và loại phòng (nếu chọn)
       const filteredBookings = bookings.filter((booking) => {
         if (!booking || booking.booking_status === 'cancelled') return false
         
         const bookingDate = dayjs(booking.created_at || booking.check_in_date)
         if (!bookingDate.isValid()) return false
+
+        if (roomTypeId) {
+          const bookingRoomTypeId =
+            booking.room_type?.room_type_id ?? booking.room_type_id
+          if (!bookingRoomTypeId || String(bookingRoomTypeId) !== String(roomTypeId)) {
+            return false
+          }
+        }
 
         return (
           bookingDate.isSameOrAfter(start, 'day') &&
@@ -348,11 +356,11 @@ function Reports() {
   // Tự động lấy doanh thu theo khoảng thời gian khi range hoặc chartType thay đổi
   useEffect(() => {
     if (range && Array.isArray(range) && range.length === 2) {
-      fetchRevenueByRange(range, chartType)
+      fetchRevenueByRange(range, chartType, selectedRoomTypeId)
     } else {
       setRangeRevenue([])
     }
-  }, [range, chartType])
+  }, [range, chartType, selectedRoomTypeId])
 
   // Hàm format doanh thu: 20tr, 500k, v.v.
   const formatRevenue = (value) => {

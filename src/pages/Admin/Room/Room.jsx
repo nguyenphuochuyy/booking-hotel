@@ -17,6 +17,7 @@ import {
 import { createWalkInUser , createWalkInBooking, getAllServices } from '../../../services/admin.service'
 import './Room.css'
 import formatPrice from '../../../utils/formatPrice'
+import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -186,12 +187,21 @@ const RoomManagement = () => {
 
   const roomPriceMap = useMemo(() => {
     const map = {}
+    const today = dayjs().startOf('day')
+
     roomPrices.forEach(price => {
+      const start = dayjs(price.start_date).startOf('day')
+      const end = dayjs(price.end_date).endOf('day')
+      // Chỉ lấy giá đang áp dụng cho hôm nay
+      if (today.isBefore(start) || today.isAfter(end)) return
+
       const existing = map[price.room_type_id]
-      if (!existing || new Date(price.updated_at || 0) > new Date(existing.updated_at || 0)) {
+      // Ưu tiên bản ghi được cập nhật mới nhất trong cùng room_type và đang áp dụng
+      if (!existing || dayjs(price.updated_at || price.start_date).isAfter(dayjs(existing.updated_at || existing.start_date))) {
         map[price.room_type_id] = price
       }
     })
+
     return map
   }, [roomPrices])
 
