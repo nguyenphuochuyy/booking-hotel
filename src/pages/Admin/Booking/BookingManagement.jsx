@@ -2,15 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
   Table, Button, Space, Modal, Form, Input, Select, message,
   Popconfirm, Tag, Card, Row, Col, Statistic, Tooltip,
-  Typography, Badge, Divider, Empty, Spin, DatePicker, InputNumber
+  Typography, Badge, Divider, Empty, Spin, DatePicker, InputNumber, Tabs
 } from 'antd'
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   CalendarOutlined, ReloadOutlined, ExclamationCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
   UserOutlined, CreditCardOutlined, EyeOutlined, PrinterOutlined,
-  CustomerServiceFilled,ClearOutlined, 
-  KeyOutlined
+  CustomerServiceFilled, ClearOutlined, 
+  KeyOutlined, HomeOutlined
 } from '@ant-design/icons'
 import {
   getAllBookings, getBookingById, cancelBooking, cancelBookingAdmin, markRefundCompleted,
@@ -1056,404 +1056,451 @@ const BookingManagement = () => {
       >
         {selectedBooking && (
           <div className="booking-details">
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Card title="Thông tin đặt phòng" size="small">
-                  <div className="detail-item">
-                    <Text strong>Mã đặt phòng:</Text>
-                    <Text code>{selectedBooking.booking_code}</Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Trạng thái:</Text>
-                    {getStatusTag(selectedBooking.booking_status)}
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Loại đặt:</Text>
-                    <Tag color={selectedBooking.booking_type === 'online' ? 'blue' : 'green'}>
-                      {selectedBooking.booking_type === 'online' ? 'Online' : 'Walk-in'}
-                    </Tag>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Ngày tạo:</Text>
-                    <Text>{formatDateTime(selectedBooking.created_at)}</Text>
-                  </div>
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card title="Thông tin khách hàng" size="small">
-                  <Spin spinning={loadingUserDetail}>
-                    <div className="detail-item">
-                      <Text strong>Tên:</Text>
-                      <Text>{selectedBooking.user?.full_name || 'Chưa cập nhật'}</Text>
-                    </div>
-                    {selectedBooking.booking_type === 'walkin' ? (
-                      <>
-                        <div className="detail-item">
-                          <Text strong>CCCD/CMND:</Text>
-                          <Text>
-                            {loadingUserDetail 
-                              ? 'Đang tải...' 
-                              : walkInUserDetail?.national_id || walkInUserDetail?.cccd || selectedBooking.user?.national_id || selectedBooking.user?.cccd || 'Chưa cập nhật'}
-                          </Text>
-                        </div>
-                        <div className="detail-item">
-                          <Text strong>Email:</Text>
-                          <Text>
-                            {loadingUserDetail 
-                              ? 'Đang tải...' 
-                              : walkInUserDetail?.email || selectedBooking.user?.email || 'Chưa cập nhật'}
-                          </Text>
-                        </div>
-                        <div className="detail-item">
-                          <Text strong>Số điện thoại:</Text>
-                          <Text>
-                            {loadingUserDetail 
-                              ? 'Đang tải...' 
-                              : walkInUserDetail?.phone || selectedBooking.user?.phone || 'Chưa cập nhật'}
-                          </Text>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="detail-item">
-                          <Text strong>Email:</Text>
-                          <Text>{selectedBooking.user?.email || 'Chưa cập nhật'}</Text>
-                        </div>
-                        <div className="detail-item">
-                          <Text strong>Số điện thoại:</Text>
-                          <Text>{selectedBooking.user?.phone || 'Chưa cập nhật'}</Text>
-                        </div>
-                      </>
-                    )}
-                  </Spin>
-                </Card>
-              </Col>
-            </Row>
+            <Tabs
+              defaultActiveKey="general"
+              items={[
+                {
+                  key: 'general',
+                  label: (
+                    <span>
+                      <UserOutlined style={{ marginRight: 8 }} />
+                      Thông tin chung
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      <Row gutter={[16, 16]}>
+                        <Col span={12}>
+                          <Card title="Thông tin đặt phòng" size="small">
+                            <div className="detail-item">
+                              <Text strong>Mã đặt phòng:</Text>
+                              <Text code>{selectedBooking.booking_code}</Text>
+                            </div>
+                            <div className="detail-item">
+                              <Text strong>Trạng thái:</Text>
+                              {getStatusTag(selectedBooking.booking_status)}
+                            </div>
+                            <div className="detail-item">
+                              <Text strong>Loại đặt:</Text>
+                              <Tag color={selectedBooking.booking_type === 'online' ? 'blue' : 'green'}>
+                                {selectedBooking.booking_type === 'online' ? 'Online' : 'Walk-in'}
+                              </Tag>
+                            </div>
+                            <div className="detail-item">
+                              <Text strong>Ngày tạo:</Text>
+                              <Text>{formatDateTime(selectedBooking.created_at)}</Text>
+                            </div>
+                          </Card>
+                        </Col>
+                        <Col span={12}>
+                          <Card title="Thông tin khách hàng" size="small">
+                            <Spin spinning={loadingUserDetail}>
+                              <div className="detail-item">
+                                <Text strong>Tên:</Text>
+                                <Text>{selectedBooking.user?.full_name || 'Chưa cập nhật'}</Text>
+                              </div>
+                              {selectedBooking.booking_type === 'walkin' ? (
+                                <>
+                                  <div className="detail-item">
+                                    <Text strong>CCCD/CMND:</Text>
+                                    <Text>
+                                      {loadingUserDetail 
+                                        ? 'Đang tải...' 
+                                        : walkInUserDetail?.national_id || walkInUserDetail?.cccd || selectedBooking.user?.national_id || selectedBooking.user?.cccd || 'Chưa cập nhật'}
+                                    </Text>
+                                  </div>
+                                  <div className="detail-item">
+                                    <Text strong>Email:</Text>
+                                    <Text>
+                                      {loadingUserDetail 
+                                        ? 'Đang tải...' 
+                                        : walkInUserDetail?.email || selectedBooking.user?.email || 'Chưa cập nhật'}
+                                    </Text>
+                                  </div>
+                                  <div className="detail-item">
+                                    <Text strong>Số điện thoại:</Text>
+                                    <Text>
+                                      {loadingUserDetail 
+                                        ? 'Đang tải...' 
+                                        : walkInUserDetail?.phone || selectedBooking.user?.phone || 'Chưa cập nhật'}
+                                    </Text>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="detail-item">
+                                    <Text strong>Email:</Text>
+                                    <Text>{selectedBooking.user?.email || 'Chưa cập nhật'}</Text>
+                                  </div>
+                                  <div className="detail-item">
+                                    <Text strong>Số điện thoại:</Text>
+                                    <Text>{selectedBooking.user?.phone || 'Chưa cập nhật'}</Text>
+                                  </div>
+                                </>
+                              )}
+                            </Spin>
+                          </Card>
+                        </Col>
+                      </Row>
 
-            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-              <Col span={12}>
-                <Card title="Thông tin phòng" size="small" >
-                  <div className="detail-item">
-                    <Text strong>Loại phòng:</Text>
-                    <Text>
-                      {selectedBooking.room_type?.room_type_name ||
-                        selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
-                        'Chưa xác định'}
-                    </Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Số phòng:</Text>
-                    <Text>
-                      {selectedBooking.booking_rooms && selectedBooking.booking_rooms.length > 0
-                        ? selectedBooking.booking_rooms
-                          .map(br => br.room?.room_num)
-                          .filter(Boolean)
-                          .join(', ') || 'Chưa gán'
-                        : selectedBooking.num_rooms
-                          ? `${selectedBooking.num_rooms} phòng`
-                          : 'Chưa gán'}
-                    </Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Số khách:</Text>
-                    <Text>{selectedBooking.num_person} người</Text>
-                  </div>
-                  {selectedBooking.num_rooms > 1 && (
-                    <div className="detail-item">
-                      <Text strong>Số lượng phòng:</Text>
-                      <Text>{selectedBooking.num_rooms} phòng</Text>
-                    </div>
-                  )}
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card title="Thông tin thanh toán" size="small">
-                  <div className="detail-item">
-                    <Text strong>Tổng tiền:</Text>
-                    <Text strong style={{ color: '#52c41a' }}>
-                      {formatPrice(selectedBooking.final_price || selectedBooking.total_price)}
-                    </Text>
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Trạng thái thanh toán:</Text>
-                    {getPaymentStatusTag(selectedBooking.payment_status)}
-                  </div>
-                  <div className="detail-item">
-                    <Text strong>Phương thức:</Text>
-                    <Text>
-                      {selectedBooking.booking_type === 'walkin' 
-                        ? 'Tiền mặt' 
-                        : selectedBooking.payment_status === 'paid' 
-                          ? 'PayOS' 
-                          : selectedBooking.payment_status === 'partial_refunded' 
-                            ? 'Chờ hoàn tiền từ admin' 
-                            : 'Admin chuyển khoản'}
-                    </Text>
-                  </div>
-                  
-                  {/* Hiển thị thông tin hoàn tiền khi booking đã hủy */}
-                  {selectedBooking.booking_status === 'cancelled' && (
-                    <>
-                      <Divider style={{ margin: '12px 0' }} />
-                      {loadingRefundInfo ? (
-                        <div style={{ textAlign: 'center', padding: '16px' }}>
-                          <Spin size="small" />
-                          <div style={{ marginTop: 8 }}>
-                            <Text type="secondary">Đang tải thông tin hoàn tiền...</Text>
+                      <Card title="Lịch trình" size="small" style={{ marginTop: 16 }}>
+                        <Row gutter={16}>
+                          <Col span={12}>
+                            <div className="detail-item">
+                              <Text strong>Ngày nhận phòng: {formatDate(selectedBooking.check_in_date)}</Text>
+                            </div>
+                          </Col>
+                          <Col span={12}>
+                            <div className="detail-item">
+                              <Text>Ngày trả phòng:</Text>
+                              <Text strong>{formatDate(selectedBooking.check_out_date)}</Text>
+                            </div>
+                          </Col>
+                        </Row>
+                        {selectedBooking.check_in_time && (
+                          <div className="detail-item">
+                            <Text strong>Thời gian check-in: </Text>
+                            <Text>{formatDateTime(selectedBooking.check_in_time)}</Text>
                           </div>
-                        </div>
-                      ) : refundInfo ? (
-                        <>
-                          <div className="detail-item" style={{ marginTop: 8 }}>
-                            <Text strong>Số tiền khách được hoàn: </Text>
-                            <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
-                              {formatPrice(refundInfo.payment_summary?.total_refunded)}
-                            </Text>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="detail-item" style={{ marginTop: 8 }}>
-                          <Text type="secondary">Không có thông tin hoàn tiền</Text>
-                        </div>
-                      )}
-                    </>
-                  )}
-                
-                </Card>
-              </Col>
-            </Row>
-
-            <Card title="Lịch trình" size="small" style={{ marginTop: 16 }}>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <div className="detail-item" >
-                    <Text strong>Ngày nhận phòng: {formatDate(selectedBooking.check_in_date)}</Text>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div className="detail-item">
-                    <Text >Ngày trả phòng:</Text>
-                    <Text strong>{formatDate(selectedBooking.check_out_date)}</Text>
-                  </div>
-                </Col>
-              </Row>
-              {selectedBooking.check_in_time && (
-                <div className="detail-item">
-                  <Text strong>Thời gian check-in: </Text>
-                  <Text>{formatDateTime(selectedBooking.check_in_time)}</Text>
-                 
-                </div>
-              )}
-              {selectedBooking.check_out_time && (
-                <div className="detail-item">   
-                  <Text strong>Thời gian check-out:</Text>
-                  <Text strong>{formatDateTime(selectedBooking.check_out_time)}</Text>
-                </div>
-              )}
-            </Card>
-
-            {/* Hiển thị danh sách dịch vụ nếu có */}
-            {selectedBooking.booking_services && selectedBooking.booking_services.length > 0 && (
-              <Card 
-                title={
-                  <Space>
-                    <CustomerServiceFilled />
-                    <span>Dịch vụ đã sử dụng</span>
-                  </Space>
-                }
-                size="small" 
-                style={{ marginTop: 16 }}
-              >
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', fontWeight: 600, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                    <div style={{ flex: 1 }}>Tên dịch vụ</div>
-                    <div style={{ width: 100, textAlign: 'center' }}>Số lượng</div>
-                    <div style={{ width: 120, textAlign: 'right' }}>Đơn giá</div>
-                    <div style={{ width: 120, textAlign: 'right' }}>Thành tiền</div>
-                    <div style={{ width: 100, textAlign: 'center' }}>Loại thanh toán</div>
-                  </div>
-                  {(() => {
-                    const activeServices = selectedBooking.booking_services.filter(bs => bs.status !== 'cancelled')
-                    return activeServices.map((bookingService, index) => {
-                      const service = bookingService.service || {}
-                      const unitPrice = parseFloat(bookingService.unit_price || bookingService.service?.price || 0)
-                      const quantity = Number(bookingService.quantity || 1)
-                      const totalPrice = parseFloat(bookingService.total_price || unitPrice * quantity)
-                      
-                      return (
-                        <div 
-                          key={bookingService.booking_service_id || index} 
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            padding: '10px 0', 
-                            borderBottom: index < activeServices.length - 1 ? '1px solid #f5f5f5' : 'none'
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <Text>{service.name || 'Dịch vụ không xác định'}</Text>
-                          </div>
-                          <div style={{ width: 100, textAlign: 'center' }}>
-                            <Text>{quantity}</Text>
-                          </div>
-                          <div style={{ width: 120, textAlign: 'right' }}>
-                            <Text>{formatPrice(unitPrice)}</Text>
-                          </div>
-                          <div style={{ width: 120, textAlign: 'right' }}>
-                            <Text strong style={{ color: '#52c41a' }}>
-                              {formatPrice(totalPrice)}
-                            </Text>
-                          </div>
-                          <div style={{ width: 100, textAlign: 'center' }}>
-                            <Tag color={bookingService.payment_type === 'prepaid' ? 'blue' : 'green'}>
-                              {bookingService.payment_type === 'prepaid' ? 'Trả trước' : 'Trả sau'}
-                            </Tag>
-                          </div>
-                        </div>
-                      )
-                    })
-                  })()}
-                  
-                  {/* Tổng tiền dịch vụ */}
-                  {(() => {
-                    const totalServicesPrice = selectedBooking.booking_services
-                      .filter(bs => bs.status !== 'cancelled')
-                      .reduce((sum, bs) => {
-                        const price = parseFloat(bs.total_price || 0)
-                        return sum + price
-                      }, 0)
-                    
-                    if (totalServicesPrice > 0) {
-                      return (
-                        <div style={{ 
-                          marginTop: 12, 
-                          paddingTop: 12, 
-                          borderTop: '2px solid #f0f0f0',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}>
-                          <Text strong style={{ fontSize: 14 }}>Tổng tiền dịch vụ:</Text>
-                          <Text strong style={{ fontSize: 16, color: '#52c41a' }}>
-                            {formatPrice(totalServicesPrice)}
-                          </Text>
-                        </div>
-                      )
-                    }
-                    return null
-                  })()}
-                </div>
-              </Card>
-            )}
-
-            {/* Thông tin hủy phòng - chỉ hiển thị khi booking_status là cancelled */}
-            {selectedBooking.booking_status === 'cancelled' && (
-              <Card
-                title={
-                  <Space>
-                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                    <Text strong>Thông tin hủy phòng</Text>
-                  </Space>
-                }
-                size="small"
-                style={{ marginTop: 16 }}
-                headStyle={{ backgroundColor: '#fff1f0', borderColor: '#ffccc7' }}
-                
-              >
-                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                  <div className="detail-item">
-                    <Text strong>Lý do hủy:</Text>
-                    <div style={{ marginTop: 8 }}>
-                      {selectedBooking.note ? (
-                        <Text>{selectedBooking.note}</Text>
-                      ) : (
-                        <Text type="secondary">Không có thông tin</Text>
-                      )}
-                    </div>
-                  </div>
-
-                  <Divider style={{ margin: '8px 0' }} />
-
-                  <div className="detail-item">
-                    <Text strong>Trạng thái hoàn tiền:</Text>
-                    <div style={{ marginTop: 8 }}>
-                      {selectedBooking.payment_status === 'refunded' && (
-                        <Text type="success" style={{ marginLeft: 8 }}>
-                          ✓ Đã hoàn tiền đầy đủ
-                        </Text>
-                      )}
-                      {selectedBooking.payment_status === 'partial_refunded' && (
-                        <Text type="warning" style={{ marginLeft: 8 }}>
-                          ⚠ Chờ hoàn tiền từ admin
-                        </Text>
-                      )}
-                      {selectedBooking.payment_status === 'paid' && (
-                        <Text type="danger" style={{ marginLeft: 8 }}>
-                          ⚠ Chưa hoàn tiền
-                        </Text>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedBooking.note && selectedBooking.note.includes('Admin hủy') && (
-                    <>
-                      <Divider style={{ margin: '8px 0' }} />
-                      <div className="detail-item">
-                        <Text strong>Người hủy:</Text>
-                        <Tag color="red" style={{ marginLeft: 8 }}>Admin</Tag>
-                        {selectedBooking.note.includes('Đã hoàn tiền thủ công') && (
-                          <Tag color="green" style={{ marginLeft: 8 }}>Đã hoàn tiền thủ công</Tag>
                         )}
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Chỉ hiển thị nút đánh dấu hoàn tiền khi booking đã hủy và chưa hoàn tiền đầy đủ */}
-                  {(selectedBooking.payment_status === 'paid' || selectedBooking.payment_status === 'partial_refunded') && (
-                    <div style={{ textAlign: 'center' }}>
-                      <Button
-                        type="primary"
-                        icon={<CheckCircleOutlined />}
-                        loading={refundSubmitting}
-                        onClick={() => handleMarkRefundCompleted(selectedBooking.booking_id)}
-                        style={{
-                          backgroundColor: '#52c41a',
-                          borderColor: '#52c41a'
-                        }}
-                        disabled={selectedBooking.payment_status === 'refunded'}
-                      >
-                        {selectedBooking.payment_status === 'partial_refunded' 
-                          ? 'Đánh dấu đã hoàn tiền đầy đủ' 
-                          : 'Đánh dấu đã hoàn tiền'}
-                      </Button>
-                      <div style={{ marginTop: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {selectedBooking.payment_status === 'partial_refunded'
-                            ? 'Click để đánh dấu đã hoàn tiền đầy đủ cho khách hàng'
-                            : 'Click để đánh dấu đã hoàn tiền thủ công cho khách hàng'}
-                        </Text>
-                      </div>
+                        {selectedBooking.check_out_time && (
+                          <div className="detail-item">   
+                            <Text strong>Thời gian check-out:</Text>
+                            <Text strong>{formatDateTime(selectedBooking.check_out_time)}</Text>
+                          </div>
+                        )}
+                      </Card>
                     </div>
-                  )}
-                  
-                  {/* Hiển thị thông báo khi đã hoàn tiền đầy đủ */}
-                  {selectedBooking.payment_status === 'refunded' && (
-                    <div style={{ textAlign: 'center', padding: '16px' }}>
-                      <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a', marginBottom: 8 }} />
-                      <div>
-                        <Text type="success" strong>Đã hoàn tiền đầy đủ</Text>
-                      </div>
-                      <div style={{ marginTop: 4 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          Booking này đã được đánh dấu hoàn tiền đầy đủ
-                        </Text>
-                      </div>
-                    </div>
-                  )}
+                  )
+                },
+                {
+                  key: 'rooms-services',
+                  label: (
+                    <span>
+                      <HomeOutlined style={{ marginRight: 8 }} />
+                      Phòng và dịch vụ
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      <Card title="Thông tin phòng" size="small" style={{ marginBottom: 16 }}>
+                        <div className="detail-item">
+                          <Text strong>Loại phòng:</Text>
+                          <Text>
+                            {selectedBooking.room_type?.room_type_name ||
+                              selectedBooking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
+                              'Chưa xác định'}
+                          </Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Số phòng:</Text>
+                          <Text>
+                            {selectedBooking.booking_rooms && selectedBooking.booking_rooms.length > 0
+                              ? selectedBooking.booking_rooms
+                                .map(br => br.room?.room_num)
+                                .filter(Boolean)
+                                .join(', ') || 'Chưa gán'
+                              : selectedBooking.num_rooms
+                                ? `${selectedBooking.num_rooms} phòng`
+                                : 'Chưa gán'}
+                          </Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Số khách:</Text>
+                          <Text>{selectedBooking.num_person} người</Text>
+                        </div>
+                        {selectedBooking.num_rooms > 1 && (
+                          <div className="detail-item">
+                            <Text strong>Số lượng phòng:</Text>
+                            <Text>{selectedBooking.num_rooms} phòng</Text>
+                          </div>
+                        )}
+                      </Card>
 
-                </Space>
-              </Card>
-            )}
+                      {/* Hiển thị danh sách dịch vụ nếu có */}
+                      {selectedBooking.booking_services && selectedBooking.booking_services.length > 0 ? (
+                        <Card 
+                          title={
+                            <Space>
+                              <CustomerServiceFilled />
+                              <span>Dịch vụ đã sử dụng</span>
+                            </Space>
+                          }
+                          size="small"
+                        >
+                          <div style={{ marginBottom: 8 }}>
+                            <div style={{ display: 'flex', fontWeight: 600, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                              <div style={{ flex: 1 }}>Tên dịch vụ</div>
+                              <div style={{ width: 100, textAlign: 'center' }}>Số lượng</div>
+                              <div style={{ width: 120, textAlign: 'right' }}>Đơn giá</div>
+                              <div style={{ width: 120, textAlign: 'right' }}>Thành tiền</div>
+                              <div style={{ width: 100, textAlign: 'center' }}>Loại thanh toán</div>
+                            </div>
+                            {(() => {
+                              const activeServices = selectedBooking.booking_services.filter(bs => bs.status !== 'cancelled')
+                              return activeServices.map((bookingService, index) => {
+                                const service = bookingService.service || {}
+                                const unitPrice = parseFloat(bookingService.unit_price || bookingService.service?.price || 0)
+                                const quantity = Number(bookingService.quantity || 1)
+                                const totalPrice = parseFloat(bookingService.total_price || unitPrice * quantity)
+                                
+                                return (
+                                  <div 
+                                    key={bookingService.booking_service_id || index} 
+                                    style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      padding: '10px 0', 
+                                      borderBottom: index < activeServices.length - 1 ? '1px solid #f5f5f5' : 'none'
+                                    }}
+                                  >
+                                    <div style={{ flex: 1 }}>
+                                      <Text>{service.name || 'Dịch vụ không xác định'}</Text>
+                                    </div>
+                                    <div style={{ width: 100, textAlign: 'center' }}>
+                                      <Text>{quantity}</Text>
+                                    </div>
+                                    <div style={{ width: 120, textAlign: 'right' }}>
+                                      <Text>{formatPrice(unitPrice)}</Text>
+                                    </div>
+                                    <div style={{ width: 120, textAlign: 'right' }}>
+                                      <Text strong style={{ color: '#52c41a' }}>
+                                        {formatPrice(totalPrice)}
+                                      </Text>
+                                    </div>
+                                    <div style={{ width: 100, textAlign: 'center' }}>
+                                      <Tag color={bookingService.payment_type === 'prepaid' ? 'blue' : 'green'}>
+                                        {bookingService.payment_type === 'prepaid' ? 'Trả trước' : 'Trả sau'}
+                                      </Tag>
+                                    </div>
+                                  </div>
+                                )
+                              })
+                            })()}
+                            
+                            {/* Tổng tiền dịch vụ */}
+                            {(() => {
+                              const totalServicesPrice = selectedBooking.booking_services
+                                .filter(bs => bs.status !== 'cancelled')
+                                .reduce((sum, bs) => {
+                                  const price = parseFloat(bs.total_price || 0)
+                                  return sum + price
+                                }, 0)
+                              
+                              if (totalServicesPrice > 0) {
+                                return (
+                                  <div style={{ 
+                                    marginTop: 12, 
+                                    paddingTop: 12, 
+                                    borderTop: '2px solid #f0f0f0',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                  }}>
+                                    <Text strong style={{ fontSize: 14 }}>Tổng tiền dịch vụ:</Text>
+                                    <Text strong style={{ fontSize: 16, color: '#52c41a' }}>
+                                      {formatPrice(totalServicesPrice)}
+                                    </Text>
+                                  </div>
+                                )
+                              }
+                              return null
+                            })()}
+                          </div>
+                        </Card>
+                      ) : (
+                        <Card size="small">
+                          <Empty description="Chưa có dịch vụ nào được sử dụng" />
+                        </Card>
+                      )}
+                    </div>
+                  )
+                },
+                {
+                  key: 'payment-refund',
+                  label: (
+                    <span>
+                      <CreditCardOutlined style={{ marginRight: 8 }} />
+                      Thanh toán và hoàn tiền
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      <Card title="Thông tin thanh toán" size="small" style={{ marginBottom: 16 }}>
+                        <div className="detail-item">
+                          <Text strong>Tổng tiền:</Text>
+                          <Text strong style={{ color: '#52c41a' }}>
+                            {formatPrice(selectedBooking.final_price || selectedBooking.total_price)}
+                          </Text>
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Trạng thái thanh toán:</Text>
+                          {getPaymentStatusTag(selectedBooking.payment_status)}
+                        </div>
+                        <div className="detail-item">
+                          <Text strong>Phương thức:</Text>
+                          <Text>
+                            {selectedBooking.booking_type === 'walkin' 
+                              ? 'Tiền mặt' 
+                              : selectedBooking.payment_status === 'paid' 
+                                ? 'PayOS' 
+                                : selectedBooking.payment_status === 'partial_refunded' 
+                                  ? 'Chờ hoàn tiền từ admin' 
+                                  : 'Admin chuyển khoản'}
+                          </Text>
+                        </div>
+                      </Card>
+
+                      {/* Thông tin hoàn tiền */}
+                      {selectedBooking.booking_status === 'cancelled' && (
+                        <>
+                          <Card
+                            title={
+                              <Space>
+                                <CreditCardOutlined />
+                                <span>Thông tin hoàn tiền</span>
+                              </Space>
+                            }
+                            size="small"
+                            style={{ marginBottom: 16 }}
+                          >
+                            {loadingRefundInfo ? (
+                              <div style={{ textAlign: 'center', padding: '16px' }}>
+                                <Spin size="small" />
+                                <div style={{ marginTop: 8 }}>
+                                  <Text type="secondary">Đang tải thông tin hoàn tiền...</Text>
+                                </div>
+                              </div>
+                            ) : refundInfo ? (
+                              <div className="detail-item">
+                                <Text strong>Số tiền khách được hoàn: </Text>
+                                <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
+                                  {formatPrice(refundInfo.payment_summary?.total_refunded)}
+                                </Text>
+                              </div>
+                            ) : (
+                              <div className="detail-item">
+                                <Text type="secondary">Không có thông tin hoàn tiền</Text>
+                              </div>
+                            )}
+                          </Card>
+
+                          {/* Thông tin hủy phòng */}
+                          <Card
+                            title={
+                              <Space>
+                                <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                                <Text strong>Thông tin hủy phòng</Text>
+                              </Space>
+                            }
+                            size="small"
+                            headStyle={{ backgroundColor: '#fff1f0', borderColor: '#ffccc7' }}
+                          >
+                            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                              <div className="detail-item">
+                                <Text strong>Lý do hủy:</Text>
+                                <div style={{ marginTop: 8 }}>
+                                  {selectedBooking.note ? (
+                                    <Text>{selectedBooking.note}</Text>
+                                  ) : (
+                                    <Text type="secondary">Không có thông tin</Text>
+                                  )}
+                                </div>
+                              </div>
+
+                              <Divider style={{ margin: '8px 0' }} />
+
+                              <div className="detail-item">
+                                <Text strong>Trạng thái hoàn tiền:</Text>
+                                <div style={{ marginTop: 8 }}>
+                                  {selectedBooking.payment_status === 'refunded' && (
+                                    <Text type="success" style={{ marginLeft: 8 }}>
+                                      ✓ Đã hoàn tiền đầy đủ
+                                    </Text>
+                                  )}
+                                  {selectedBooking.payment_status === 'partial_refunded' && (
+                                    <Text type="warning" style={{ marginLeft: 8 }}>
+                                      ⚠ Chờ hoàn tiền từ admin
+                                    </Text>
+                                  )}
+                                  {selectedBooking.payment_status === 'paid' && (
+                                    <Text type="danger" style={{ marginLeft: 8 }}>
+                                      ⚠ Chưa hoàn tiền
+                                    </Text>
+                                  )}
+                                </div>
+                              </div>
+
+                              {selectedBooking.note && selectedBooking.note.includes('Admin hủy') && (
+                                <>
+                                  <Divider style={{ margin: '8px 0' }} />
+                                  <div className="detail-item">
+                                    <Text strong>Người hủy:</Text>
+                                    <Tag color="red" style={{ marginLeft: 8 }}>Admin</Tag>
+                                    {selectedBooking.note.includes('Đã hoàn tiền thủ công') && (
+                                      <Tag color="green" style={{ marginLeft: 8 }}>Đã hoàn tiền thủ công</Tag>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                              
+                              {/* Chỉ hiển thị nút đánh dấu hoàn tiền khi booking đã hủy và chưa hoàn tiền đầy đủ */}
+                              {(selectedBooking.payment_status === 'paid' || selectedBooking.payment_status === 'partial_refunded') && (
+                                <div style={{ textAlign: 'center' }}>
+                                  <Button
+                                    type="primary"
+                                    icon={<CheckCircleOutlined />}
+                                    loading={refundSubmitting}
+                                    onClick={() => handleMarkRefundCompleted(selectedBooking.booking_id)}
+                                    style={{
+                                      backgroundColor: '#52c41a',
+                                      borderColor: '#52c41a'
+                                    }}
+                                    disabled={selectedBooking.payment_status === 'refunded'}
+                                  >
+                                    {selectedBooking.payment_status === 'partial_refunded' 
+                                      ? 'Đánh dấu đã hoàn tiền đầy đủ' 
+                                      : 'Đánh dấu đã hoàn tiền'}
+                                  </Button>
+                                  <div style={{ marginTop: 8 }}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                      {selectedBooking.payment_status === 'partial_refunded'
+                                        ? 'Click để đánh dấu đã hoàn tiền đầy đủ cho khách hàng'
+                                        : 'Click để đánh dấu đã hoàn tiền thủ công cho khách hàng'}
+                                    </Text>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Hiển thị thông báo khi đã hoàn tiền đầy đủ */}
+                              {selectedBooking.payment_status === 'refunded' && (
+                                <div style={{ textAlign: 'center', padding: '16px' }}>
+                                  <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a', marginBottom: 8 }} />
+                                  <div>
+                                    <Text type="success" strong>Đã hoàn tiền đầy đủ</Text>
+                                  </div>
+                                  <div style={{ marginTop: 4 }}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                      Booking này đã được đánh dấu hoàn tiền đầy đủ
+                                    </Text>
+                                  </div>
+                                </div>
+                              )}
+                            </Space>
+                          </Card>
+                        </>
+                      )}
+
+                      {selectedBooking.booking_status !== 'cancelled' && (
+                        <Card size="small">
+                          <Empty description="Không có thông tin hoàn tiền" />
+                        </Card>
+                      )}
+                    </div>
+                  )
+                }
+              ]}
+            />
           </div>
         )}
       </Modal>
