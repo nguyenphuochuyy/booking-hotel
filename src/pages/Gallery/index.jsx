@@ -10,6 +10,8 @@ import banner3 from '../../assets/images/banner3.webp'
 import banner4 from '../../assets/images/banner4.webp'
 import mainBanner from '../../assets/images/main-banner.webp'
 import luxyryRoom from '../../assets/images/luxyryRoom.webp'
+import glr1 from '../../assets/images/galary/glr1.webp'
+import glr2 from '../../assets/images/galary/glr2.webp'
 // import about1 from '../../assets/images/about1.webp'
 
 const { Title, Paragraph } = Typography
@@ -22,8 +24,9 @@ const allImages = [
   { src: banner2, title: 'Lối vào chính', category: 'exterior' },
   { src: banner3, title: 'Khu vực chờ', category: 'lobby' },
   { src: banner4, title: 'Quầy lễ tân 24/7', category: 'lobby' },
-  // Bạn có thể thêm ảnh duplicate để test giao diện Masonry
-  { src: banner1, title: 'Góc nhìn từ ban công', category: 'exterior' }, 
+  { src: glr1, title: 'Góc nhìn từ ban công', category: 'lobby' }, 
+  { src: glr2, title: 'Phục vụ khách sạn', category: 'room' }, 
+  { src: banner1, title: 'Nội thất phòng', category: 'room' }, 
 ]
 
 function GalleryPage() {

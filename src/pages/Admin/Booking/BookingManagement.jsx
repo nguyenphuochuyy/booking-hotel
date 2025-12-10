@@ -468,12 +468,19 @@ const BookingManagement = () => {
       return
     }
 
+    // Tính toán số tiền hoàn dựa trên booking hiện tại
+    const refundAmount =
+      selectedBooking?.payment_status === 'paid'
+        ? Number(selectedBooking?.final_price || selectedBooking?.total_price || 0)
+        : 0
+
     setCancelSubmitting(true)
     try {
       await cancelBookingAdmin(
         cancelModal.bookingId,
         cancelModal.reason.trim(),
-        cancelModal.refundManually
+        cancelModal.refundManually,
+        refundAmount
       )
       message.success('Hủy đặt phòng thành công!')
       setCancelModal({ visible: false, bookingId: null, bookingCode: null, reason: '', refundManually: false })
@@ -1058,6 +1065,15 @@ const BookingManagement = () => {
       >
         {selectedBooking && (
           <div className="booking-details">
+            {(() => {
+              // Xác định booking bị admin hủy (dựa trên note)
+              const note = selectedBooking.note || ''
+              const isAdminCancelled = note.toLowerCase().includes('admin hủy')
+              const isCancelled = selectedBooking.booking_status === 'cancelled'
+              // Gắn vào scope để dùng bên dưới
+              selectedBooking.isAdminCancelled = isAdminCancelled
+              selectedBooking.isCancelled = isCancelled
+            })()}
             <Tabs
               defaultActiveKey="general"
               items={[
@@ -1402,11 +1418,7 @@ const BookingManagement = () => {
                               <div className="detail-item">
                                 <Text strong>Lý do hủy:</Text>
                                 <div style={{ marginTop: 8 }}>
-                                  {selectedBooking.note ? (
-                                    <Text>{selectedBooking.note}</Text>
-                                  ) : (
-                                    <Text type="secondary">Không có thông tin</Text>
-                                  )}
+                                  <Text>{selectedBooking.isAdminCancelled ? 'Admin hủy' : (selectedBooking.note || 'Không có thông tin')}</Text>
                                 </div>
                               </div>
 
@@ -1425,7 +1437,7 @@ const BookingManagement = () => {
                                       ⚠ Chờ hoàn tiền từ admin
                                     </Text>
                                   )}
-                                  {selectedBooking.payment_status === 'paid' && (
+                              {selectedBooking.payment_status === 'paid' && (
                                     <Text type="danger" style={{ marginLeft: 8 }}>
                                       ⚠ Chưa hoàn tiền
                                     </Text>
@@ -1447,7 +1459,7 @@ const BookingManagement = () => {
                               )}
                               
                               {/* Chỉ hiển thị nút đánh dấu hoàn tiền khi booking đã hủy và chưa hoàn tiền đầy đủ */}
-                              {(selectedBooking.payment_status === 'paid' || selectedBooking.payment_status === 'partial_refunded') && (
+                              {(selectedBooking.payment_status === 'paid' || selectedBooking.payment_status === 'partial_refunded') && !selectedBooking.isAdminCancelled && (
                                 <div style={{ textAlign: 'center' }}>
                                   <Button
                                     type="primary"

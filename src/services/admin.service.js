@@ -532,10 +532,15 @@ export async function cancelBooking(id, reason = '') {
  * @param {number|string} id - Booking ID
  * @param {string} reason - Lý do hủy
  * @param {boolean} refund_manually - Đã hoàn tiền thủ công hay chưa
+ * @param {number|null} refund_amount - Số tiền cần hoàn (tuỳ chính sách, optional)
  * @returns {Promise}
  */
-export async function cancelBookingAdmin(id, reason = '', refund_manually = false) {
-  return http.post(`/bookings/${id}/cancel-admin`, { reason, refund_manually })
+export async function cancelBookingAdmin(id, reason = '', refund_manually = false, refund_amount = null) {
+  const payload = { reason, refund_manually }
+  if (refund_amount !== null && !Number.isNaN(Number(refund_amount))) {
+    payload.refund_amount = Number(refund_amount)
+  }
+  return http.post(`/bookings/${id}/cancel-admin`, payload)
 }
 
 /**
