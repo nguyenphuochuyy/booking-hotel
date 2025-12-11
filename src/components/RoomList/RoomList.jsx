@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react'
-import { Row, Col, Typography, Button, Grid, Carousel } from 'antd'
-import { WifiOutlined, UserOutlined, ExpandOutlined, RestOutlined, CoffeeOutlined } from '@ant-design/icons'
+import React, { useMemo, useRef, useState, useEffect } from 'react'
+import { Row, Col, Typography, Button, Grid, Carousel, Modal, Divider, Space, Tag, Spin, Image } from 'antd'
+import { WifiOutlined, UserOutlined, ExpandOutlined, RestOutlined, CoffeeOutlined, HomeOutlined } from '@ant-design/icons'
+import { getRoomTypeById } from '../../services/roomtype.service'
 import './RoomList.css'
 import { useNavigate } from 'react-router-dom'
 import { useRoomTypes } from '../../hooks/roomtype'
@@ -29,6 +30,12 @@ const CATEGORY_LABEL = {
 }
 
 function RoomList() {
+  const [hoverTimer, setHoverTimer] = useState(null)
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [roomInModal, setRoomInModal] = useState(null)
+  const [roomDetailsCache, setRoomDetailsCache] = useState({})
+  const [modalLoading, setModalLoading] = useState(false)
+  const timerRef = useRef(null)
   const screens = useBreakpoint()
   const navigate = useNavigate()
   const { roomTypes } = useRoomTypes()
@@ -86,6 +93,7 @@ function RoomList() {
     infinite: featuredRooms.length > 4,
     autoplay: true,
     autoplaySpeed: 3000,
+    draggable: true,
     speed: 600,
     slidesToShow: Math.min(4, featuredRooms.length || 1),
     slidesToScroll: 1,
@@ -104,6 +112,68 @@ function RoomList() {
       }
     ]
   }), [featuredRooms.length])
+
+  // Cleanup timer
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  const mergeRoomDetail = (room, detail) => {
+    if (!detail) return room
+    return {
+      ...room,
+      description: room.description || detail.description,
+      images: room.images && room.images.length ? room.images : (detail.images || detail.image_urls || detail.gallery || []),
+      amenities: Array.isArray(room.amenities) && room.amenities.length ? room.amenities : (detail.amenities || []),
+      capacity: room.capacity || detail.capacity,
+      area: room.area || detail.area,
+      price_per_night: room.price_per_night || detail.price_per_night,
+      bed_type: room.bed_type || detail.bed_type,
+      view: room.view || detail.view,
+      available_rooms: room.available_rooms ?? detail.available_rooms,
+      total_rooms: room.total_rooms ?? detail.total_rooms
+    }
+  }
+
+  const handleHoverStart = (room) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
+      setModalLoading(true)
+      const typeId = room.room_type_id
+      let detail = roomDetailsCache[typeId]
+      if (!detail && typeId) {
+        try {
+          const resp = await getRoomTypeById(typeId)
+          detail = resp?.roomType || resp?.data?.roomType || resp?.room_type || resp?.data?.room_type || resp
+          if (detail) {
+            setRoomDetailsCache(prev => ({ ...prev, [typeId]: detail }))
+          }
+        } catch (error) {
+          console.error('Load room type detail failed', error)
+        }
+      }
+      const merged = mergeRoomDetail(room, detail)
+      setRoomInModal(merged)
+      setIsModalVisible(true)
+      setModalLoading(false)
+    }, 700)
+    setHoverTimer(timerRef.current)
+  }
+
+  const handleHoverEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+      setHoverTimer(null)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false)
+    setRoomInModal(null)
+  }
 
   return (
     <div>
@@ -126,7 +196,11 @@ function RoomList() {
           <Carousel {...carouselSettings} className="featured-carousel">
             {featuredRooms.map((room) => (
               <div key={room.room_type_id} className="featured-room-slide">
-                <div className="featured-room-card" >
+                <div
+                  className="featured-room-card"
+                  onMouseEnter={() => handleHoverStart(room)}
+                  onMouseLeave={handleHoverEnd}
+                >
                   <div className="featured-room-media">
                     <img src={getCoverImage(room)} alt={room.room_type_name} />
                   </div>
@@ -157,6 +231,111 @@ function RoomList() {
 
       {/* --- MAIN ROOM LIST SECTION --- */}
     
+      {/* Modal chi tiết phòng (hiển thị sau 1.5s hover) */}
+      <Modal
+        open={isModalVisible}
+        onCancel={handleCloseModal}
+        footer={null}
+        width={900}
+        className="room-detail-modal"
+        centered
+      >
+        {modalLoading && (
+          <div style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Spin size="large" />
+          </div>
+        )}
+        {!modalLoading && roomInModal && (
+          <div className="modal-content">
+            <div className="modal-header" style={{ marginBottom: 12 }}>
+              <Typography.Title level={3} style={{ margin: 0 }}>
+                {roomInModal.room_type_name}
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                {roomInModal.bed_type ? `${roomInModal.bed_type} • ` : ''}{roomInModal.view ? `View ${roomInModal.view}` : ''}
+              </Typography.Text>
+            </div>
+            <Divider style={{ margin: '12px 0 20px 0' }} />
+            <Row gutter={[24, 24]}>
+              <Col xs={24} md={12}>
+                <div className="featured-room-media" style={{ minHeight: 260 }}>
+                  <Image
+                    src={getCoverImage(roomInModal)}
+                    alt={roomInModal.room_type_name}
+                    width="100%"
+                    height={260}
+                    style={{ objectFit: 'cover', borderRadius: 12 }}
+                    preview={{
+                      toolbarRender: () => null
+                    }}
+                  />
+                  {/* Thumbnails nếu có nhiều ảnh */}
+                  {Array.isArray(roomInModal.images) && roomInModal.images.length > 1 && (
+                    <Space size={8} wrap style={{ marginTop: 12 }}>
+                      {roomInModal.images.slice(0, 6).map((img, idx) => (
+                        <Image
+                          key={idx}
+                          src={img}
+                          alt={`${roomInModal.room_type_name} - ${idx + 1}`}
+                          width={64}
+                          height={48}
+                          style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid #f0f0f0' }}
+                          preview={{
+                            src: img
+                          }}
+                        />
+                      ))}
+                    </Space>
+                  )}
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                  {roomInModal.description && (
+                    <Typography.Text style={{ fontSize: 14, color: '#555', lineHeight: 1.6 }}>
+                      {roomInModal.description}
+                    </Typography.Text>
+                  )}
+                  <Space size={16} wrap>
+                    <Space>
+                      <UserOutlined style={{ color: '#9ca3af' }} />
+                      <Typography.Text>Sức chứa: {roomInModal.capacity || 2} người</Typography.Text>
+                    </Space>
+                    <Space>
+                      <ExpandOutlined style={{ color: '#9ca3af' }} />
+                      <Typography.Text>Diện tích: {roomInModal.area || 0} m²</Typography.Text>
+                    </Space>
+                  </Space>
+                  <Space size={16} wrap>
+                    {roomInModal.available_rooms != null && (
+                      <Tag color={roomInModal.available_rooms > 0 ? 'green' : 'red'}>
+                        Còn {roomInModal.available_rooms} / {roomInModal.total_rooms || '?'} phòng
+                      </Tag>
+                    )}
+                    {roomInModal.bed_type && <Tag>{roomInModal.bed_type}</Tag>}
+                    {roomInModal.view && <Tag>View {roomInModal.view}</Tag>}
+                  </Space>
+                  <Typography.Title level={4} style={{ color: '#c08a19', margin: 0 }}>
+                    {roomInModal.price_per_night ? `${formatPrice(roomInModal.price_per_night)}/Đêm` : 'Giá liên hệ'}
+                  </Typography.Title>
+                  {Array.isArray(roomInModal.amenities) && roomInModal.amenities.length > 0 && (
+                    <Space size={[8, 8]} wrap>
+                      {roomInModal.amenities.slice(0, 8).map((am, idx) => (
+                        <Tag key={idx} color="gold" style={{ borderRadius: 12 }}>
+                          {am}
+                        </Tag>
+                      ))}
+                    </Space>
+                  )}
+                  <Button type="primary" onClick={() => navigate('/hotels')}>
+                    Xem chi tiết & đặt phòng
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

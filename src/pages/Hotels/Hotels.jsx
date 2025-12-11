@@ -702,6 +702,7 @@ function Hotels() {
               </div>
               <Divider />
               <div className="summary-dates">
+                
                 <Text strong style={{ fontSize: '16px' }}>
                   {checkIn ? formatDate(checkIn) : 'Chưa chọn'} - {checkOut ? formatDate(checkOut) : 'Chưa chọn'}
                 </Text>
