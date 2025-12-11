@@ -1,10 +1,10 @@
-import React, { useEffect, Suspense } from 'react'
+import React, { useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Navigation from '../components/Navigation'
 import Footer from '../components/Footer'
-import { FloatButton, notification, Button, Spin } from "antd";
+import { FloatButton, notification, Button } from "antd";
 import ChatBot from '../components/ChatBot/ChatBot'
-import { ArrowUpOutlined, LoadingOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined } from '@ant-design/icons';
 
 function UserLayout() {
   const navigate = useNavigate()
@@ -23,33 +23,16 @@ function UserLayout() {
     } catch {}
   }, [location.pathname, navigate])
   
-  const antIcon = <LoadingOutlined style={{ fontSize: 48, color: '#c08a19' }} spin />
-  
   return (
     <div className="App">
       <Navigation/>
+      <ChatBot />
       <main className="main-content">
-        <Suspense fallback={
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '60vh',
-            flexDirection: 'column',
-            gap: 24
-          }}>
-            <Spin indicator={antIcon} size="large" />
-            <div style={{ color: '#666', fontSize: 16, fontWeight: 500 }}>
-              Đang tải...
-            </div>
-          </div>
-        }>
-          <Outlet />
-        </Suspense>
+        <Outlet />
       </main>
       <Footer />
       <FloatButton.BackTop icon={<ArrowUpOutlined />} />
-      <ChatBot />
+
     </div>
   )
 }

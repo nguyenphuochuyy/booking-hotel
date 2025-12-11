@@ -8,12 +8,6 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
-  .contact-page .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 16px;
-  }
-
   .breadcrumb-custom {
     padding: 20px 0;
   }
@@ -67,8 +61,8 @@
   /* =========================================
      4. LEFT COLUMN: LUXURY FORM
      ========================================= */
-  .contact-page .form-container {
-    padding: 60px;
+.contact-page .form-container {
+    padding: 40px;
     background: #ffffff;
     flex: 1;
   }
@@ -79,7 +73,7 @@
   
   .contact-page .form-title {
     color: #1a1a1a !important;
-    font-size: 28px !important;
+    font-size: 24px !important;
     font-weight: 700 !important;
     margin-bottom: 8px !important;
   }
@@ -94,8 +88,8 @@
   
   .contact-page .form-description {
     color: #666;
-    font-size: 15px;
-    margin-bottom: 35px !important;
+    font-size: 14px;
+    margin-bottom: 26px !important;
   }
   
   /* --- Form Styles --- */
@@ -113,8 +107,8 @@
     background: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 15px;
+    padding: 10px 14px;
+    font-size: 14px;
     transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   }
   
@@ -135,8 +129,8 @@
     background: #1a1a1a;
     color: #d4af37;
     border: 1px solid #1a1a1a;
-    height: 54px;
-    font-size: 15px;
+    height: 48px;
+    font-size: 14px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -168,7 +162,7 @@
   }
   
   .contact-page .info-container {
-    padding: 60px;
+    padding: 40px;
     position: relative;
     flex: 1;
     display: flex;
@@ -202,9 +196,9 @@
   
   .contact-page .info-title {
     color: #ffffff !important;
-    font-size: 28px !important;
+    font-size: 24px !important;
     font-weight: 700 !important;
-    margin-bottom: 40px !important;
+    margin-bottom: 28px !important;
     position: relative;
     display: inline-block;
   }
@@ -223,14 +217,14 @@
   .contact-page .info-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
   }
   
   .contact-page .info-item {
     display: flex;
     align-items: flex-start;
-    gap: 20px;
-    padding: 20px;
+    gap: 16px;
+    padding: 16px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03); /* Glass effect */
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -246,8 +240,8 @@
   
   /* Icons */
   .contact-page .icon-box {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     background: rgba(212, 175, 55, 0.1);
     border-radius: 50%;
     display: flex;
@@ -258,25 +252,25 @@
   
   .contact-page .info-icon {
     color: #d4af37; /* Gold Icon */
-    font-size: 20px;
+    font-size: 18px;
   }
   
   .contact-page .text-box strong {
     display: block;
     color: #ffffff;
-    font-size: 16px;
+    font-size: 15px;
     margin-bottom: 5px;
   }
   
   .contact-page .info-text {
     color: rgba(255, 255, 255, 0.75) !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     line-height: 1.6;
     margin: 0 !important;
   }
   /* Map Section */
   .contact-page .map-section {
-    margin-top: 30px;
+    margin-top: 24px;
   }
   
   .contact-page .map-card {
@@ -300,7 +294,7 @@
   
     .contact-page .form-container,
     .contact-page .info-container {
-      padding: 40px 30px;
+    padding: 32px 26px;
       min-height: auto;
     }
   }
@@ -316,16 +310,16 @@
   
     .contact-page .form-container,
     .contact-page .info-container {
-      padding: 30px 20px;
+    padding: 26px 18px;
     }
   
     .contact-page .info-item {
-      padding: 15px;
-      gap: 15px;
+    padding: 14px;
+    gap: 12px;
     }
   
     .contact-page .submit-btn {
-      height: 48px;
-      font-size: 14px;
+    height: 44px;
+    font-size: 13.5px;
     }
   }

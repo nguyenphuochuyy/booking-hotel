@@ -52,7 +52,7 @@ function NewsDetail() {
   if (loading) {
     return (
       <div className="news-detail-page">
-        <div className="news-detail-container">
+        <div className="container news-detail-container">
           <div className="news-detail-loading">
             <Spin size="large" />
             <Text className="news-detail-loading-text">Đang tải bài viết...</Text>
@@ -65,7 +65,7 @@ function NewsDetail() {
   if (error || !post) {
     return (
       <div className="news-detail-page">
-        <div className="news-detail-container">
+        <div className="container news-detail-container">
           <div className="news-detail-error">
             <Empty 
               description={error || 'Không tìm thấy bài viết'}
@@ -87,10 +87,10 @@ function NewsDetail() {
 
   return (
     <div className="news-detail-page">
-      <div className="news-detail-container">
+      <div className="container news-detail-container">
         {/* Breadcrumb */}
         <Breadcrumb 
-          className="news-detail-breadcrumb"
+          className="breadcrumb-custom"
           items={[
             {
               href: '/',
@@ -110,6 +110,14 @@ function NewsDetail() {
             },
           ]}
         />
+
+        {/* Header (đồng bộ layout trang tin tức) */}
+        <div className="page-header">
+          <h1 className="page-title">TIN TỨC & SỰ KIỆN</h1>
+          <Paragraph className="page-description">
+            Cập nhật những thông tin mới nhất về khách sạn, du lịch và các sự kiện đặc biệt
+          </Paragraph>
+        </div>
 
         {/* Back Button */}
         <Button 

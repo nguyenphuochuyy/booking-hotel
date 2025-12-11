@@ -76,13 +76,11 @@ function Home() {
           <BookingWidget />
         </div>
       </div>
-
-      <div className='container home-room-list-container'>
+      <div className="container">
+      <div className='home-room-list-container'>
         <RoomList />
       </div>
-
-
-      <div className="home-page container">
+      <div className="home-page">
         <AnimatedSection>
           <div className="about">
             <div className="about-container">
@@ -147,8 +145,6 @@ function Home() {
             </div>
           </div>
         </AnimatedSection>
-
-        
         <AnimatedSection>
           {/* Luxury Section */}
           <div className="luxury-section">
@@ -314,17 +310,18 @@ function Home() {
         {/* Section khoảng khắc thú vị với chúng tôi */}
 
       </div>
-
       {/* Tại sao chọn chúng tôi */}
-      <div className='container'>
+      <div className=''>
         <AnimatedSection>
           <WhyChooseUs />
         </AnimatedSection>
       </div>
       
-      <div className='container'>
+      <div className=''>
         <Moments />
       </div>
+      </div>
+    
     </>
 
   )
