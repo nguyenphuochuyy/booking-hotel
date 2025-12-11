@@ -879,7 +879,6 @@ const BookingManagement = () => {
               title="Tổng doanh thu (đ)"
               value={statistics.totalRevenue.toLocaleString('vi-VN')}
               valueStyle={{ color: '#008000' ,fontWeight: 'bold' , fontSize: '24px'}}
-              suffix="đ"
             />
           </Card>
         </Col>
