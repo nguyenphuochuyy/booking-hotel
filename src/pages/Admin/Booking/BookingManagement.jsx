@@ -232,11 +232,16 @@ const BookingManagement = () => {
         const roomTypeName = (booking.room_type?.room_type_name ||
           booking.booking_rooms?.[0]?.room?.room_type?.room_type_name ||
           '').toLowerCase()
+        const roomNumbers = (booking.booking_rooms || [])
+          .map(br => br.room?.room_num)
+          .filter(Boolean)
+          .map(num => String(num).toLowerCase())
 
         return bookingCode.includes(searchLower) ||
           userName.includes(searchLower) ||
           userEmail.includes(searchLower) ||
-          roomTypeName.includes(searchLower)
+          roomTypeName.includes(searchLower) ||
+          roomNumbers.some(num => num.includes(searchLower))
       })
     }
 
@@ -888,7 +893,7 @@ const BookingManagement = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12} md={8} lg={8}>
           <Input
-            placeholder="Tìm kiếm theo tên khách hàng, email, mã đặt phòng..."
+            placeholder="Tìm kiếm theo tên khách hàng, email, mã đặt phòng, số phòng..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
