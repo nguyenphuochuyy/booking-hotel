@@ -387,7 +387,7 @@ function UserBookingHistory() {
         nonRefundable,
         hoursUntilCheckIn,
         hoursSinceBooking,
-        policy: 'Ngoại lệ: Hủy trong vòng 1 giờ từ lúc đặt - hoàn 85%, phí 15%',
+        policy: 'Hủy trong vòng 1 giờ từ lúc đặt - hoàn 85%, phí 15%',
         message: `Bạn sẽ được hoàn lại ${formatCurrency(refundable)} (85%). Khách sạn giữ ${formatCurrency(nonRefundable)} (15%). Áp dụng bất kể còn bao nhiêu giờ trước check-in.`
       }
     }
