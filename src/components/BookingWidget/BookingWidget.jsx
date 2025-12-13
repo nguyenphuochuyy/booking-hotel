@@ -18,7 +18,7 @@ const GuestSelector = ({ adults, rooms, setAdults, setRooms, onClose }) => {
   return (
     <div className="guest-popover">
       <div className="guest-item">
-        <span>Người lớn</span>
+        <span>Khách</span>
         <Space>
           <Button size="small" onClick={() => currentAdults > 1 && setAdults(currentAdults - 1)}>-</Button>
           <span>{currentAdults}</span>
