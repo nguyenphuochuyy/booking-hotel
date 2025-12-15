@@ -78,6 +78,7 @@ const BookingManagement = () => {
   const [refundSubmitting, setRefundSubmitting] = useState(false)
   const [refundInfo, setRefundInfo] = useState(null) // Thông tin hoàn tiền
   const [loadingRefundInfo, setLoadingRefundInfo] = useState(false)
+  const [refundMap, setRefundMap] = useState({}) // Lưu số tiền hoàn theo booking_id
   const [isAddServiceModalVisible, setIsAddServiceModalVisible] = useState(false)
   const [servicesLoading, setServicesLoading] = useState(false)
   const [servicesList, setServicesList] = useState([])
@@ -209,6 +210,50 @@ const BookingManagement = () => {
     fetchRoomTypes()
     fetchUsers()
   }, [])
+
+  // Đồng bộ thông tin hoàn tiền cho các booking đã hủy để tính doanh thu
+  useEffect(() => {
+    const cancelledWithoutRefund = (bookings || []).filter(
+      (b) => b?.booking_status === 'cancelled' && b.booking_id && refundMap[b.booking_id] === undefined
+    )
+    if (!cancelledWithoutRefund.length) return
+
+    let isMounted = true
+    ;(async () => {
+      try {
+        const entries = await Promise.all(
+          cancelledWithoutRefund.map(async (booking) => {
+            try {
+              const res = await getInfoRefundBooking(booking.booking_id)
+              const data = res?.booking || res || {}
+              const amount = parseFloat(data?.payment_summary?.total_refunded)
+              return [booking.booking_id, Number.isNaN(amount) ? 0 : amount]
+            } catch (err) {
+              console.error('Error fetching refund info for booking', booking.booking_id, err)
+              return [booking.booking_id, 0]
+            }
+          })
+        )
+
+        if (!isMounted) return
+        setRefundMap((prev) => {
+          const next = { ...prev }
+          entries.forEach(([id, amt]) => {
+            if (next[id] === undefined) {
+              next[id] = amt
+            }
+          })
+          return next
+        })
+      } catch (err) {
+        console.error('Error syncing refund map', err)
+      }
+    })()
+
+    return () => {
+      isMounted = false
+    }
+  }, [bookings, refundMap])
 
   const hasActiveFilters = useMemo(() => {
     const hasSearch = Boolean(searchText?.trim())
@@ -621,6 +666,7 @@ const BookingManagement = () => {
   }
 
   // tính toán thống kê số lượng và doanh thu
+  // Thống kê tổng, áp dụng bộ lọc nếu đang bật; công thức đồng nhất với dashboard/báo cáo
   const statistics = useMemo(() => {
     const dataSource = hasActiveFilters ? filteredBookings : bookings
     const stats = {
@@ -629,12 +675,26 @@ const BookingManagement = () => {
       checkedIn: dataSource.filter(b => b.booking_status === 'checked_in').length,
       checkedOut: dataSource.filter(b => b.booking_status === 'checked_out').length,
       cancelled: dataSource.filter(b => b.booking_status === 'cancelled').length,
-      totalRevenue: dataSource
-        .filter(b => b.payment_status === 'paid')
-        .reduce((sum, b) => sum + (parseFloat(b.final_price) || 0), 0)
+      totalRevenue: dataSource.reduce((sum, b) => {
+        const priceParsed = parseFloat(b.final_price) || parseFloat(b.total_price) || 0
+        const price = Number.isNaN(priceParsed) ? 0 : priceParsed
+
+        if (b.booking_status === 'cancelled') {
+          const refund = refundMap[b.booking_id] ?? 0
+          const safeRefund = Number.isFinite(refund) ? refund : 0
+          const net = price - safeRefund
+          return sum + (net > 0 ? net : 0)
+        }
+
+        if (b.payment_status === 'paid' && b.booking_status !== 'cancelled') {
+          return sum + price
+        }
+
+        return sum
+      }, 0)
     }
     return stats
-  }, [filteredBookings, bookings, hasActiveFilters])
+  }, [filteredBookings, bookings, hasActiveFilters, refundMap])
 
   // Đồng bộ tổng số record cho pagination sau khi lọc
   useEffect(() => {

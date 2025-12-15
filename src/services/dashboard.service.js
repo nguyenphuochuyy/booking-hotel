@@ -1,4 +1,5 @@
 import httpClient from './httpClient'
+import { getInfoRefundBooking } from './admin.service'
 
 const normalizeBookings = (bookings) => {
   if (!Array.isArray(bookings)) return []
@@ -101,15 +102,38 @@ export const getTotalRevenue = async () => {
       params: { page: 1, limit: 1000 } 
     })
     
-    // Tính tổng doanh thu từ các bookings đã paid (payment_status = 'paid')
-    let totalRevenue = 0
-    if (response?.bookings && Array.isArray(response.bookings)) {
-      totalRevenue = response.bookings
-        .filter(booking => booking.payment_status === 'paid' && booking.final_price)
-        .reduce((sum, booking) => {
-          const price = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
-          return sum + price
-        }, 0)
+    const bookings = Array.isArray(response?.bookings) ? response.bookings : []
+    
+    // 1) Doanh thu từ các booking đã thanh toán (không tính booking đã hủy)
+    let totalRevenue = bookings
+      .filter(booking => booking.payment_status === 'paid' && booking.booking_status !== 'cancelled')
+      .reduce((sum, booking) => {
+        const price = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        return sum + (Number.isNaN(price) ? 0 : price)
+      }, 0)
+
+    // 2) Đối với booking đã hủy: doanh thu = tổng tiền - số tiền hoàn
+    const cancelledBookings = bookings.filter(b => b.booking_status === 'cancelled' && b.booking_id)
+    if (cancelledBookings.length > 0) {
+      const refundTotals = await Promise.all(
+        cancelledBookings.map(async (booking) => {
+          try {
+            const refundResponse = await getInfoRefundBooking(booking.booking_id)
+            const bookingData = refundResponse?.booking || refundResponse || {}
+            const refundAmount = bookingData?.payment_summary?.total_refunded
+            const refundParsed = parseFloat(refundAmount)
+            const refund = Number.isNaN(refundParsed) ? 0 : refundParsed
+            const priceParsed = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+            const price = Number.isNaN(priceParsed) ? 0 : priceParsed
+            const net = price - refund
+            return net > 0 ? net : 0
+          } catch (err) {
+            console.error('Error fetching refund info for booking', booking.booking_id, err)
+            return 0
+          }
+        })
+      )
+      totalRevenue += refundTotals.reduce((sum, val) => sum + val, 0)
     }
     
     return {
@@ -256,47 +280,80 @@ export const getRevenueByDay = async () => {
       }
     }
     
-    // Tính doanh thu từ các bookings đã thanh toán
-    if (response?.bookings && Array.isArray(response.bookings)) {
-      response.bookings
-        .filter(booking => {
-          // Chỉ tính các booking đã thanh toán và không bị hủy
-          return booking.payment_status === 'paid' && 
-                 booking.booking_status !== 'cancelled' &&
-                 booking.final_price &&
-                 booking.created_at // Đảm bảo có created_at
+    const bookings = Array.isArray(response?.bookings) ? response.bookings : []
+
+    // Tính doanh thu từ các bookings đã thanh toán (không bị hủy)
+    bookings
+      .filter(booking => {
+        return booking.payment_status === 'paid' && 
+               booking.booking_status !== 'cancelled' &&
+               booking.final_price &&
+               booking.created_at // Đảm bảo có created_at
+      })
+      .forEach(booking => {
+        // Validate và parse date
+        const bookingDate = new Date(booking.created_at)
+        
+        if (isNaN(bookingDate.getTime())) {
+          console.warn('Invalid booking date:', booking.created_at, booking.booking_id)
+          return
+        }
+        
+        bookingDate.setHours(0, 0, 0, 0)
+        
+        const year = bookingDate.getFullYear()
+        const month = bookingDate.getMonth() + 1
+        const day = bookingDate.getDate()
+        
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          console.warn('Invalid date values:', { year, month, day }, booking.booking_id)
+          return
+        }
+        
+        const dayKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        
+        if (revenueByDay[dayKey]) {
+          const price = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+          if (!isNaN(price) && price > 0) {
+            revenueByDay[dayKey].revenue += price
+          }
+        }
+      })
+
+    // Thêm doanh thu từ các booking đã hủy (dựa trên tiền hoàn)
+    const cancelledBookings = bookings.filter(b => b.booking_status === 'cancelled' && b.booking_id)
+    if (cancelledBookings.length > 0) {
+      const refundInfos = await Promise.all(
+        cancelledBookings.map(async (booking) => {
+          try {
+            const refundResponse = await getInfoRefundBooking(booking.booking_id)
+            return refundResponse?.booking || refundResponse || {}
+          } catch (err) {
+            console.error('Error fetching refund info for revenueByDay', booking.booking_id, err)
+            return {}
+          }
         })
-        .forEach(booking => {
-          // Validate và parse date
-          const bookingDate = new Date(booking.created_at)
-          
-          // Kiểm tra xem date có hợp lệ không
-          if (isNaN(bookingDate.getTime())) {
-            console.warn('Invalid booking date:', booking.created_at, booking.booking_id)
-            return // Bỏ qua booking có date không hợp lệ
-          }
-          
-          bookingDate.setHours(0, 0, 0, 0)
-          
-          const year = bookingDate.getFullYear()
-          const month = bookingDate.getMonth() + 1
-          const day = bookingDate.getDate()
-          
-          // Kiểm tra lại xem các giá trị có hợp lệ không
-          if (isNaN(year) || isNaN(month) || isNaN(day)) {
-            console.warn('Invalid date values:', { year, month, day }, booking.booking_id)
-            return
-          }
-          
-          const dayKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-          
-          if (revenueByDay[dayKey]) {
-            const price = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
-            if (!isNaN(price) && price > 0) {
-              revenueByDay[dayKey].revenue += price
-            }
-          }
-        })
+      )
+
+      refundInfos.forEach((bookingData, idx) => {
+        const booking = cancelledBookings[idx]
+        const refundAmount = bookingData?.payment_summary?.total_refunded
+        const amount = parseFloat(refundAmount)
+        if (isNaN(amount) || amount <= 0) return
+
+        const bookingDate = new Date(booking?.created_at)
+        if (isNaN(bookingDate.getTime())) return
+        bookingDate.setHours(0, 0, 0, 0)
+
+        const year = bookingDate.getFullYear()
+        const month = bookingDate.getMonth() + 1
+        const day = bookingDate.getDate()
+        const dayKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+        if (revenueByDay[dayKey]) {
+          revenueByDay[dayKey].revenue += amount
+        }
+      })
     }
     
     // Chuyển đổi object thành array và sắp xếp theo ngày

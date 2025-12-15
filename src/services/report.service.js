@@ -1,5 +1,6 @@
 import { getBaseUrl } from './httpClient'
 import httpClient from './httpClient'
+import { getInfoRefundBooking } from './admin.service'
 import dayjs from 'dayjs'
 
 /**
@@ -143,31 +144,68 @@ export async function getMonthlyRevenue({ months = 12 } = {}) {
 
     const revenueMap = {}
 
-    bookings.forEach((booking) => {
-      if (!booking || booking.booking_status === 'cancelled') {
-        return
-      }
-
-      const bookingDate = dayjs(booking.created_at || booking.check_in_date)
-      if (!bookingDate.isValid()) return
-
-      if (bookingDate.isBefore(startDate) || bookingDate.isAfter(endDate)) {
-        return
-      }
-
-      const monthKey = bookingDate.format('YYYY-MM')
-      const revenue = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
-      if (Number.isNaN(revenue) || revenue <= 0) return
-
+    const ensureMonthBucket = (dateObj) => {
+      const monthKey = dateObj.format('YYYY-MM')
       if (!revenueMap[monthKey]) {
         revenueMap[monthKey] = {
-          date: bookingDate.endOf('month').format('DD/MM/YYYY'),
+          date: dateObj.endOf('month').format('DD/MM/YYYY'),
           revenue: 0,
         }
       }
+      return monthKey
+    }
 
+    // 1) Doanh thu từ booking đã thanh toán (paid, không bị hủy)
+    bookings.forEach((booking) => {
+      if (!booking || booking.booking_status === 'cancelled') return
+      if (booking.payment_status !== 'paid') return
+
+      const bookingDate = dayjs(booking.created_at)
+      if (!bookingDate.isValid()) return
+      if (bookingDate.isBefore(startDate) || bookingDate.isAfter(endDate)) return
+
+      const revenue = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+      if (Number.isNaN(revenue) || revenue <= 0) return
+
+      const monthKey = ensureMonthBucket(bookingDate)
       revenueMap[monthKey].revenue += revenue
     })
+
+    // 2) Doanh thu từ các booking đã hủy: doanh thu = tổng tiền - số tiền hoàn
+    const cancelledBookings = bookings.filter(b => b?.booking_status === 'cancelled' && b.booking_id)
+    if (cancelledBookings.length > 0) {
+      const refundInfos = await Promise.all(
+        cancelledBookings.map(async (booking) => {
+          try {
+            const refundResponse = await getInfoRefundBooking(booking.booking_id)
+            return refundResponse?.booking || refundResponse || {}
+          } catch (err) {
+            console.error('Error fetching refund info for monthly revenue', booking.booking_id, err)
+            return {}
+          }
+        })
+      )
+
+      refundInfos.forEach((bookingData, idx) => {
+        const booking = cancelledBookings[idx]
+        const refundAmount = bookingData?.payment_summary?.total_refunded
+        const refundParsed = parseFloat(refundAmount)
+        const refund = Number.isNaN(refundParsed) ? 0 : refundParsed
+
+        const priceParsed = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        const price = Number.isNaN(priceParsed) ? 0 : priceParsed
+
+        const net = price - refund
+        if (net <= 0) return
+
+        const bookingDate = dayjs(booking.created_at)
+        if (!bookingDate.isValid()) return
+        if (bookingDate.isBefore(startDate) || bookingDate.isAfter(endDate)) return
+
+        const monthKey = ensureMonthBucket(bookingDate)
+        revenueMap[monthKey].revenue += net
+      })
+    }
 
     return Object.keys(revenueMap)
       .sort()
@@ -207,31 +245,65 @@ export async function getDailyRevenue() {
 
     const bookings = Array.isArray(response?.bookings) ? response.bookings : []
 
+    // 1) Doanh thu từ booking đã thanh toán (paid, không bị hủy)
     bookings.forEach((booking) => {
-      if (!booking || booking.booking_status === 'cancelled') {
-        return
-      }
+      if (!booking || booking.booking_status === 'cancelled') return
+      if (booking.payment_status !== 'paid') return
 
-      const bookingDate = dayjs(booking.created_at || booking.check_in_date)
+      const bookingDate = dayjs(booking.created_at)
       if (!bookingDate.isValid()) return
 
       const bookingDay = bookingDate.startOf('day')
-
-      // Kiểm tra xem booking có nằm trong 7 ngày gần nhất không
-      if (bookingDay.isBefore(startDate) || bookingDay.isAfter(today)) {
-        return
-      }
+      if (bookingDay.isBefore(startDate) || bookingDay.isAfter(today)) return
 
       const dateKey = bookingDay.format('YYYY-MM-DD')
       const revenue = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
       
       if (Number.isNaN(revenue) || revenue <= 0) return
-
-      // Cộng doanh thu vào ngày tương ứng
       if (revenueMap[dateKey]) {
         revenueMap[dateKey].revenue += revenue
       }
     })
+
+    // 2) Doanh thu từ các booking đã hủy: doanh thu = tổng tiền - số tiền hoàn
+    const cancelledBookings = bookings.filter(b => b?.booking_status === 'cancelled' && b.booking_id)
+    if (cancelledBookings.length > 0) {
+      const refundInfos = await Promise.all(
+        cancelledBookings.map(async (booking) => {
+          try {
+            const refundResponse = await getInfoRefundBooking(booking.booking_id)
+            return refundResponse?.booking || refundResponse || {}
+          } catch (err) {
+            console.error('Error fetching refund info for daily revenue', booking.booking_id, err)
+            return {}
+          }
+        })
+      )
+
+      refundInfos.forEach((bookingData, idx) => {
+        const booking = cancelledBookings[idx]
+        const refundAmount = bookingData?.payment_summary?.total_refunded
+        const refundParsed = parseFloat(refundAmount)
+        const refund = Number.isNaN(refundParsed) ? 0 : refundParsed
+
+        const priceParsed = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        const price = Number.isNaN(priceParsed) ? 0 : priceParsed
+
+        const net = price - refund
+        if (net <= 0) return
+
+        const bookingDate = dayjs(booking.created_at)
+        if (!bookingDate.isValid()) return
+
+        const bookingDay = bookingDate.startOf('day')
+        if (bookingDay.isBefore(startDate) || bookingDay.isAfter(today)) return
+
+        const dateKey = bookingDay.format('YYYY-MM-DD')
+        if (revenueMap[dateKey]) {
+          revenueMap[dateKey].revenue += net
+        }
+      })
+    }
 
     // Trả về mảng đã sắp xếp theo thứ tự thời gian
     return Object.keys(revenueMap)

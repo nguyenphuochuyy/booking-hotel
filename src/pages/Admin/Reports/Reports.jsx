@@ -3,7 +3,7 @@ import { Row, Col, Card, Space, Button, DatePicker, message, Typography, Statist
 import { FileExcelOutlined, FilePdfOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import httpClient from '../../../services/httpClient'
-import { getAllRoomTypes } from '../../../services/admin.service'
+import { getAllRoomTypes, getInfoRefundBooking } from '../../../services/admin.service'
 import { exportRevenueReportExcel, exportRevenueReportPDF, exportTaxReport, downloadBlob, getMonthlyRevenue, getDailyRevenue } from '../../../services/report.service'
 import dayjs from 'dayjs'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
@@ -116,6 +116,7 @@ function Reports() {
     roomNightsSold: 0,
     totalCancelled: 0,
   })
+  const [refundCache, setRefundCache] = useState({})
 
   // Tải danh sách loại phòng
   const fetchRoomTypes = async () => {
@@ -186,9 +187,9 @@ function Reports() {
 
       // Filter bookings theo khoảng thời gian và loại phòng (nếu chọn)
       const filteredBookings = bookings.filter((booking) => {
-        if (!booking || booking.booking_status === 'cancelled') return false
+        if (!booking) return false
         
-        const bookingDate = dayjs(booking.created_at || booking.check_in_date)
+        const bookingDate = dayjs(booking.created_at)
         if (!bookingDate.isValid()) return false
 
         if (roomTypeId) {
@@ -205,12 +206,46 @@ function Reports() {
         )
       })
 
+      // Chuẩn bị map hoàn tiền cho các booking bị hủy (nếu chưa có trong cache)
+      const cancelledBookings = filteredBookings.filter(b => b.booking_status === 'cancelled' && b.booking_id)
+      let refundMap = {}
+      if (cancelledBookings.length > 0) {
+        const entries = await Promise.all(
+          cancelledBookings.map(async (booking) => {
+            const cached = refundCache[booking.booking_id]
+            if (cached !== undefined) return [booking.booking_id, cached]
+            try {
+              const res = await getInfoRefundBooking(booking.booking_id)
+              const data = res?.booking || res || {}
+              const amount = parseFloat(data?.payment_summary?.total_refunded)
+              return [booking.booking_id, Number.isNaN(amount) ? 0 : amount]
+            } catch (err) {
+              console.error('Error fetching refund info (range) for booking', booking.booking_id, err)
+              return [booking.booking_id, 0]
+            }
+          })
+        )
+        refundMap = Object.fromEntries(entries)
+        setRefundCache(prev => ({ ...prev, ...refundMap }))
+      }
+
       // Nhóm doanh thu theo ngày hoặc tháng tùy theo type
       const revenueMap = {}
       
       filteredBookings.forEach((booking) => {
-        const bookingDate = dayjs(booking.created_at || booking.check_in_date)
-        const revenue = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        const bookingDate = dayjs(booking.created_at)
+        let revenue = 0
+
+        const basePriceParsed = parseFloat(booking.final_price) || parseFloat(booking.total_price) || 0
+        const basePrice = Number.isNaN(basePriceParsed) ? 0 : basePriceParsed
+
+        if (booking.booking_status === 'cancelled') {
+          const refundAmount = refundMap[booking.booking_id] ?? refundCache[booking.booking_id] ?? 0
+          const refund = Number.isFinite(refundAmount) ? refundAmount : 0
+          revenue = basePrice - refund
+        } else if (booking.payment_status === 'paid') {
+          revenue = basePrice
+        }
         
         if (Number.isNaN(revenue) || revenue <= 0) return
 
@@ -257,7 +292,7 @@ function Reports() {
   useEffect(() => {
     fetchRoomTypes()
     fetchDailyRevenue() // Mặc định load dữ liệu 7 ngày gần nhất
-  }, [])
+  }, [refundCache])
 
   const computeRevenueMetrics = useCallback(async (rangeValue = null, roomTypeValue = null) => {
     try {
@@ -294,12 +329,11 @@ function Reports() {
         }
         
         filteredBookings = filteredBookings.filter((booking) => {
-          if (!booking.check_in_date) return false
-          const checkIn = dayjs(booking.check_in_date)
-          if (!checkIn.isValid()) return false
+          const createdAt = dayjs(booking.created_at)
+          if (!createdAt.isValid()) return false
           return (
-            checkIn.isSameOrAfter(start, 'day') &&
-            checkIn.isSameOrBefore(end, 'day')
+            createdAt.isSameOrAfter(start, 'day') &&
+            createdAt.isSameOrBefore(end, 'day')
           )
         })
       }
@@ -307,6 +341,29 @@ function Reports() {
       let totalRevenue = 0
       let roomNightsSold = 0
       let totalCancelled = 0
+
+      // Lấy thông tin hoàn tiền cho các booking hủy (nếu chưa có)
+      const cancelledBookings = filteredBookings.filter(b => b.booking_status === 'cancelled' && b.booking_id)
+      let refundMap = {}
+      if (cancelledBookings.length > 0) {
+        const entries = await Promise.all(
+          cancelledBookings.map(async (booking) => {
+            const cached = refundCache[booking.booking_id]
+            if (cached !== undefined) return [booking.booking_id, cached]
+            try {
+              const res = await getInfoRefundBooking(booking.booking_id)
+              const data = res?.booking || res || {}
+              const amount = parseFloat(data?.payment_summary?.total_refunded)
+              return [booking.booking_id, Number.isNaN(amount) ? 0 : amount]
+            } catch (err) {
+              console.error('Error fetching refund info (metrics) for booking', booking.booking_id, err)
+              return [booking.booking_id, 0]
+            }
+          })
+        )
+        refundMap = Object.fromEntries(entries)
+        setRefundCache(prev => ({ ...prev, ...refundMap }))
+      }
 
       filteredBookings.forEach((booking) => {
         const checkIn = booking.check_in_date ? dayjs(booking.check_in_date) : null
@@ -317,19 +374,26 @@ function Reports() {
             : 0
         const roomsCount = booking.rooms?.length || booking.num_rooms || 1
 
+        const priceParsed =
+          parseFloat(booking.final_price) ||
+          parseFloat(booking.total_price) ||
+          0
+        const price = Number.isNaN(priceParsed) ? 0 : priceParsed
+
         if (booking.booking_status === 'cancelled') {
           totalCancelled += 1
+          const refundAmount = refundMap[booking.booking_id] ?? refundCache[booking.booking_id] ?? 0
+          const refund = Number.isFinite(refundAmount) ? refundAmount : 0
+          const net = price - refund
+          if (net > 0) {
+            totalRevenue += net
+          }
           return
         }
 
         roomNightsSold += nights * roomsCount
 
-        const price =
-          parseFloat(booking.final_price) ||
-          parseFloat(booking.total_price) ||
-          0
-
-        if (!Number.isNaN(price) && price > 0) {
+        if (!Number.isNaN(price) && price > 0 && booking.payment_status === 'paid') {
           totalRevenue += price
         }
       })
@@ -498,17 +562,17 @@ function Reports() {
               </Col>
               <Col xs={24} md={12} lg={6}>
                 <Card loading={calcLoading}>
-                  <Statistic title="Tổng Đặt phòng" value={metrics.totalBookings} precision={0} />
+                  <Statistic title="Tổng Đặt phòng" value={metrics.totalBookings} precision={0} valueStyle={{ fontWeight: 'bold' }} />
                 </Card>
               </Col>
               <Col xs={24} md={12} lg={6}>
                 <Card loading={calcLoading}>
-                  <Statistic title="Số đêm đã đặt" value={metrics.roomNightsSold} precision={0} />
+                  <Statistic title="Số đêm đã đặt" value={metrics.roomNightsSold} precision={0} valueStyle={{ fontWeight: 'bold' }}/>
                 </Card>
               </Col>
               <Col xs={24} md={12} lg={6}>
                 <Card loading={calcLoading}>
-                  <Statistic title="Booking bị hủy" value={metrics.totalCancelled} precision={0} />
+                  <Statistic title="Booking bị hủy" value={metrics.totalCancelled} precision={0} valueStyle={{ fontWeight: 'bold' }}/>
                 </Card>
               </Col>
             </Row>
