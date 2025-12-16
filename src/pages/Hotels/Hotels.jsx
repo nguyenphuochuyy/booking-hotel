@@ -136,6 +136,9 @@ function Hotels() {
   const [allowChildren, setAllowChildren] = useState(false)
   const [allowPets, setAllowPets] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
+  const [guestFilter, setGuestFilter] = useState(null) // lọc theo số khách (capacity tối thiểu)
+  const [areaMin, setAreaMin] = useState(null)         // diện tích tối thiểu
+  const [areaMax, setAreaMax] = useState(null)         // diện tích tối đa
 
   // State cho booking summary
   const [selectedRoom, setSelectedRoom] = useState(null)
@@ -308,10 +311,33 @@ function Hotels() {
       if ((room.sold_out || room.available_rooms === 0) && (price == null)) return true
       if (price == null && (room.available_rooms > 0 || !room.sold_out)) return true
       if (price != null) {
-      return price >= priceRange[0] && price <= priceRange[1]
+        return price >= priceRange[0] && price <= priceRange[1]
       }
       return false
     })
+
+    // Lọc theo số khách (capacity tối thiểu)
+    if (guestFilter && Number(guestFilter) > 0) {
+      const minGuests = Number(guestFilter)
+      filtered = filtered.filter(room => {
+        const capacity = room.capacity ?? room.room_type?.capacity
+        if (!capacity) return false
+        return Number(capacity) >= minGuests
+      })
+    }
+
+    // Lọc theo diện tích (m²)
+    if (areaMin != null || areaMax != null) {
+      filtered = filtered.filter(room => {
+        const area = room.area ?? room.room_type?.area
+        if (area == null) return false
+        const value = Number(area)
+        if (Number.isNaN(value)) return false
+        if (areaMin != null && value < areaMin) return false
+        if (areaMax != null && value > areaMax) return false
+        return true
+      })
+    }
 
     if (selectedRoomType !== 'all') {
       filtered = filtered.filter(room => {
@@ -323,19 +349,45 @@ function Hotels() {
       })
     }
 
+    // Sắp xếp theo giá & tình trạng, ưu tiên phòng còn trống
     if (checkIn && checkOut) {
       filtered.sort((a, b) => {
         const aAvailable = a.available_rooms > 0 && !a.sold_out
         const bAvailable = b.available_rooms > 0 && !b.sold_out
         if (aAvailable && !bAvailable) return -1
         if (!aAvailable && bAvailable) return 1
+
         const aPrice = a.price_per_night || 0
         const bPrice = b.price_per_night || 0
+
+        // sortBy: 'price_asc' | 'price_desc' | 'default'
+        if (sortBy === 'price_desc') {
+          return bPrice - aPrice
+        }
+        // default & 'price_asc'
         return aPrice - bPrice
       })
+    } else {
+      // Khi chưa chọn ngày, vẫn cho phép sort theo giá
+      if (sortBy === 'price_asc' || sortBy === 'price_desc') {
+        filtered.sort((a, b) => {
+          const aPrice = a.price_per_night || 0
+          const bPrice = b.price_per_night || 0
+          return sortBy === 'price_desc' ? bPrice - aPrice : aPrice - bPrice
+        })
+      }
     }
     return filtered
-  }, [dataSource, searchKeyword, priceRange, selectedRoomType, allowChildren, allowPets, sortBy, checkIn, checkOut])
+  }, [dataSource, searchKeyword, priceRange, selectedRoomType, allowChildren, allowPets, sortBy, checkIn, checkOut, guestFilter, areaMin, areaMax])
+
+  const handleResetQuickFilters = () => {
+    setSortBy('default')
+    setGuestFilter(null)
+    setAreaMin(null)
+    setAreaMax(null)
+    setPriceRange([0, 10000000])
+    setSelectedRoomType('all')
+  }
 
   // ... (Giữ nguyên các hàm handler: handleRoomTypeChange, handleSelectRoom, v.v.)
   const handleSearch = (value) => setSearchKeyword(value)
@@ -574,6 +626,88 @@ function Hotels() {
 
         <Row gutter={[24, 24]}>
           <Col xs={24} lg={16}>
+            {/* Summary + bộ lọc nhanh */}
+            <div
+              style={{
+                marginBottom: 16,
+                padding: '10px 14px',
+                borderRadius: 12,
+                border: '1px solid #e5e7eb',
+                background: '#f9fafb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Space direction="vertical" size={0}>
+                <Text strong>
+                  {`Tìm thấy ${filteredRooms.length} loại phòng`}
+                </Text>
+                {checkIn && checkOut && (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Tổng số phòng còn trống:{' '}
+                    {filteredRooms.reduce((sum, room) => {
+                      const avail = Number(room.available_rooms ?? 0)
+                      return sum + (Number.isNaN(avail) ? 0 : avail)
+                    }, 0)}
+                  </Text>
+                )}
+              </Space>
+
+              <Space size="small" wrap>
+                {/* Sắp xếp theo giá */}
+                <Select
+                  size="small"
+                  value={sortBy}
+                  style={{ minWidth: 140 }}
+                  onChange={setSortBy}
+                  suffixIcon={<SortAscendingOutlined />}
+                >
+                  <Option value="default">Mặc định</Option>
+                  <Option value="price_asc">Giá tăng dần</Option>
+                  <Option value="price_desc">Giá giảm dần</Option>
+                </Select>
+
+                {/* Lọc theo số khách */}
+                <InputNumber
+                  size="small"
+                  min={1}
+                  placeholder="Số khách"
+                  value={guestFilter}
+                  onChange={(val) => setGuestFilter(val || null)}
+                  style={{ width: 100 }}
+                />
+
+                {/* Lọc theo diện tích */}
+                <InputNumber
+                  size="small"
+                  min={0}
+                  placeholder="m² từ"
+                  value={areaMin}
+                  onChange={(val) => setAreaMin(val ?? null)}
+                  style={{ width: 90 }}
+                />
+                <InputNumber
+                  size="small"
+                  min={0}
+                  placeholder="m² đến"
+                  value={areaMax}
+                  onChange={(val) => setAreaMax(val ?? null)}
+                  style={{ width: 90 }}
+                />
+
+                <Button
+                  size="small"
+                  icon={<FilterOutlined />}
+                  onClick={handleResetQuickFilters}
+                >
+                  Mặc định
+                </Button>
+              </Space>
+            </div>
+
             <div className="rooms-list">
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
