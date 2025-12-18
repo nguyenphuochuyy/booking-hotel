@@ -33,7 +33,6 @@ import {
   SortAscendingOutlined,
   EnvironmentOutlined,
   UserOutlined,
-  StarOutlined,
   SearchOutlined,
   ExpandOutlined,
   CloseOutlined,
@@ -45,7 +44,9 @@ import {
   PlusOutlined,
   CustomerServiceOutlined,
   MoreOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  StarOutlined,
+  StarFilled
 } from '@ant-design/icons'
 import { useRoomTypes } from '../../hooks/roomtype'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -169,7 +170,12 @@ function Hotels() {
     comment: '',
     images: []
   })
-
+ const [averageRating, setAverageRating] = useState(0)
+ useEffect(() => {
+  if (reviews.length > 0) {
+    setAverageRating(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length)
+  }
+ }, [reviews])
   const numNights = useMemo(() => {
     if (!checkIn || !checkOut) return 1
     const checkInDate = new Date(checkIn)
@@ -948,6 +954,9 @@ function Hotels() {
                     <Title level={3} style={{ margin: 0 }}>
                       {roomInModal.room_type_name}
                     </Title>
+                    <>
+                    <Text type="secondary" style={{ fontSize: '15px' }}>Đánh giá trung bình: {averageRating.toFixed(1)} <StarFilled style={{ color: '#fadb14' }} /></Text>
+                    </>
                   </div>
 
                   <Divider style={{ margin: '12px 0 24px 0' }} />
@@ -1027,8 +1036,10 @@ function Hotels() {
                         <Title level={5} style={{ marginBottom: '16px' }}>
                           <MessageOutlined style={{ marginRight: '8px' }} />
                             Đánh giá từ khách hàng ({reviewsPagination.total})
+                            <Text type="secondary" style={{ fontSize: '14px', marginLeft: '10px' , fontWeight: 600 }}>{averageRating.toFixed(1)}/5 <StarFilled style={{ color: '#fadb14' }} /></Text>
                         </Title>
-
+                    
+                       
                         {reviewsLoading ? (
                             <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>
                         ) : reviews.length === 0 ? (
