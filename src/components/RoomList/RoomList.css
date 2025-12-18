@@ -9,7 +9,8 @@
 /* Style chung cho tiêu đề các section (Phòng Đơn, Đôi...) */
 .room-title-wrap {
   margin-bottom: 24px;
-  border-left: 4px solid #c08a19; /* Viền vàng bên trái */
+  border-left: 4px solid #c08a19;
+  /* Viền vàng bên trái */
   padding-left: 16px;
 }
 
@@ -37,21 +38,25 @@
 .featured-heading {
   display: flex;
   flex-direction: column;
-  align-items: center;    /* Căn giữa trục ngang */
+  align-items: center;
+  /* Căn giữa trục ngang */
   justify-content: center;
-  text-align: center;     /* Căn giữa văn bản */
+  text-align: center;
+  /* Căn giữa văn bản */
   margin-bottom: 30px;
   border-bottom: 1px solid #e0e0e0;
   padding-bottom: 20px;
 }
 
-.featured-heading > div {
+.featured-heading>div {
   max-width: 800px;
   padding: 0 15px;
 }
-.featured-heading .room-section-title{
+
+.featured-heading .room-section-title {
   color: #c08a19;
 }
+
 .featured-subtitle {
   color: #666;
   margin-top: 8px;
@@ -61,7 +66,8 @@
 /* --- Xử lý Nút bấm ở dưới (Mới) --- */
 .featured-bottom-action {
   display: flex;
-  justify-content: flex-end; /* Căn nút sang bên phải */
+  justify-content: flex-end;
+  /* Căn nút sang bên phải */
   padding: 20px 20px 0 20px;
   margin-top: 10px;
 }
@@ -135,15 +141,45 @@
   text-overflow: ellipsis;
 }
 
+.featured-room-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.featured-room-header-row h3 {
+  margin-bottom: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.featured-room-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rating-value {
+  font-size: 13px;
+  color: #c08a19;
+  font-weight: 600;
+}
+
 .featured-room-info p {
   color: #666;
   margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: 14px;
-  min-height: 42px; /* Đảm bảo chiều cao đồng đều cho mô tả */
+  min-height: 42px;
+  /* Đảm bảo chiều cao đồng đều cho mô tả */
 }
 
 .featured-room-meta {
@@ -176,9 +212,12 @@
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  display: flex;         /* Flexbox */
-  flex-direction: column; /* Xếp dọc */
-  height: 100%;          /* Chiếm hết chiều cao cột Grid */
+  display: flex;
+  /* Flexbox */
+  flex-direction: column;
+  /* Xếp dọc */
+  height: 100%;
+  /* Chiếm hết chiều cao cột Grid */
   position: relative;
 }
 
@@ -212,7 +251,8 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  flex: 1; /* Lò xo giãn nở chiếm khoảng trống còn lại */
+  flex: 1;
+  /* Lò xo giãn nở chiếm khoảng trống còn lại */
 }
 
 .room-list-name {
@@ -223,9 +263,11 @@
   /* Giới hạn 2 dòng */
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 44px; /* Giữ chỗ cho 2 dòng text */
+  min-height: 44px;
+  /* Giữ chỗ cho 2 dòng text */
 }
 
 /* Amenities Icons */
@@ -257,7 +299,8 @@
 
 /* Footer: Luôn ở đáy */
 .room-list-footer {
-  margin-top: auto; /* Đẩy xuống đáy */
+  margin-top: auto;
+  /* Đẩy xuống đáy */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -294,15 +337,16 @@
    ========================================= */
 
 @media (max-width: 768px) {
+
   /* Tiêu đề section nhỏ lại chút */
   .room-section-title {
     font-size: 20px !important;
   }
-  
+
   .room-list-image {
     height: 180px;
   }
-  
+
   /* Căn giữa tiêu đề chính section trên mobile (tuỳ chọn, ở đây giữ nguyên style PC) */
   .room-title-wrap {
     padding-left: 12px;
@@ -310,11 +354,65 @@
 
   /* Căn chỉnh lại nút Xem tất cả trên mobile */
   .featured-bottom-action {
-    justify-content: center; /* Giữa màn hình cho dễ bấm */
+    justify-content: center;
+    /* Giữa màn hình cho dễ bấm */
     padding: 16px 0;
   }
-  
+
   .featured-bottom-action .ant-btn {
-    width: 100%; /* Nút full chiều rộng */
+    width: 100%;
+    /* Nút full chiều rộng */
   }
+}
+
+/* =========================================
+   5. STAR RATINGS
+   ========================================= */
+
+.featured-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.featured-room-header h3 {
+  margin-bottom: 0;
+  flex: 1;
+  padding-right: 10px;
+}
+
+.room-rating-compact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fffcf0;
+  border: 1px solid #fadb14;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.rating-text {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Modal Header */
+.room-modal-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.room-rating-modal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-text-modal {
+  font-size: 14px;
+  color: #666;
 }

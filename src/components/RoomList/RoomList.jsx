@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react'
-import { Row, Col, Typography, Button, Grid, Carousel, Modal, Divider, Space, Tag, Spin, Image } from 'antd'
-import { WifiOutlined, UserOutlined, ExpandOutlined, RestOutlined, CoffeeOutlined, HomeOutlined } from '@ant-design/icons'
+import { Row, Col, Typography, Button, Grid, Carousel, Modal, Divider, Space, Tag, Spin, Image, Rate } from 'antd'
+import { WifiOutlined, UserOutlined, ExpandOutlined, RestOutlined, CoffeeOutlined, HomeOutlined, StarFilled } from '@ant-design/icons'
 import { getRoomTypeById } from '../../services/roomtype.service'
+import { getReviewsByRoomType } from '../../services/review.service'
 import './RoomList.css'
 import { useNavigate } from 'react-router-dom'
 import { useRoomTypes } from '../../hooks/roomtype'
@@ -35,10 +36,37 @@ function RoomList() {
   const [roomInModal, setRoomInModal] = useState(null)
   const [roomDetailsCache, setRoomDetailsCache] = useState({})
   const [modalLoading, setModalLoading] = useState(false)
+  const [ratings, setRatings] = useState({}) // Store rating avg for each roomTypeId
   const timerRef = useRef(null)
   const screens = useBreakpoint()
   const navigate = useNavigate()
   const { roomTypes } = useRoomTypes()
+
+  // lấy danh sách review của toàn bộ phòng sau đó lấy số sao trung bình của từng loại phòng và hiển thị lên modal
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewsPagination, setReviewsPagination] = useState({ current: 1, pageSize: 5, total: 0 })
+  useEffect(() => {
+    if (roomInModal) {
+      loadReviews(roomInModal.room_type_id)
+    }
+  }, [roomInModal])
+  const loadReviews = async (roomTypeId) => {
+    if (!roomTypeId) return
+    try {
+      setReviewsLoading(true)
+      const pageSize = 5
+      const response = await getReviewsByRoomType(roomTypeId, { page: 1, limit: pageSize })
+      setReviews(response?.reviews || [])
+      setReviewsPagination(prev => ({ ...prev, current: response?.pagination?.currentPage || 1, total: response?.pagination?.totalItems || 0, pageSize: pageSize }))
+    } catch (error) { console.error('Error loading reviews:', error); setReviews([]); } finally { setReviewsLoading(false) }
+  }
+  const getAverageRating = (roomTypeId) => {
+    if (!roomTypeId) return 0
+    const reviews = reviews.filter(r => r.room_type_id === roomTypeId)
+    if (reviews.length === 0) return 0
+    return reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+  }
 
   // 1. Group phòng theo category
   const groupedByCategory = CATEGORY_ORDER.map((cat) => ({
@@ -73,6 +101,36 @@ function RoomList() {
     }
     return picked.slice(0, 5)
   }, [roomTypes])
+
+  // EFFECT: Fetch average ratings for featured rooms
+  useEffect(() => {
+    const fetchRatings = async () => {
+      const newRatings = {}
+      for (const room of featuredRooms) {
+        if (!room.room_type_id) continue;
+        try {
+          // Fetch reviews to calculate average. Limit to 100 to get a good sample
+          const resp = await getReviewsByRoomType(room.room_type_id, { page: 1, limit: 100 })
+          const list = resp?.reviews || []
+          if (list.length > 0) {
+            const sum = list.reduce((acc, r) => acc + Number(r.rating || 0), 0)
+            const avg = sum / list.length
+            newRatings[room.room_type_id] = avg
+          } else {
+            newRatings[room.room_type_id] = 5
+          }
+        } catch (err) {
+          console.error(`Error fetching rating for room ${room.room_type_id}`, err)
+          newRatings[room.room_type_id] = 5
+        }
+      }
+      setRatings(prev => ({ ...prev, ...newRatings }))
+    }
+
+    if (featuredRooms.length > 0) {
+      fetchRatings()
+    }
+  }, [featuredRooms])
 
   // Helper lấy ảnh bìa
   const getCoverImage = (rt) => {
@@ -194,43 +252,54 @@ function RoomList() {
 
           {/* Carousel */}
           <Carousel {...carouselSettings} className="featured-carousel">
-            {featuredRooms.map((room) => (
-              <div key={room.room_type_id} className="featured-room-slide">
-                <div
-                  className="featured-room-card"
-                  onMouseEnter={() => handleHoverStart(room)}
-                  onMouseLeave={handleHoverEnd}
-                >
-                  <div className="featured-room-media">
-                    <img src={getCoverImage(room)} alt={room.room_type_name} />
-                  </div>
-                  <div className="featured-room-info">
-                    <h3>{room.room_type_name}</h3>
-                    <p>{getShortDescription(room)}</p>
-                    <div className="featured-room-meta">
-                      <span><UserOutlined /> {room.capacity ? `${room.capacity} khách` : '2 khách'}</span>
-                      <span><ExpandOutlined /> {room.area ? `${room.area} m²` : '30 m²'}</span>
+            {featuredRooms.map((room) => {
+              const avgRating = ratings[room.room_type_id] || 5
+              return (
+                <div key={room.room_type_id} className="featured-room-slide">
+                  <div
+                    className="featured-room-card"
+                    onMouseEnter={() => handleHoverStart(room)}
+                    onMouseLeave={handleHoverEnd}
+                  >
+                    <div className="featured-room-media">
+                      <img src={getCoverImage(room)} alt={room.room_type_name} />
                     </div>
-                    <div className="featured-room-footer">
-                      <div className="price">
-                        {room.price_per_night ? `${formatPrice(room.price_per_night)}/Đêm` : 'Giá liên hệ'}
+                    <div className="featured-room-info">
+                      <div className="featured-room-header-row">
+                        <h3>{room.room_type_name}</h3>
+                        {avgRating > 0 && (
+                          <div className="featured-room-rating">
+                            <StarFilled style={{ fontSize: 14, color: '#fadb14' }} />
+                            <span className="rating-value">{avgRating.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <p>{getShortDescription(room)}</p>
+                      <div className="featured-room-meta">
+                        <span><UserOutlined /> {room.capacity ? `${room.capacity} khách` : '2 khách'}</span>
+                        <span><ExpandOutlined /> {room.area ? `${room.area} m²` : '30 m²'}</span>
+                      </div>
+                      <div className="featured-room-footer">
+                        <div className="price">
+                          {room.price_per_night ? `${formatPrice(room.price_per_night)}/Đêm` : 'Giá liên hệ'}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </Carousel>
 
           {/* Bottom Action: Nút Xem tất cả nằm góc phải dưới */}
           <div className="featured-bottom-action">
-             <Button type="primary" onClick={() => navigate('/hotels')}>Xem tất cả phòng</Button>
+            <Button type="primary" onClick={() => navigate('/hotels')}>Xem tất cả phòng</Button>
           </div>
         </div>
       )}
 
       {/* --- MAIN ROOM LIST SECTION --- */}
-    
+
       {/* Modal chi tiết phòng (hiển thị sau 1.5s hover) */}
       <Modal
         open={isModalVisible}
@@ -248,9 +317,19 @@ function RoomList() {
         {!modalLoading && roomInModal && (
           <div className="modal-content">
             <div className="modal-header" style={{ marginBottom: 12 }}>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {roomInModal.room_type_name}
-              </Typography.Title>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                <Typography.Title level={3} style={{ margin: 0 }}>
+                  {roomInModal.room_type_name}
+                </Typography.Title>
+                {ratings[roomInModal.room_type_id] > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <StarFilled style={{ fontSize: 20, color: '#fadb14' }} />
+                    <span style={{ fontSize: 18, fontWeight: 700, color: '#fadb14' }}>
+                      {ratings[roomInModal.room_type_id].toFixed(1)}
+                    </span>
+                  </div>
+                )}
+              </div>
               <Typography.Text type="secondary">
                 {roomInModal.bed_type ? `${roomInModal.bed_type} • ` : ''}{roomInModal.view ? `View ${roomInModal.view}` : ''}
               </Typography.Text>
